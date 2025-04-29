@@ -30,9 +30,9 @@
             <li 
               v-for="category in categories" 
               :key="category.id" 
-              @click="selectCategory(category.id)"
+              @click="selectCategory(category.name)"
               class="py-2 px-3 rounded cursor-pointer transition-colors hover:bg-amber-50"
-              :class="{ 'bg-amber-100 font-medium': selectedCategoryId === category.id }"
+              :class="{ 'bg-amber-100 font-medium': selectedCategory === category.name }"
             >
               {{ category.name }}
             </li>
@@ -42,14 +42,14 @@
         <!-- 右侧图书列表 -->
         <div class="md:w-3/4 bg-white rounded-lg shadow-md p-4">
           <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-200">
-            <h2 class="text-xl font-semibold">{{ selectedCategory?.name || '所有分类' }}</h2>
-            <p class="text-sm text-gray-600">{{ selectedCategory?.description }}</p>
+            <h2 class="text-xl font-semibold">{{ selectedCategory || '所有分类' }}</h2>
+            <p class="text-sm text-gray-600">{{ selectedCategoryDescription }}</p>
           </div>
           
           <!-- 使用BookList组件 -->
           <BookList 
-            v-if="selectedCategoryBooks && selectedCategoryBooks.length > 0"
-            :books="selectedCategoryBooks" 
+            v-if="categorizedBooks[selectedCategory] && categorizedBooks[selectedCategory].length > 0"
+            :books="categorizedBooks[selectedCategory]" 
             :showHeader="false"
           />
           
@@ -59,9 +59,9 @@
           </p>
           
           <!-- 查看全部按钮 -->
-          <div v-if="selectedCategoryBooks && selectedCategoryBooks.length > 16" class="mt-8 text-center">
+          <div v-if="categorizedBooks[selectedCategory] && categorizedBooks[selectedCategory].length > 16" class="mt-8 text-center">
             <router-link 
-              :to="`/category/${selectedCategoryId}`" 
+              :to="`/category/${selectedCategory}`" 
               class="inline-block px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition"
             >
               查看全部 <i class="ri-arrow-right-line ml-1"></i>
@@ -80,100 +80,97 @@ import { useRoute, useRouter } from 'vue-router';
 import Header from '../components/Header.vue';
 import Footer from '../components/Footer.vue';
 import BookList from '../components/BookList.vue';
-import { categoryAPI, bookAPI } from '../services/api';
+import axios from 'axios';
+import BookCard from '../components/BookCard.vue';
+import { searchBooks, getBookDetail } from '../api/books';
 
 const route = useRoute();
 const router = useRouter();
 const categories = ref([]);
-const categorizedBooks = ref([]); // 所有分类及其对应的书籍
+const categorizedBooks = ref({});
 const loading = ref(true);
-const error = ref(null);
-const selectedCategoryId = ref('');
-const selectedCategoryBooks = ref([]);
-
-// 根据ID找到选中的分类对象
-const selectedCategory = computed(() => {
-  return categories.value.find(cat => cat.id === selectedCategoryId.value);
-});
+const error = ref('');
+const selectedCategory = ref('');
 
 // 选择分类的方法
-const selectCategory = (categoryId) => {
-  selectedCategoryId.value = categoryId;
-  
-  // 从已加载的分类书籍中查找
-  const categoryData = categorizedBooks.value.find(cat => cat.category_id === categoryId);
-  if (categoryData && categoryData.books) {
-    selectedCategoryBooks.value = categoryData.books;
-  } else {
-    // 如果在已加载数据中没找到，则重新获取
-    fetchBooksByCategory(categoryId);
-  }
-  
-  // 添加导航功能 - 更新URL，但不重新加载页面
+const selectCategory = (categoryName) => {
+  selectedCategory.value = categoryName;
+  // 更新 URL 参数
   router.push({
     path: '/categories',
-    query: { category: categoryId }
+    query: { category: categoryName }
   });
 };
 
-// 获取所有分类的图书
-const fetchCategorizedBooks = async () => {
-  loading.value = true;
-  error.value = null;
-  
-  try {
-    const response = await categoryAPI.getCategoriesWithBooks();
-    categorizedBooks.value = response.data.categoriesList || [];
-  } catch (err) {
-    console.error('获取分类书籍失败:', err);
-    error.value = '获取分类书籍失败，请稍后再试';
-    categorizedBooks.value = [];
-  } finally {
-    loading.value = false;
-  }
-};
-
-// 获取所有分类
+// 获取分类列表
 const fetchCategories = async () => {
-  loading.value = true;
-  error.value = null;
-  
   try {
-    const response = await categoryAPI.getAllCategories();
-    categories.value = response.data.categoriesList || [];
+    const response = await axios.get('/api/categories/getAll');
+    if (response.data.state === 'Success') {
+      categories.value = response.data.categoriesList;
+      // 如果有 URL 参数，设置选中的分类
+      if (route.query.category) {
+        selectedCategory.value = route.query.category;
+      } else if (categories.value.length > 0) {
+        // 否则默认选中第一个分类
+        selectedCategory.value = categories.value[0].name;
+      }
+    } else {
+      error.value = '获取分类列表失败';
+    }
   } catch (err) {
     console.error('获取分类列表失败:', err);
-    error.value = '获取分类列表失败，请稍后再试';
-    categories.value = [];
-  } finally {
-    loading.value = false;
+    error.value = '获取分类列表失败，请稍后重试';
   }
 };
 
-// 获取指定分类下的图书
-const fetchBooksByCategory = async (categoryId) => {
-  loading.value = true;
-  error.value = null;
-  
+// 获取特定类别的图书
+const fetchBooksByCategory = async (categoryName) => {
   try {
-    const response = await bookAPI.getBooksByCategory(categoryId);
-    selectedCategoryBooks.value = response.data.books || [];
+    loading.value = true;
+    error.value = '';
+    
+    // 使用搜索 API 获取特定类别的图书
+    const result = await searchBooks({ category: categoryName });
+    
+    if (result.state === 'success' && result.bookId && result.bookId.length > 0) {
+      // 获取每本书的详细信息
+      const bookDetails = await Promise.all(
+        result.bookId.map(async (bookId) => {
+          const bookDetail = await getBookDetail(bookId);
+          return bookDetail;
+        })
+      );
+      
+      // 过滤掉获取失败的书籍（返回 null 的情况）
+      categorizedBooks.value[categoryName] = bookDetails.filter(book => book !== null);
+    } else {
+      categorizedBooks.value[categoryName] = [];
+    }
   } catch (err) {
-    console.error('获取分类书籍失败:', err);
-    error.value = '获取分类书籍失败，请稍后再试';
-    selectedCategoryBooks.value = [];
+    console.error('获取分类图书失败:', err);
+    error.value = '获取分类图书失败，请稍后重试';
+    categorizedBooks.value[categoryName] = [];
   } finally {
     loading.value = false;
   }
 };
 
-// 监听URL参数变化
-watch(() => route.query.category, (newCategoryId) => {
-  if (newCategoryId && categories.value.some(cat => cat.id === newCategoryId)) {
-    selectCategory(newCategoryId);
+// 监听选中的分类变化
+watch(selectedCategory, (newCategory) => {
+  if (newCategory) {
+    fetchBooksByCategory(newCategory);
   }
 });
 
+// 监听 URL 参数变化
+watch(() => route.query.category, (newCategory) => {
+  if (newCategory) {
+    selectedCategory.value = newCategory;
+  }
+});
+
+// 组件挂载时获取分类列表
 onMounted(() => {
   fetchCategories();
 });
