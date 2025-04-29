@@ -11,6 +11,8 @@ import Books from '../views/Books.vue'
 import Categories from '../views/Categories.vue'
 import SearchResults from '../views/SearchResults.vue'
 import CategoryDetail from '../views/CategoryDetail.vue'
+import { useUserStore } from '../stores/userStore'
+import ReaderPage from '../views/ReaderPage.vue'
 
 const routes = [
   {
@@ -126,12 +128,41 @@ const routes = [
     name: 'Settings',
     component: () => import('../views/user/SettingsPage.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/reader/:id',
+    name: 'ReaderPage',
+    component: ReaderPage,
+    meta: { requiresAuth: true }
   }
 ]
 
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+// 全局前置守卫
+router.beforeEach((to, from, next) => {
+  const userStore = useUserStore()
+
+  // 初始化用户状态，从localStorage恢复登录状态
+  userStore.initUserState()
+
+  // 检查页面是否需要认证
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+
+  // 如果页面需要认证，但用户未登录，则重定向到登录页
+  if (requiresAuth && !userStore.isAuthenticated) {
+    next({ path: '/login', query: { redirect: to.fullPath } })
+  } else {
+    // 如果用户已登录且尝试访问登录或注册页面，重定向到主页
+    if (userStore.isAuthenticated && (to.path === '/login' || to.path === '/register')) {
+      next({ path: '/' })
+    } else {
+      next() // 继续导航
+    }
+  }
 })
 
 export default router

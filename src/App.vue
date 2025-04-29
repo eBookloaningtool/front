@@ -14,21 +14,25 @@ import Header from './components/Header.vue'
 import { getMockBooksByCategory } from '@/mock-api'
 import { checkAndSendDueSoonNotifications } from '@/utils/emailService'
 import ToastContainer from './components/ToastContainer.vue'
+import { useUserStore } from './stores/userStore'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 onMounted(() => {
+  // 初始化用户状态
+  userStore.initUserState()
+
   // 认证检查
-  const token = localStorage.getItem('token')
   const publicPages = ['/login', '/register'] // 白名单路由
   const currentPath = router.currentRoute.value.path
 
-  if (!token && !publicPages.includes(currentPath)) {
+  if (!userStore.isAuthenticated && !publicPages.includes(currentPath)) {
     router.push('/login')
   }
 
   // 检查即将到期的书籍并发送提醒
-  if (token) {
+  if (userStore.isAuthenticated) {
     checkAndSendDueSoonNotifications().catch(err => {
       console.error('检查到期书籍失败:', err)
     })

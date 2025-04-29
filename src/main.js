@@ -5,6 +5,10 @@ import './index.css' // Import Tailwind CSS
 import axios from 'axios'
 import 'remixicon/fonts/remixicon.css'
 import mockAPI from './mock-api' // 导入mock API实现
+import { createPinia } from 'pinia'
+
+// 创建Pinia实例
+const pinia = createPinia()
 
 // 开发环境中模拟数据
 // 强制设置mockMode为true，确保开发环境下可以正常使用
@@ -78,5 +82,6 @@ axios.defaults.baseURL = import.meta.env.VITE_API_URL || ''
 // 挂载axios到全局属性
 app.config.globalProperties.$axios = axios
 
+app.use(pinia)    // 添加Pinia
 app.use(router)   // Install router functionality
 app.mount('#app') // Mount App.vue to <div id="app"> in HTML

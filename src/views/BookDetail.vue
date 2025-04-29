@@ -243,11 +243,19 @@ const handleBorrow = async () => {
         dueDate: result.dueDate
       }).catch(err => console.error('发送借阅邮件失败:', err));
 
-      // 更新UI或显示成功提示
-      alert(`借阅成功！归还日期: ${result.dueDate}`);
+      // 显示成功提示并跳转到阅读器页面
+      alert('借阅成功！正在打开阅读器...');
+      router.push({
+        name: 'Reader',
+        params: { id: bookId.value }
+      });
     } else if (result.state === 'insufficient balance') {
+      // 余额不足，直接跳转到充值页面
       requiredAmount.value = result.newPayment;
-      showBalanceDialog.value = true;
+      alert(`您的账户余额不足，需要充值${formatPrice(result.newPayment)}才能借阅此书。正在跳转到充值页面...`);
+      router.push({
+        name: 'TopUp'
+      });
     } else if (result.state === 'exceed_limit') {
       // 书籍借阅次数已达上限（全局限制）
       alert('该书籍已达到最大借阅次数限制（10次），暂不可借阅。');

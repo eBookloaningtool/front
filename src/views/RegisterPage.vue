@@ -5,86 +5,103 @@ import { ref, reactive, computed } from 'vue';
 
 const router = useRouter();
 
-// 注册成功后的回调函数
-const handleRegistrationSuccess = (userData) => {
-  // 存储其他用户信息
+// Registration success callback
+const handleRegistrationSuccess = async (userData) => {
+  // Store user information
   if (userData.email) {
     localStorage.setItem('registeredEmail', userData.email);
   }
   if (userData.name) {
     localStorage.setItem('userName', userData.name);
   }
-  
-  // 显示成功消息
-  alert('注册成功！正在跳转到个人资料页面...');
-  
-  // 延迟跳转到用户资料页面
-  setTimeout(() => {
-    router.push('/user/profile');
-  }, 1500);
+
+  // 不自动登录，而是跳转到登录页面
+  router.push('/login');
 };
 </script>
 
 <template>
-  <div class="register-page min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-16 px-4 sm:px-6 lg:px-8">
-    <div class="w-full max-w-sm mx-auto">
-      <div class="text-center mb-10">
-        <h1 class="text-3xl font-extralight text-gray-800">Welcome</h1>
-        <p class="mt-4 text-sm text-gray-500">
-          Create your account to start using our services
-        </p>
+  <div class="register-page min-h-screen flex flex-col items-center justify-center bg-blur">
+    <div class="overlay"></div>
+    <div class="register-container relative z-10">
+      <div class="text-center mb-12">
+        <h1 class="text-3xl font-extrabold text-gray-800">BorrowBee</h1>
       </div>
-      
+
+      <div class="tab-container text-center mb-10">
+        <span class="tab">
+          <router-link to="/login" class="text-gray-500 hover:text-gray-700">
+            Log in
+          </router-link>
+        </span>
+        <span class="tab active">Register</span>
+      </div>
+
       <!-- Registration Form Component -->
       <RegisterForm @registration-success="handleRegistrationSuccess" />
-      
-      <!-- Footer Information -->
-      <div class="mt-10 text-center text-xs text-gray-400">
-        <p>By registering, you agree to our <span class="text-blue-500 hover:text-blue-600 cursor-pointer transition-colors">Terms of Service</span> and <span class="text-blue-500 hover:text-blue-600 cursor-pointer transition-colors">Privacy Policy</span></p>
-        <div class="mt-4">
-          <p>已有账号? <router-link to="/login" class="text-blue-500 hover:text-blue-600 transition-colors">登录</router-link></p>
-        </div>
-      </div>
     </div>
-    
-    <!-- Decorative Elements - Softer Effects -->
-    <div class="absolute top-10 left-10 w-48 h-48 bg-blue-50 rounded-full mix-blend-multiply filter blur-xl opacity-50 animate-blob-slow"></div>
-    <div class="absolute bottom-10 right-10 w-48 h-48 bg-indigo-50 rounded-full mix-blend-multiply filter blur-xl opacity-50 animate-blob-slow animation-delay-3000"></div>
   </div>
 </template>
 
-<style>
-body {
-  margin: 0;
-  padding: 0;
-  background-color: #f7fafc;
-  font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+<style scoped>
+.register-page {
+  position: relative;
+  overflow: hidden;
 }
 
-@keyframes blob-slow {
-  0% {
-    transform: translate(0px, 0px) scale(1);
-  }
-  33% {
-    transform: translate(20px, -20px) scale(1.05);
-  }
-  66% {
-    transform: translate(-10px, 10px) scale(0.95);
-  }
-  100% {
-    transform: translate(0px, 0px) scale(1);
-  }
+.bg-blur {
+  background-image: url('/src/assets/images/background.jpg');
+  background-size: cover;
+  background-position: center;
 }
 
-.animate-blob-slow {
-  animation: blob-slow 15s infinite ease;
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  z-index: 1;
 }
 
-.animation-delay-3000 {
-  animation-delay: 3s;
+.register-container {
+  width: 100%;
+  max-width: 420px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 2.5rem;
 }
 
-.hidden-input {
-  display: none;
+.tab-container {
+  display: flex;
+  justify-content: center;
+  gap: 3rem;
+  margin-bottom: 2rem;
+  padding-top: 0.75rem;
 }
-</style> 
+
+.tab {
+  padding-bottom: 0.75rem;
+  font-size: 1.1rem;
+  cursor: pointer;
+  position: relative;
+}
+
+.tab.active {
+  color: #f59e0b;
+  font-weight: 500;
+}
+
+.tab.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #f59e0b;
+}
+</style>

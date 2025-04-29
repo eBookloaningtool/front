@@ -86,43 +86,19 @@ export const getBookDetail = async (bookId: string): Promise<BookDetail | null> 
 };
 
 /**
- * 获取电子书内容链接
- * @param {string} bookId - 书籍ID
- * @returns {Promise<BookContentResponse | null>} - 书籍内容信息或 null
+ * 获取电子书内容
+ * @param bookId 电子书ID
+ * @returns 电子书内容
  */
-export const getBookContent = async (bookId: string): Promise<BookContentResponse | null> => {
-  if (!bookId) {
-    console.error('获取书籍内容失败: bookId 不能为空');
-    return null;
-  }
-  const token = getAuthToken();
-  if (!token) {
-    console.error('获取书籍内容失败: 未找到认证 Token');
-    // 根据你的应用逻辑，这里可能需要重定向到登录页或抛出错误
-    return null;
-  }
-
+export async function getBookContent(bookId: string) {
   try {
-    const response = await axios.post<BookContentResponse>(
-      '/api/books/content',
-      { bookId } as BookContentRequest,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const response = await axios.post('/api/books/content', { bookId });
     return response.data;
   } catch (error) {
-    console.error(`获取书籍内容失败 (ID: ${bookId}):`, error instanceof AxiosError ? error.message : error);
-    // 可以根据状态码处理特定错误，例如 401 Unauthorized
-    if (error instanceof AxiosError && error.response?.status === 401) {
-      console.error('认证失败，请重新登录。');
-      // 可能需要触发登出逻辑
-    }
-    return null;
+    console.error('获取电子书内容失败:', error);
+    throw error;
   }
-};
+}
 
 /**
  * 搜索书籍
@@ -137,4 +113,4 @@ export const searchBooks = async (searchType, query) => {
     console.error('搜索书籍失败:', error);
     throw error;
   }
-}; 
+};
