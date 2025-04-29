@@ -2,20 +2,117 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../../stores/userStore';
+import axios from 'axios';
+import { getBookDetail } from '../../api/books';
 
 const router = useRouter();
 const userStore = useUserStore();
+
+const user = ref(null);
+const borrowedBooks = ref([]);
+const loading = ref(true);
+const error = ref('');
 
 // 使用计算属性从userStore获取用户信息
 const userName = computed(() => userStore.userName || 'New User');
 const userEmail = computed(() => userStore.userEmail || '');
 const userAvatar = computed(() => `https://ui-avatars.com/api/?name=${encodeURIComponent(userName.value)}&background=random`);
 
-onMounted(() => {
-  // 确保用户状态已初始化
-  if (!userStore.isAuthenticated) {
-    userStore.initUserState();
+// 获取借阅列表
+const fetchBorrowedBooks = async () => {
+  try {
+    loading.value = true;
+    error.value = '';
+    
+    // 获取借阅列表
+    const response = await axios.post('/api/borrow/borrowlist/', {}, {
+      headers: {
+        Authorization: `Bearer ${userStore.token}`
+      }
+    });
+    
+    if (response.data.state === 'success' && response.data.data) {
+      // 获取每本书的详细信息
+      const bookDetails = await Promise.all(
+        response.data.data.map(async (borrow) => {
+          const bookDetail = await getBookDetail(borrow.bookId);
+          if (bookDetail) {
+            return {
+              ...bookDetail,
+              borrowDate: borrow.borrowDate,
+              dueDate: borrow.dueDate,
+              borrowId: borrow.borrowId
+            };
+          }
+          return null;
+        })
+      );
+      
+      // 过滤掉获取失败的书籍
+      borrowedBooks.value = bookDetails.filter(book => book !== null);
+    } else {
+      borrowedBooks.value = [];
+    }
+  } catch (err) {
+    console.error('获取借阅列表失败:', err);
+    error.value = '获取借阅列表失败，请稍后重试';
+    borrowedBooks.value = [];
+  } finally {
+    loading.value = false;
   }
+};
+
+// 格式化日期
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+// 计算剩余天数
+const getRemainingDays = (dueDate) => {
+  const due = new Date(dueDate);
+  const now = new Date();
+  const diffTime = due - now;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+};
+
+// 获取状态样式
+const getStatusClass = (dueDate) => {
+  const remainingDays = getRemainingDays(dueDate);
+  if (remainingDays < 0) {
+    return 'text-red-500';
+  } else if (remainingDays <= 3) {
+    return 'text-orange-500';
+  }
+  return 'text-green-500';
+};
+
+// 获取状态文本
+const getStatusText = (dueDate) => {
+  const remainingDays = getRemainingDays(dueDate);
+  if (remainingDays < 0) {
+    return `已逾期 ${Math.abs(remainingDays)} 天`;
+  } else if (remainingDays === 0) {
+    return '今天到期';
+  } else if (remainingDays <= 3) {
+    return `还剩 ${remainingDays} 天到期`;
+  }
+  return `还剩 ${remainingDays} 天到期`;
+};
+
+onMounted(async () => {
+  if (!userStore.isAuthenticated) {
+    router.push('/login');
+    return;
+  }
+  
+  user.value = userStore.user;
+  await fetchBorrowedBooks();
 });
 
 // 导航到设置页面
@@ -72,15 +169,50 @@ const goToPersonalCenter = () => {
             </div>
           </div>
           
-          <!-- 欢迎消息 -->
-          <div class="mt-8 bg-blue-50 p-6 rounded-lg">
-            <h3 class="text-lg font-medium text-blue-800">欢迎加入我们的电子书平台！</h3>
-            <p class="mt-2 text-blue-600">
-              您的账户已成功创建。现在您可以开始浏览和借阅我们丰富的电子书籍。
-            </p>
-            <button @click="goToPersonalCenter" class="mt-4 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition">
-              前往个人中心
-            </button>
+          <!-- 当前借阅区域 -->
+          <div class="mt-8">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">当前借阅</h3>
+            
+            <!-- 加载状态 -->
+            <div v-if="loading" class="flex justify-center py-8">
+              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            </div>
+            
+            <!-- 错误信息 -->
+            <div v-else-if="error" class="bg-red-50 text-red-600 p-4 rounded-lg">
+              {{ error }}
+              <button @click="fetchBorrowedBooks" class="ml-4 text-red-800 underline">重试</button>
+            </div>
+            
+            <!-- 借阅列表 -->
+            <div v-else-if="borrowedBooks.length > 0" class="space-y-4">
+              <div v-for="book in borrowedBooks" :key="book.borrowId" class="bg-gray-50 p-4 rounded-lg">
+                <div class="flex items-start">
+                  <!-- 书籍封面 -->
+                  <img :src="book.coverUrl" :alt="book.title" class="w-20 h-28 object-cover rounded shadow-md" />
+                  
+                  <!-- 书籍信息 -->
+                  <div class="ml-4 flex-1">
+                    <h4 class="font-medium text-gray-800">{{ book.title }}</h4>
+                    <p class="text-sm text-gray-600">{{ book.author }}</p>
+                    
+                    <!-- 借阅信息 -->
+                    <div class="mt-2 text-sm">
+                      <p class="text-gray-600">借阅日期：{{ formatDate(book.borrowDate) }}</p>
+                      <p class="text-gray-600">到期日期：{{ formatDate(book.dueDate) }}</p>
+                      <p :class="getStatusClass(book.dueDate)" class="font-medium">
+                        {{ getStatusText(book.dueDate) }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 无借阅提示 -->
+            <div v-else class="text-center py-8 text-gray-500">
+              暂无借阅的书籍
+            </div>
           </div>
           
           <!-- 快速操作区域 -->
