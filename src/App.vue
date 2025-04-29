@@ -26,8 +26,9 @@ onMounted(() => {
   const publicPages = ['/login', '/register'] // 白名单路由
   const currentPath = router.currentRoute.value.path
 
-  if (!userStore.isAuthenticated && !publicPages.includes(currentPath)) {
-    router.push('/login')
+  // 如果用户已登录且尝试访问登录或注册页面，重定向到首页
+  if (userStore.isAuthenticated && publicPages.includes(currentPath)) {
+    router.push('/')
   }
 
   // 检查即将到期的书籍并发送提醒

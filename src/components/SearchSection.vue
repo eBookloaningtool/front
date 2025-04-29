@@ -7,7 +7,7 @@
         <input 
           type="text" 
           v-model="searchQuery" 
-          placeholder="Search by title, author or keywords" 
+          placeholder="搜索书名、作者或关键词" 
           @keyup.enter="handleSearch"
         />
         <i 
@@ -16,46 +16,38 @@
           @click="clearSearch"
         ></i>
       </div>
-      <button class="search-btn" @click="handleSearch">Search</button>
+      <button class="search-btn" @click="handleSearch">搜索</button>
       <div class="advanced-search" @click="toggleAdvanced">
-        Advanced Search <i :class="['ri-arrow-' + (showAdvanced ? 'up' : 'down') + '-s-line']"></i>
+        高级搜索 <i :class="['ri-arrow-' + (showAdvanced ? 'up' : 'down') + '-s-line']"></i>
       </div>
     </div>
     
     <div class="advanced-options" v-if="showAdvanced">
       <div class="option-group">
-        <label>Category</label>
+        <label>作者</label>
+        <input 
+          type="text" 
+          v-model="filters.author" 
+          placeholder="输入作者名称"
+          @keyup.enter="handleSearch"
+        />
+      </div>
+      
+      <div class="option-group">
+        <label>分类</label>
         <select v-model="filters.category">
-          <option value="">All Categories</option>
-          <option value="novel">Fiction</option>
-          <option value="technology">Technology</option>
-          <option value="business">Business</option>
-          <option value="biography">Biography</option>
-          <option value="self-help">Self Help</option>
+          <option value="">全部分类</option>
+          <option 
+            v-for="category in categories" 
+            :key="category.name" 
+            :value="category.name"
+          >
+            {{ category.name }}
+          </option>
         </select>
       </div>
       
-      <div class="option-group">
-        <label>Rating</label>
-        <select v-model="filters.rating">
-          <option value="">All Ratings</option>
-          <option value="4">4+ Stars</option>
-          <option value="3">3+ Stars</option>
-          <option value="2">2+ Stars</option>
-        </select>
-      </div>
-      
-      <div class="option-group">
-        <label>Published Date</label>
-        <select v-model="filters.publishedDate">
-          <option value="">All Time</option>
-          <option value="week">Past Week</option>
-          <option value="month">Past Month</option>
-          <option value="year">Past Year</option>
-        </select>
-      </div>
-      
-      <button class="apply-filters-btn" @click="handleSearch">Apply Filters</button>
+      <button class="apply-filters-btn" @click="handleSearch">应用筛选</button>
     </div>
     
     <div class="search-suggestions" v-if="showSuggestions">
@@ -70,18 +62,33 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 
 const router = useRouter()
 const searchQuery = ref('')
 const showAdvanced = ref(false)
 const showSuggestions = ref(false)
+const categories = ref([])
 const filters = ref({
-  category: '',
-  rating: '',
-  publishedDate: ''
+  author: '',
+  category: ''
 })
+
+// 获取分类列表
+const fetchCategories = async () => {
+  try {
+    const response = await axios.get('/api/categories/getAll')
+    if (response.data.state === 'Success') {
+      categories.value = response.data.categoriesList
+    } else {
+      console.error('获取分类列表失败:', response.data)
+    }
+  } catch (error) {
+    console.error('获取分类列表出错:', error)
+  }
+}
 
 // Mock search suggestions data
 const searchSuggestions = computed(() => {
@@ -89,9 +96,9 @@ const searchSuggestions = computed(() => {
   
   // In a real project, this would come from an API
   return [
-    { id: 1, title: 'The Three-Body Problem' },
-    { id: 2, title: 'Three Kingdoms' },
-    { id: 3, title: 'Thirty Years to Life' }
+    { id: 1, title: '三体' },
+    { id: 2, title: '三国演义' },
+    { id: 3, title: '活着' }
   ].filter(item => item.title.toLowerCase().includes(searchQuery.value.toLowerCase()))
 })
 
@@ -100,25 +107,27 @@ const toggleAdvanced = () => {
 }
 
 const handleSearch = () => {
-  if (!searchQuery.value.trim()) return
+  if (!searchQuery.value.trim() && !filters.value.author.trim() && !filters.value.category) return
   
-  // Build query parameters
+  // 构建查询参数
   const queryParams = new URLSearchParams()
-  queryParams.append('q', searchQuery.value)
   
+  // 如果主搜索框有内容，作为标题搜索
+  if (searchQuery.value.trim()) {
+    queryParams.append('title', searchQuery.value.trim())
+  }
+  
+  // 添加作者搜索条件
+  if (filters.value.author.trim()) {
+    queryParams.append('author', filters.value.author.trim())
+  }
+  
+  // 添加分类搜索条件
   if (filters.value.category) {
     queryParams.append('category', filters.value.category)
   }
   
-  if (filters.value.rating) {
-    queryParams.append('rating', filters.value.rating)
-  }
-  
-  if (filters.value.publishedDate) {
-    queryParams.append('published', filters.value.publishedDate)
-  }
-  
-  // Navigate to search results page
+  // 导航到搜索结果页面
   router.push({
     path: '/search',
     query: Object.fromEntries(queryParams)
@@ -154,6 +163,11 @@ const debouncedInputHandler = () => {
 }
 
 const debouncedInput = debouncedInputHandler()
+
+// 组件挂载时获取分类列表
+onMounted(() => {
+  fetchCategories()
+})
 </script>
 
 <style scoped>
@@ -259,19 +273,24 @@ const debouncedInput = debouncedInputHandler()
   color: #666;
 }
 
+.option-group input,
 .option-group select {
   padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
-  appearance: none;
-  background: white url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="6"><path d="M0 0l6 6 6-6z" fill="%23999"/></svg>') no-repeat right 12px center;
-  padding-right: 30px;
 }
 
+.option-group input:focus,
 .option-group select:focus {
   outline: none;
   border-color: #e9a84c;
+}
+
+.option-group select {
+  appearance: none;
+  background: white url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="6"><path d="M0 0l6 6 6-6z" fill="%23999"/></svg>') no-repeat right 12px center;
+  padding-right: 30px;
 }
 
 .apply-filters-btn {

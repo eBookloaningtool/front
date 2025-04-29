@@ -33,7 +33,7 @@
 <script>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { searchBooks } from '../api/books';
+import { searchBooks, getBookDetail } from '../api/books';
 import BookCard from '../components/BookCard.vue';
 
 export default {
@@ -63,17 +63,37 @@ export default {
       
       try {
         console.log("搜索关键词:", searchQuery.value);
-        const result = await searchBooks(searchQuery.value);
+        
+        // 构建搜索参数
+        const searchParams = {
+          title: searchQuery.value,
+          // 如果有其他搜索条件，可以在这里添加
+          // author: route.query.author,
+          // category: route.query.category
+        };
+        
+        const result = await searchBooks(searchParams);
         console.log("搜索结果:", result);
         
-        if (result && result.code === 200) {
-          books.value = result.data || [];
-          if (books.value.length === 0) {
-            console.log("未找到匹配的书籍");
+        if (result.state === 'success') {
+          // 获取书籍ID列表后，需要获取每本书的详细信息
+          if (result.bookId && result.bookId.length > 0) {
+            // 获取每本书的详细信息
+            const bookDetails = await Promise.all(
+              result.bookId.map(async (bookId) => {
+                const bookDetail = await getBookDetail(bookId);
+                return bookDetail;
+              })
+            );
+            
+            // 过滤掉获取失败的书籍（返回 null 的情况）
+            books.value = bookDetails.filter(book => book !== null);
+          } else {
+            books.value = [];
           }
         } else {
           books.value = [];
-          error.value = '搜索失败，请稍后再试';
+          error.value = result.message || '搜索失败，请稍后再试';
           console.error('API请求失败:', result);
         }
       } catch (err) {
@@ -87,7 +107,7 @@ export default {
     
     // 导航到图书详情页
     const navigateToBookDetail = (bookId) => {
-      router.push(`/books/${bookId}`);
+      router.push(`/book/${bookId}`);
     };
     
     // 监听搜索查询变化
