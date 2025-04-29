@@ -7,7 +7,13 @@
         <SearchSection />
         <LoginSection v-if="!isLoggedIn" />
         <CategoriesSection @category-click="navigateToCategory" />
-        <PopularBooks title="热门书籍推荐" @book-click="navigateToBookDetail" />
+        <BookList 
+          title="热门书籍推荐" 
+          :books="popularBooks" 
+          :loading="loading"
+          :error="error"
+          @book-click="navigateToBookDetail" 
+        />
         <div class="rankings-section">
           <BookList title="新书上架" :books="newBooks" @view-more="viewAllNew" @book-click="navigateToBookDetail" />
           <BookList title="经典小说" :books="fictionBooks" @view-more="viewAllFiction" @book-click="navigateToBookDetail" />
@@ -30,7 +36,6 @@ import LoginSection from '../components/LoginSection.vue'
 import CategoriesSection from '../components/CategoriesSection.vue'
 import BookList from '../components/BookList.vue'
 import Footer from '../components/Footer.vue'
-import PopularBooks from '../components/PopularBooks.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -40,6 +45,7 @@ const fictionBooks = ref([])
 const historyBooks = ref([])
 const popularBooks = ref([])
 const loading = ref(true)
+const error = ref(null)
 
 // 路由导航函数
 const navigateToBooks = (category) => {
@@ -130,6 +136,7 @@ onMounted(async () => {
     loading.value = false
   } catch (error) {
     console.error('获取书籍数据失败:', error)
+    error.value = '获取书籍数据失败，请稍后再试'
     loading.value = false
     
     // 加载失败时使用空数组
