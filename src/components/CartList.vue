@@ -71,18 +71,18 @@ const fetchCartItems = async () => {
   error.value = null;
 
   try {
-    // 首先尝试从本地存储获取购物车数据
-    const localCart = JSON.parse(localStorage.getItem('cartItems') || '[]');
-    console.log('本地购物车数据:', localCart);
+    // 首先从API获取购物车数据
+    const response = await cartAPI.getCart();
+    console.log('API购物车数据:', response);
 
-    if (localCart && localCart.length > 0) {
+    if (response.data && response.data.bookId && response.data.bookId.length > 0) {
       // 获取每个书籍的详细信息
       const bookDetails = await Promise.all(
-        localCart.map(async (item) => {
+        response.data.bookId.map(async (bookId) => {
           try {
-            const bookResponse = await bookAPI.getBookDetail(item.bookId);
+            const bookResponse = await bookAPI.getBookDetail(bookId);
             return {
-              bookId: item.bookId,
+              bookId: bookId,
               title: bookResponse.data.title,
               author: bookResponse.data.author,
               price: bookResponse.data.price,
@@ -90,7 +90,7 @@ const fetchCartItems = async () => {
               quantity: 1
             };
           } catch (err) {
-            console.error(`获取书籍 ${item.bookId} 详情失败:`, err);
+            console.error(`获取书籍 ${bookId} 详情失败:`, err);
             return null;
           }
         })
@@ -98,11 +98,14 @@ const fetchCartItems = async () => {
       
       // 过滤掉获取失败的书籍
       cartItems.value = bookDetails.filter(Boolean);
-      calculateTotal();
+      // 更新本地存储
+      localStorage.setItem('cartItems', JSON.stringify(response.data.bookId.map(id => ({ bookId: id }))));
     } else {
       cartItems.value = [];
-      calculateTotal();
+      // 清空本地存储
+      localStorage.removeItem('cartItems');
     }
+    calculateTotal();
   } catch (err) {
     console.error('获取购物车失败:', err);
     error.value = '获取购物车失败，请稍后重试';
@@ -134,6 +137,7 @@ const removeItem = async (itemId) => {
   } catch (err) {
     console.error('删除购物车项失败:', err);
     error.value = '删除购物车项失败，请稍后重试';
+    throw err; // 抛出错误以便上层处理
   }
 };
 
@@ -145,7 +149,7 @@ const handleRemoveItem = async (bookId) => {
 
   try {
     await removeItem(bookId);
-
+    await fetchCartItems();
     showToast('商品已从购物车中移除', 'success');
   } catch (err) {
     console.error('移除购物车商品错误:', err);

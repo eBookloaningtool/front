@@ -107,16 +107,32 @@ export const wishlistAPI = {
 // 购物车相关API
 export const cartAPI = {
   // 添加到购物车
-  addToCart: (bookId) => axios.post('/api/cart/add', { bookId }),
+  addToCart: (bookId) => axios.post('/api/cart/add', { bookId }, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`
+    }
+  }),
   
   // 从购物车移除
-  removeFromCart: (bookId) => axios.delete(`/api/cart/${bookId}`),
+  removeFromCart: (bookId) => axios.post('/api/cart/remove', { bookId: Array.isArray(bookId) ? bookId : [bookId] }, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`
+    }
+  }),
   
   // 更新购物车商品数量
-  updateCartItem: (bookId, quantity) => axios.put(`/api/cart/${bookId}`, { quantity }),
+  updateCartItem: (bookId, quantity) => axios.put(`/api/cart/${bookId}`, { quantity }, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`
+    }
+  }),
   
   // 获取购物车
-  getCart: () => axios.get('/api/cart/get')
+  getCart: () => axios.post('/api/cart/get', {}, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`
+    }
+  })
 };
 
 // 评论相关API
