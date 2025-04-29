@@ -7,7 +7,7 @@
 
     <h3 class="book-title">{{ book.title || '未命名书籍' }}</h3>
     <p class="book-author">{{ book.author || '未知作者' }}</p>
-    <p class="book-price">£5</p>
+    <p class="book-price">£{{ book.price?.toFixed(2) || '0.00' }}</p>
 
     <div class="book-rating" v-if="showRating">
       <div class="stars">
@@ -95,7 +95,7 @@ const handleBorrow = async (event) => {
   if (isBorrowing.value || !isAvailable.value) return;
 
   // 检查余额是否足够
-  const price = 5; // 固定价格为5英镑
+  const price = props.book.price; // 使用API返回的实际价格
   const balance = getBalance();
   if (balance < price) {
     showToast('余额不足，请先充值', 'error');
@@ -109,7 +109,7 @@ const handleBorrow = async (event) => {
 
     if (result.state === 'success') {
       saveBorrowedBook(result.dueDate);
-      setBalance(balance - price); // 扣除余额并持久化
+      setBalance(balance - price); // 扣除实际价格
       showToast('借阅成功，前往我的书籍查看', 'success');
       router.push('/my-books');
     } else if (result.state === 'insufficient balance') {
