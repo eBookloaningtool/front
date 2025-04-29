@@ -20,7 +20,7 @@
               <p class="text-amber-100">{{ email }}</p>
               <div class="mt-3 flex flex-col sm:flex-row sm:space-x-4 text-sm">
                 <p class="text-amber-100">注册时间：{{ registrationDate }}</p>
-                <p class="text-amber-100 mt-1 sm:mt-0">账户余额：¥{{ balance }}</p>
+                <p class="text-amber-100 mt-1 sm:mt-0">账户余额：￡{{ balance }}</p>
               </div>
             </div>
           </div>

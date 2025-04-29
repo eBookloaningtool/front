@@ -5,12 +5,7 @@
     <div class="item-details">
       <h3>{{ item.title }}</h3>
       <p class="author">{{ item.author }}</p>
-      <p class="price">¥{{ item.price }}</p>
-      <div class="quantity-controls">
-        <button @click="updateQuantity(item.quantity - 1)" :disabled="item.quantity <= 1">-</button>
-        <span>{{ item.quantity }}</span>
-        <button @click="updateQuantity(item.quantity + 1)">+</button>
-      </div>
+      <p class="price">￡{{ item.price }}</p>
     </div>
     <button class="remove-btn" @click="$emit('remove', item.bookId)">删除</button>
   </div>

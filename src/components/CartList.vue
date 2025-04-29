@@ -31,7 +31,7 @@
       <div class="cart-summary">
         <div class="summary-row">
           <span>总计: {{ cartItems.length }} 本书</span>
-          <span class="total-price">¥{{ totalPrice.toFixed(2) }}</span>
+          <span class="total-price">￡{{ totalPrice.toFixed(2) }}</span>
         </div>
         <slot name="cart-actions"></slot>
       </div>
@@ -71,9 +71,36 @@ const fetchCartItems = async () => {
   error.value = null;
 
   try {
-    const response = await cartAPI.getCart();
-    if (response.data && response.data.items) {
-      cartItems.value = response.data.items;
+    // 首先尝试从本地存储获取购物车数据
+    const localCart = JSON.parse(localStorage.getItem('cartItems') || '[]');
+    console.log('本地购物车数据:', localCart);
+
+    if (localCart && localCart.length > 0) {
+      // 获取每个书籍的详细信息
+      const bookDetails = await Promise.all(
+        localCart.map(async (item) => {
+          try {
+            const bookResponse = await bookAPI.getBookDetail(item.bookId);
+            return {
+              bookId: item.bookId,
+              title: bookResponse.data.title,
+              author: bookResponse.data.author,
+              price: bookResponse.data.price,
+              coverUrl: bookResponse.data.coverUrl,
+              quantity: 1
+            };
+          } catch (err) {
+            console.error(`获取书籍 ${item.bookId} 详情失败:`, err);
+            return null;
+          }
+        })
+      );
+      
+      // 过滤掉获取失败的书籍
+      cartItems.value = bookDetails.filter(Boolean);
+      calculateTotal();
+    } else {
+      cartItems.value = [];
       calculateTotal();
     }
   } catch (err) {

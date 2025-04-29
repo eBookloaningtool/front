@@ -69,14 +69,14 @@
           </div>
           <h3>续借成功!</h3>
           <p>借阅时间已延长30天</p>
-          <p class="balance">当前余额: ¥{{ userBalance.toFixed(2) }}</p>
+          <p class="balance">当前余额: ￡{{ userBalance.toFixed(2) }}</p>
         </div>
         
         <div v-else>
           <h3>确认续借</h3>
           <p>续借将延长借阅时间30天</p>
-          <p class="fee">续借费用: ¥{{ renewFee.toFixed(2) }}</p>
-          <p class="balance">当前余额: ¥{{ userBalance.toFixed(2) }}</p>
+          <p class="fee">续借费用: ￡{{ renewFee.toFixed(2) }}</p>
+          <p class="balance">当前余额: ￡{{ userBalance.toFixed(2) }}</p>
           
           <div v-if="renewError" class="error-message">
             {{ renewError }}
