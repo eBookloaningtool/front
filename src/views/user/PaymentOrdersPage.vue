@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
+  <div class="min-h-screen bg-gray-50 pt-24 pb-8">
     <div class="container mx-auto px-4 max-w-4xl">
       <div class="bg-white rounded-xl shadow-md overflow-hidden">
         <div class="p-6 border-b border-gray-200">

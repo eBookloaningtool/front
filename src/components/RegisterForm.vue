@@ -5,7 +5,7 @@ import mockAPI from '../mock-api.js';
 
 const router = useRouter();
 
-// 表单数据
+// Form data
 const name = ref('');
 const email = ref('');
 const password = ref('');
@@ -13,169 +13,178 @@ const errorMessage = ref('');
 const isSubmitting = ref(false);
 const registerSuccess = ref(false);
 
-// 简单验证
+// Simple validation
 const validateForm = () => {
   if (!name.value || !email.value || !password.value) {
-    errorMessage.value = '请填写所有字段';
+    errorMessage.value = 'Please fill in all fields';
     return false;
   }
-  
-  // 邮箱格式验证
+
+  // Email format validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email.value)) {
-    errorMessage.value = '请输入有效的邮箱地址';
+    errorMessage.value = 'Please enter a valid email address';
     return false;
   }
-  
-  // 密码长度验证
+
+  // Password length validation
   if (password.value.length < 6) {
-    errorMessage.value = '密码长度至少为6个字符';
+    errorMessage.value = 'Password must be at least 6 characters long';
     return false;
   }
-  
+
   return true;
 };
 
-// 提交注册
+// Submit registration
 const handleSubmit = async () => {
   try {
-    // 重置错误信息
+    // Reset error message
     errorMessage.value = '';
-    
-    // 表单验证
+
+    // Form validation
     if (!validateForm()) {
       return;
     }
-    
+
     isSubmitting.value = true;
-    
-    // 构建请求数据
+
+    // Build request data
     const userData = {
       name: name.value,
       email: email.value,
       password: password.value
     };
-    
-    // 使用模拟API发送注册请求
+
+    // Use mock API to send registration request
     const data = await mockAPI.post('/api/auth/register', userData);
-    
+
     if (data.state === 'success') {
-      // 注册成功
+      // Show success status
       registerSuccess.value = true;
-      
-      // 缓存登录信息，方便用户直接登录
+
+      // Cache login info for easy login
       localStorage.setItem('registeredEmail', email.value);
       localStorage.setItem('userName', name.value);
-      
-      // 触发注册成功事件
-      emit('registration-success', {
-        name: name.value,
-        email: email.value
-      });
+
+      // Trigger registration success event after delay (1秒后触发跳转)
+      setTimeout(() => {
+        emit('registration-success', {
+          name: name.value,
+          email: email.value
+        });
+      }, 1000);
     } else {
-      // 处理失败情况
-      errorMessage.value = data.message || '注册失败，请稍后重试';
+      // Handle failure
+      errorMessage.value = data.message || 'Registration failed, please try again later';
+
+      // 检查错误信息是否包含"Email already registered"或"邮箱已注册"
+      if (
+        data.message && (
+          data.message.includes('Email already registered') ||
+          data.message.includes('email already registered') ||
+          data.message.includes('邮箱已注册') ||
+          data.message.includes('Email already') ||
+          data.message === 'Email already registered'
+        )
+      ) {
+        // 显示错误消息1秒后跳转到登录页面
+        setTimeout(() => {
+          // 保存邮箱方便登录页面自动填充
+          localStorage.setItem('registeredEmail', email.value);
+          router.push('/login');
+        }, 1500);
+      }
     }
   } catch (error) {
-    console.error('注册请求出错:', error);
-    errorMessage.value = '注册过程中出错，请稍后重试';
+    console.error('Registration request error:', error);
+    errorMessage.value = 'An error occurred during registration, please try again later';
   } finally {
     isSubmitting.value = false;
   }
 };
 
-// 定义emit事件
+// Define emit events
 const emit = defineEmits(['registration-success']);
 </script>
 
 <template>
-  <div class="register-form-container p-8 bg-white rounded-xl shadow-sm border border-gray-100">
-    <h2 class="text-xl font-medium mb-8 text-center text-gray-700">用户注册</h2>
-    
-    <!-- 注册成功信息 -->
-    <div v-if="registerSuccess" class="success-message text-center py-8">
-      <div class="success-icon mb-4">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+  <div class="register-form-container py-4">
+    <!-- Registration success message -->
+    <div v-if="registerSuccess" class="success-message">
+      <div class="success-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-green-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       </div>
-      <h3 class="text-xl font-medium text-gray-800 mb-2">注册成功！</h3>
-      <p class="text-sm text-gray-600">正在跳转到登录页面...</p>
+      <h3 class="text-xl font-semibold text-center text-gray-800 mt-4">Registration Successful!</h3>
+      <p class="text-center text-gray-600 mt-2">Redirecting to home page...</p>
     </div>
-    
-    <form v-else @submit.prevent="handleSubmit" class="space-y-6">
-      <!-- 错误信息展示 -->
-      <div v-if="errorMessage" class="bg-red-50 border border-red-100 text-red-600 p-3 rounded-lg mb-6 text-center text-sm transition-all duration-300" role="alert">
-        {{ errorMessage }}
-      </div>
-      
-      <!-- 姓名输入框 -->
-      <div class="form-group">
-        <label for="name" class="block text-sm font-normal text-gray-600 mb-2 text-center">姓名</label>
-        <div class="relative rounded-md">
-          <input
-            id="name"
-            v-model="name"
-            type="text"
-            class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:ring-1 focus:ring-blue-400 focus:border-blue-400 focus:bg-white transition-colors text-center"
-            placeholder="请输入您的姓名"
-            required
-          />
+
+    <form v-else @submit.prevent="handleSubmit" class="space-y-7">
+      <!-- Error message display -->
+      <div v-if="errorMessage" class="bg-red-50 border-l-4 border-red-400 text-red-700 p-4 rounded-md mb-5 transition-all duration-300" role="alert">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm">{{ errorMessage }}</p>
+          </div>
         </div>
       </div>
-      
-      <!-- 邮箱输入框 -->
+
+      <!-- Name input -->
       <div class="form-group">
-        <label for="email" class="block text-sm font-normal text-gray-600 mb-2 text-center">邮箱</label>
-        <div class="relative rounded-md">
-          <input
-            id="email"
-            v-model="email"
-            type="email"
-            class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:ring-1 focus:ring-blue-400 focus:border-blue-400 focus:bg-white transition-colors text-center"
-            placeholder="请输入您的邮箱"
-            required
-          />
-        </div>
+        <input
+          id="name"
+          v-model="name"
+          type="text"
+          class="w-full px-6 py-4 bg-gray-100 border-none rounded-lg transition-colors text-base"
+          placeholder="Full Name"
+          required
+        />
       </div>
-      
-      <!-- 密码输入框 -->
+
+      <!-- Email input -->
       <div class="form-group">
-        <label for="password" class="block text-sm font-normal text-gray-600 mb-2 text-center">密码</label>
-        <div class="relative rounded-md">
-          <input
-            id="password"
-            v-model="password"
-            type="password"
-            class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:ring-1 focus:ring-blue-400 focus:border-blue-400 focus:bg-white transition-colors text-center"
-            placeholder="请设置密码"
-            required
-          />
-        </div>
-        <p class="mt-2 text-xs text-gray-400 text-center">密码至少需要6位字符</p>
+        <input
+          id="email"
+          v-model="email"
+          type="email"
+          class="w-full px-6 py-4 bg-gray-100 border-none rounded-lg transition-colors text-base"
+          placeholder="Email Address"
+          required
+        />
       </div>
-      
-      <!-- 注册按钮 -->
+
+      <!-- Password input -->
+      <div class="form-group">
+        <input
+          id="password"
+          v-model="password"
+          type="password"
+          class="w-full px-6 py-4 bg-gray-100 border-none rounded-lg transition-colors text-base"
+          placeholder="Create Password"
+          required
+        />
+      </div>
+
+      <!-- Register button -->
       <button
         type="submit"
-        class="w-full py-3 px-4 bg-blue-500 hover:bg-blue-600 text-white font-normal rounded-lg transition-colors duration-300 mt-8"
+        class="w-full py-4 px-4 bg-yellow-400 hover:bg-yellow-500 text-white font-medium rounded-lg transition duration-300 text-base"
         :disabled="isSubmitting"
       >
-        <span v-if="isSubmitting" class="flex items-center justify-center">
-          <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          注册中...
-        </span>
-        <span v-else>注册</span>
+        <span v-if="isSubmitting">Registering...</span>
+        <span v-else>Create Account</span>
       </button>
-      
-      <!-- 已有账号？前往登录 -->
-      <div class="text-center mt-6">
-        <router-link to="/login" class="text-blue-500 hover:text-blue-600 text-sm transition-colors">
-          已有账号？点击登录
-        </router-link>
+
+      <!-- Password requirements -->
+      <div class="text-center mt-2">
+        <p class="text-gray-500 text-base">Password must be at least 6 characters</p>
       </div>
     </form>
   </div>
@@ -183,12 +192,12 @@ const emit = defineEmits(['registration-success']);
 
 <style scoped>
 .register-form-container {
-  animation: fadeIn 0.6s ease-out;
   transition: all 0.3s ease;
 }
 
 .success-message {
   animation: successFadeIn 0.5s ease-out;
+  padding: 2rem 1rem;
 }
 
 @keyframes successFadeIn {
@@ -207,17 +216,32 @@ const emit = defineEmits(['registration-success']);
   100% { transform: scale(1); }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+input {
+  transition: all 0.3s ease;
+  height: 3.5rem;
+  font-size: 1rem;
+  border: none;
+  outline: none;
+  box-shadow: none;
 }
 
 input:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  border: none;
+  box-shadow: none;
 }
 
 input::placeholder {
-  color: #CBD5E0;
+  color: #9ca3af;
 }
-</style> 
+
+button {
+  transition: all 0.3s ease;
+  height: 3.5rem;
+}
+
+button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+</style>

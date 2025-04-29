@@ -62,25 +62,22 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '../stores/userStore'
 
 const router = useRouter()
-const isLoggedIn = ref(false)
-const username = ref('User')
+const userStore = useUserStore()
 const showUserMenu = ref(false)
 const searchQuery = ref('')
 
+// 使用computed计算属性获取登录状态
+const isLoggedIn = computed(() => userStore.isAuthenticated)
+const username = computed(() => userStore.userName || 'User')
+
 onMounted(() => {
-  const token = localStorage.getItem('token')
-  if (token) {
-    isLoggedIn.value = true
-    // Get username from localStorage or from API
-    const storedUsername = localStorage.getItem('username')
-    if (storedUsername) {
-      username.value = storedUsername
-    }
-  }
+  // 初始化用户状态
+  userStore.initUserState()
 })
 
 const toggleUserMenu = () => {
@@ -88,9 +85,7 @@ const toggleUserMenu = () => {
 }
 
 const logout = () => {
-  localStorage.removeItem('token')
-  localStorage.removeItem('username')
-  isLoggedIn.value = false
+  userStore.logout()
   showUserMenu.value = false
   router.push('/login')
 }

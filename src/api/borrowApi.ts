@@ -1,4 +1,3 @@
-import axios, { AxiosRequestConfig, AxiosError } from 'axios';
 import { post } from '../utils/request';
 
 // --- 接口定义 ---
@@ -93,29 +92,6 @@ type ReturnApiResponse = ReturnSuccessResponse | ErrorResponse;
 /** renewBook 可能的响应类型 */
 type RenewApiResponse = RenewSuccessResponse | InsufficientBalanceResponse | ErrorResponse;
 
-// --- 辅助函数 ---
-
-/**
- * 获取包含 JWT Token 的 Axios 请求配置
- * @returns {AxiosRequestConfig} Axios 请求配置对象
- */
-const getAuthConfig = (): AxiosRequestConfig => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    console.warn('JWT token not found in localStorage. Application logic should handle redirection or errors.');
-    // 返回空的 headers 或根据应用逻辑抛出错误
-    // return { headers: {} };
-    // 或者可以考虑在这里抛出错误，让调用方处理
-    // throw new Error('Authentication token not found.');
-  }
-  return {
-    headers: {
-      // 仅在 token 存在时添加 Authorization 头
-      ...(token && { Authorization: `Bearer ${token}` }),
-    },
-  };
-};
-
 // --- API 调用函数 ---
 
 /**
@@ -128,20 +104,9 @@ export const borrowBook = async (bookId: string | string[]): Promise<BorrowApiRe
     // 确保 bookId 始终作为数组传递
     const bookIdParam = Array.isArray(bookId) ? bookId : [bookId];
 
-    // 获取认证token
-    const token = localStorage.getItem('token');
-    const headers: Record<string, string> = {};
-
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    } else {
-      console.warn('借阅书籍时未找到认证令牌，可能导致认证失败');
-    }
-
     const response = await post({
       url: '/api/borrow/borrow',
-      data: { bookId: bookIdParam },
-      headers
+      data: { bookId: bookIdParam }
     });
     return response;
   } catch (error) {
@@ -157,16 +122,15 @@ export const borrowBook = async (bookId: string | string[]): Promise<BorrowApiRe
  */
 export const returnBook = async (bookId: string): Promise<ReturnApiResponse> => {
   try {
-    const response = await axios.post<ReturnSuccessResponse>(
-      '/api/borrow/return/',
-      { bookId },
-      getAuthConfig()
-    );
-    return response.data;
+    const response = await post({
+      url: '/api/borrow/return/',
+      data: { bookId }
+    });
+    return response;
   } catch (error) {
-    console.error('归还电子书失败:', (error as AxiosError)?.response?.data || (error as Error).message);
-    const axiosError = error as AxiosError<ErrorResponse>;
-    return axiosError.response?.data || { state: 'error', message: (error as Error).message || 'Unknown error occurred' };
+    console.error('归还电子书失败:', error);
+    // 确保返回一个合适的错误响应
+    return { state: 'error', message: error instanceof Error ? error.message : '未知错误' };
   }
 };
 
@@ -177,16 +141,15 @@ export const returnBook = async (bookId: string): Promise<ReturnApiResponse> => 
  */
 export const renewBook = async (bookId: string): Promise<RenewApiResponse> => {
   try {
-    const response = await axios.post<RenewSuccessResponse | InsufficientBalanceResponse>(
-      '/api/borrow/renew/',
-      { bookId },
-      getAuthConfig()
-    );
-    return response.data;
+    const response = await post({
+      url: '/api/borrow/renew/',
+      data: { bookId }
+    });
+    return response;
   } catch (error) {
-    console.error('续借电子书失败:', (error as AxiosError)?.response?.data || (error as Error).message);
-    const axiosError = error as AxiosError<ErrorResponse>; // 假设错误响应也遵循 ErrorResponse 结构
-    return axiosError.response?.data || { state: 'error', message: (error as Error).message || 'Unknown error occurred' };
+    console.error('续借电子书失败:', error);
+    // 确保返回一个合适的错误响应
+    return { state: 'error', message: error instanceof Error ? error.message : '未知错误' };
   }
 };
 
@@ -196,14 +159,12 @@ export const renewBook = async (bookId: string): Promise<RenewApiResponse> => {
  */
 export const getBorrowList = async (): Promise<BorrowListResponse> => {
   try {
-    const response = await axios.post<BorrowListResponse>(
-      '/api/borrow/borrowlist/',
-      {},  // 无需请求体参数
-      getAuthConfig()
-    );
-    return response.data;
+    const response = await post({
+      url: '/api/borrow/borrowlist/'
+    });
+    return response;
   } catch (error) {
-    console.error('获取借阅列表失败:', (error as AxiosError)?.response?.data || (error as Error).message);
+    console.error('获取借阅列表失败:', error);
     // 出错时返回空数据
     return { state: 'error', data: [] };
   }
@@ -215,14 +176,12 @@ export const getBorrowList = async (): Promise<BorrowListResponse> => {
  */
 export const getBorrowHistory = async (): Promise<BorrowHistoryResponse> => {
   try {
-    const response = await axios.post<BorrowHistoryResponse>(
-      '/api/borrow/history/',
-      {},  // 无需请求体参数
-      getAuthConfig()
-    );
-    return response.data;
+    const response = await post({
+      url: '/api/borrow/history/'
+    });
+    return response;
   } catch (error) {
-    console.error('获取借阅历史失败:', (error as AxiosError)?.response?.data || (error as Error).message);
+    console.error('获取借阅历史失败:', error);
     // 出错时返回空数据
     return { state: 'error', data: [] };
   }

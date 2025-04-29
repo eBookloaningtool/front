@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
+  <div class="min-h-screen bg-gray-50 pt-24 pb-8">
     <div class="container mx-auto px-4 max-w-4xl">
       <div class="bg-white rounded-xl shadow-md overflow-hidden">
         <div class="p-6 border-b border-gray-200">
@@ -11,8 +11,8 @@
           </div>
           <div v-else-if="recentBooks.length === 0" class="text-center py-8">
             <p class="text-gray-500">您目前没有正在阅读的图书</p>
-            <RouterLink 
-              to="/books" 
+            <RouterLink
+              to="/books"
               class="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
               浏览图书馆
@@ -31,7 +31,7 @@
                   </div>
                   <p class="text-gray-600 text-sm mt-1">{{ book.author }}</p>
                   <div class="mt-2">
-                    <button 
+                    <button
                       @click="continueReading(book.id)"
                       class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
                     >
@@ -65,19 +65,19 @@ onMounted(async () => {
     // 这里应该是API调用，现在用模拟数据
     await new Promise(resolve => setTimeout(resolve, 500));
     recentBooks.value = [
-      { 
-        id: 1, 
-        title: '三体', 
-        author: '刘慈欣', 
-        cover: '/images/books/threebody.jpg', 
-        progress: 45 
+      {
+        id: 1,
+        title: '三体',
+        author: '刘慈欣',
+        cover: '/images/books/threebody.jpg',
+        progress: 45
       },
-      { 
-        id: 2, 
-        title: '百年孤独', 
-        author: '加西亚·马尔克斯', 
-        cover: '/images/books/solitude.jpg', 
-        progress: 62 
+      {
+        id: 2,
+        title: '百年孤独',
+        author: '加西亚·马尔克斯',
+        cover: '/images/books/solitude.jpg',
+        progress: 62
       }
     ];
   } catch (error) {
@@ -91,4 +91,4 @@ onMounted(async () => {
 const continueReading = (bookId) => {
   router.push(`/books/${bookId}/read`);
 };
-</script> 
+</script>

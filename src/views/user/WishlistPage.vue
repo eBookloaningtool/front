@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
+  <div class="min-h-screen bg-gray-50 pt-24 pb-8">
     <div class="container mx-auto px-4 max-w-4xl">
       <div class="bg-white rounded-xl shadow-md overflow-hidden">
         <div class="p-6 border-b border-gray-200">
@@ -12,16 +12,16 @@
           </div>
           <div v-else-if="wishlistItems.length === 0" class="text-center py-8">
             <p class="text-gray-500">您的愿望清单是空的</p>
-            <RouterLink 
-              to="/books" 
+            <RouterLink
+              to="/books"
               class="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
               浏览图书馆
             </RouterLink>
           </div>
           <div v-else>
-            <WishlistComponent 
-              :items="wishlistItems" 
+            <WishlistComponent
+              :items="wishlistItems"
               @remove-item="removeFromWishlist"
               @view-details="viewBookDetails"
             />
@@ -50,17 +50,17 @@ onMounted(async () => {
     // 这里应该是API调用，现在用模拟数据
     await new Promise(resolve => setTimeout(resolve, 500));
     wishlistItems.value = [
-      { 
-        id: 1, 
-        title: '三体', 
-        author: '刘慈欣', 
+      {
+        id: 1,
+        title: '三体',
+        author: '刘慈欣',
         cover: '/images/books/threebody.jpg',
         price: '49.00'
       },
-      { 
-        id: 2, 
-        title: '百年孤独', 
-        author: '加西亚·马尔克斯', 
+      {
+        id: 2,
+        title: '百年孤独',
+        author: '加西亚·马尔克斯',
         cover: '/images/books/solitude.jpg',
         price: '42.50'
       }
@@ -82,4 +82,4 @@ const removeFromWishlist = (bookId) => {
 const viewBookDetails = (bookId) => {
   router.push(`/books/${bookId}`);
 };
-</script> 
+</script>

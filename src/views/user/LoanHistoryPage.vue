@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
+  <div class="min-h-screen bg-gray-50 pt-24 pb-8">
     <div class="container mx-auto px-4 max-w-4xl">
       <div class="bg-white rounded-xl shadow-md overflow-hidden">
         <div class="p-6 border-b border-gray-200">
@@ -33,11 +33,11 @@
                 </select>
               </div>
             </div>
-            
+
             <div v-if="filteredLoans.length === 0" class="text-center py-10">
               <p class="text-gray-500">没有找到符合条件的借阅记录</p>
             </div>
-            
+
             <div v-else>
               <!-- 借阅记录表格 -->
               <div class="overflow-x-auto rounded-lg border border-gray-200 mb-4">
@@ -83,7 +83,7 @@
                         {{ formatDate(loan.dueDate) }}
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap">
-                        <span 
+                        <span
                           class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
                           :class="{
                             'bg-green-100 text-green-800': loan.status === 'returned',
@@ -95,14 +95,14 @@
                         </span>
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                        <button 
+                        <button
                           v-if="loan.status === 'active'"
                           @click="extendLoan(loan.id)"
                           class="text-blue-600 hover:text-blue-900 mr-3"
                         >
                           延长借阅
                         </button>
-                        <button 
+                        <button
                           @click="viewLoanDetail(loan.id)"
                           class="text-indigo-600 hover:text-indigo-900"
                         >
@@ -113,7 +113,7 @@
                   </tbody>
                 </table>
               </div>
-              
+
               <!-- 分页控件 -->
               <div class="flex items-center justify-between border-t border-gray-200 px-4 py-3 sm:px-6">
                 <div class="flex-1 flex justify-between sm:hidden">
@@ -148,7 +148,7 @@
                         <span class="sr-only">上一页</span>
                         &lt;
                       </button>
-                      
+
                       <button
                         v-for="page in displayedPages"
                         :key="page"
@@ -162,7 +162,7 @@
                       >
                         {{ page }}
                       </button>
-                      
+
                       <button
                         @click="nextPage"
                         :disabled="currentPage >= totalPages"
@@ -221,14 +221,14 @@ const filteredLoans = computed(() => {
     if (statusFilter.value !== 'all' && loan.status !== statusFilter.value) {
       return false;
     }
-    
+
     // 搜索过滤
     if (searchQuery.value) {
       const query = searchQuery.value.toLowerCase();
-      return loan.book.title.toLowerCase().includes(query) || 
+      return loan.book.title.toLowerCase().includes(query) ||
              loan.book.author.toLowerCase().includes(query);
     }
-    
+
     return true;
   });
 });
@@ -256,19 +256,19 @@ const paginationEnd = computed(() => {
 const displayedPages = computed(() => {
   const total = totalPages.value;
   const current = currentPage.value;
-  
+
   if (total <= 7) {
     return Array.from({ length: total }, (_, i) => i + 1);
   }
-  
+
   if (current <= 3) {
     return [1, 2, 3, 4, 5, '...', total];
   }
-  
+
   if (current >= total - 2) {
     return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
   }
-  
+
   return [1, '...', current - 1, current, current + 1, '...', total];
 });
 
@@ -312,7 +312,7 @@ onMounted(async () => {
   try {
     // 这里应该是API调用，现在用模拟数据
     await new Promise(resolve => setTimeout(resolve, 500));
-    
+
     // 模拟借阅数据
     loans.value = [
       {
@@ -400,4 +400,4 @@ onMounted(async () => {
     loading.value = false;
   }
 });
-</script> 
+</script>

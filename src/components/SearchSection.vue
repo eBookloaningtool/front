@@ -4,15 +4,15 @@
     <div class="search-container">
       <div class="search-input">
         <i class="ri-search-line"></i>
-        <input 
-          type="text" 
-          v-model="searchQuery" 
-          placeholder="Search by title, author or keywords" 
+        <input
+          type="text"
+          v-model="searchQuery"
+          placeholder="Search by title, author or keywords"
           @keyup.enter="handleSearch"
         />
-        <i 
-          v-show="searchQuery.length > 0" 
-          class="ri-close-line clear-btn" 
+        <i
+          v-show="searchQuery.length > 0"
+          class="ri-close-line clear-btn"
           @click="clearSearch"
         ></i>
       </div>
@@ -21,7 +21,7 @@
         Advanced Search <i :class="['ri-arrow-' + (showAdvanced ? 'up' : 'down') + '-s-line']"></i>
       </div>
     </div>
-    
+
     <div class="advanced-options" v-if="showAdvanced">
       <div class="option-group">
         <label>Category</label>
@@ -34,30 +34,20 @@
           <option value="self-help">Self Help</option>
         </select>
       </div>
-      
+
       <div class="option-group">
-        <label>Rating</label>
-        <select v-model="filters.rating">
-          <option value="">All Ratings</option>
-          <option value="4">4+ Stars</option>
-          <option value="3">3+ Stars</option>
-          <option value="2">2+ Stars</option>
-        </select>
+        <label>Author</label>
+        <input
+          type="text"
+          v-model="filters.author"
+          placeholder="Enter author name"
+          class="author-input"
+        />
       </div>
-      
-      <div class="option-group">
-        <label>Published Date</label>
-        <select v-model="filters.publishedDate">
-          <option value="">All Time</option>
-          <option value="week">Past Week</option>
-          <option value="month">Past Month</option>
-          <option value="year">Past Year</option>
-        </select>
-      </div>
-      
+
       <button class="apply-filters-btn" @click="handleSearch">Apply Filters</button>
     </div>
-    
+
     <div class="search-suggestions" v-if="showSuggestions">
       <ul>
         <li v-for="suggestion in searchSuggestions" :key="suggestion.id" @click="selectSuggestion(suggestion)">
@@ -79,14 +69,13 @@ const showAdvanced = ref(false)
 const showSuggestions = ref(false)
 const filters = ref({
   category: '',
-  rating: '',
-  publishedDate: ''
+  author: ''
 })
 
 // Mock search suggestions data
 const searchSuggestions = computed(() => {
   if (!searchQuery.value || searchQuery.value.length < 2) return []
-  
+
   // In a real project, this would come from an API
   return [
     { id: 1, title: 'The Three-Body Problem' },
@@ -101,29 +90,25 @@ const toggleAdvanced = () => {
 
 const handleSearch = () => {
   if (!searchQuery.value.trim()) return
-  
+
   // Build query parameters
   const queryParams = new URLSearchParams()
   queryParams.append('q', searchQuery.value)
-  
+
   if (filters.value.category) {
     queryParams.append('category', filters.value.category)
   }
-  
-  if (filters.value.rating) {
-    queryParams.append('rating', filters.value.rating)
+
+  if (filters.value.author) {
+    queryParams.append('author', filters.value.author)
   }
-  
-  if (filters.value.publishedDate) {
-    queryParams.append('published', filters.value.publishedDate)
-  }
-  
+
   // Navigate to search results page
   router.push({
     path: '/search',
     query: Object.fromEntries(queryParams)
   })
-  
+
   showSuggestions.value = false
 }
 
@@ -274,6 +259,19 @@ const debouncedInput = debouncedInputHandler()
   border-color: #e9a84c;
 }
 
+.option-group input.author-input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  background: white;
+}
+
+.option-group input.author-input:focus {
+  outline: none;
+  border-color: #e9a84c;
+}
+
 .apply-filters-btn {
   padding: 8px 16px;
   background: #e9a84c;
@@ -325,21 +323,21 @@ const debouncedInput = debouncedInputHandler()
   .search-container {
     flex-wrap: wrap;
   }
-  
+
   .search-input {
     order: 1;
     flex: 1 0 100%;
   }
-  
+
   .search-btn {
     order: 2;
     flex: 1;
   }
-  
+
   .advanced-search {
     order: 3;
     flex: 1;
     justify-content: center;
   }
 }
-</style> 
+</style>

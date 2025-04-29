@@ -525,6 +525,96 @@ const mockAPI = {
           });
         }
 
+        // 模拟获取当前借阅列表接口
+        if (url === '/api/borrow/borrowlist/') {
+          const userId = getUserId();
+          if (!userId) {
+            resolve({ state: 'error', message: '未登录' });
+            return;
+          }
+
+          // 如果没有借阅记录，返回空数组
+          if (!mockData.borrowedBooks[userId]) {
+            resolve({
+              state: 'success',
+              data: []
+            });
+            return;
+          }
+
+          // 为每条借阅记录生成唯一的borrowId
+          const borrowList = mockData.borrowedBooks[userId].map(record => ({
+            borrowId: 'borrow_' + Math.random().toString(36).substr(2, 9),
+            bookId: record.bookId,
+            borrowDate: record.borrowDate,
+            dueDate: record.dueDate
+          }));
+
+          resolve({
+            state: 'success',
+            data: borrowList
+          });
+        }
+
+        // 模拟获取借阅历史记录接口
+        if (url === '/api/borrow/history/') {
+          const userId = getUserId();
+          if (!userId) {
+            resolve({ state: 'error', message: '未登录' });
+            return;
+          }
+
+          // 模拟一些历史借阅记录
+          const today = new Date();
+          const oneMonthAgo = new Date(today);
+          oneMonthAgo.setMonth(today.getMonth() - 1);
+          const twoMonthsAgo = new Date(today);
+          twoMonthsAgo.setMonth(today.getMonth() - 2);
+
+          // 生成5条历史记录
+          const historyRecords = [];
+
+          // 如果用户有当前的借阅记录，也放入历史中
+          if (mockData.borrowedBooks[userId]) {
+            historyRecords.push(
+              ...mockData.borrowedBooks[userId].map(record => ({
+                borrowId: 'history_' + Math.random().toString(36).substr(2, 9),
+                bookId: record.bookId,
+                borrowDate: record.borrowDate,
+                dueDate: record.dueDate,
+                returnDate: null,
+                status: new Date(record.dueDate) < today ? 'overdue' : 'active'
+              }))
+            );
+          }
+
+          // 添加一些已归还的记录
+          for (let i = 0; i < 3; i++) {
+            const borrowDate = new Date(twoMonthsAgo);
+            borrowDate.setDate(borrowDate.getDate() + i * 10);
+
+            const dueDate = new Date(borrowDate);
+            dueDate.setDate(dueDate.getDate() + 30);
+
+            const returnDate = new Date(borrowDate);
+            returnDate.setDate(returnDate.getDate() + 20 + i * 2);
+
+            historyRecords.push({
+              borrowId: 'history_' + Math.random().toString(36).substr(2, 9),
+              bookId: `book${100 + i}`,
+              borrowDate: borrowDate.toISOString().split('T')[0],
+              dueDate: dueDate.toISOString().split('T')[0],
+              returnDate: returnDate.toISOString().split('T')[0],
+              status: 'returned'
+            });
+          }
+
+          resolve({
+            state: 'success',
+            data: historyRecords
+          });
+        }
+
         // 模拟续借书籍接口
         if (url === '/api/borrow/renew') {
           const userId = getUserId();

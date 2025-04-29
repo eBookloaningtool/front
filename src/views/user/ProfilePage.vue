@@ -1,23 +1,56 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useUserStore } from '../../stores/userStore';
+import UserLayout from '../../layouts/UserLayout.vue';
 
 const router = useRouter();
-const userAvatar = ref('https://ui-avatars.com/api/?background=random');
-const userName = ref('New User');
+const userStore = useUserStore();
+const userName = ref('dsfuis'); // 从截图中获取的用户名
 const userEmail = ref('');
+const registrationDate = ref('2021-06-30'); // 从截图中获取的注册日期
+const activeTab = ref('basic'); // 默认显示基础信息标签页
+
+// 计算用户余额，保留两位小数
+const userBalance = computed(() => {
+  return userStore.balance.toFixed(2);
+});
+
+// 备用默认头像，只有在userStore中没有头像时使用
+const defaultAvatarUrl = computed(() => {
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(userName.value || 'User')}&background=random`;
+});
 
 onMounted(() => {
-  // 获取用户名（假设在注册过程中存储）
+  // 初始化用户状态
+  userStore.initUserState();
+
+  // 获取用户名
   const name = localStorage.getItem('userName');
   if (name) {
     userName.value = name;
+  } else if (userStore.userName) {
+    userName.value = userStore.userName;
   }
-  
+
   // 获取用户邮箱
   const email = localStorage.getItem('registeredEmail');
   if (email) {
     userEmail.value = email;
+  } else if (userStore.userEmail) {
+    userEmail.value = userStore.userEmail;
+  }
+
+  // 设置样例余额（如果没有）
+  if (!localStorage.getItem('userBalance')) {
+    localStorage.setItem('userBalance', '0.00');
+    userStore.updateBalance(0);
+  }
+
+  // 确保头像生成
+  const uuid = localStorage.getItem('uuid');
+  if (!userStore.avatarUrl && uuid) {
+    userStore.avatarUrl = userStore.generateAvatarUrl(uuid);
   }
 });
 
@@ -33,81 +66,112 @@ const goToPersonalCenter = () => {
 </script>
 
 <template>
-  <div class="profile-page min-h-screen bg-gray-50">
-    <!-- 头部信息区域 -->
-    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 h-64 rounded-b-xl">
-      <div class="container mx-auto px-4 py-10">
-        <div class="flex justify-between items-center">
-          <h1 class="text-white text-2xl font-medium">个人资料</h1>
-          <button @click="goToSettings" class="bg-white bg-opacity-20 text-white py-2 px-4 rounded-lg hover:bg-opacity-30 transition">
-            设置
-          </button>
-        </div>
+  <UserLayout>
+    <!-- 用户设置内容区域 -->
+    <div class="bg-white rounded-lg shadow">
+      <!-- 标签页导航 -->
+      <div class="flex border-b border-gray-200">
+        <button
+          @click="activeTab = 'basic'"
+          class="px-6 py-4 text-sm font-medium"
+          :class="activeTab === 'basic' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'"
+        >
+          基础信息
+        </button>
+        <button
+          @click="activeTab = 'security'"
+          class="px-6 py-4 text-sm font-medium"
+          :class="activeTab === 'security' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'"
+        >
+          安全设置
+        </button>
+        <button
+          @click="activeTab = 'verify'"
+          class="px-6 py-4 text-sm font-medium"
+          :class="activeTab === 'verify' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'"
+        >
+          实名认证
+        </button>
       </div>
-    </div>
-    
-    <!-- 个人资料卡片 -->
-    <div class="container mx-auto px-4 -mt-24">
-      <div class="bg-white rounded-xl shadow-md overflow-hidden">
-        <div class="p-8">
-          <div class="flex flex-col md:flex-row items-center">
-            <!-- 头像区域 -->
-            <div class="flex-shrink-0">
-              <div class="avatar-container">
-                <img :src="userAvatar" alt="用户头像" class="avatar-image" />
-              </div>
-            </div>
-            
-            <!-- 用户信息区域 -->
-            <div class="mt-6 md:mt-0 md:ml-8 text-center md:text-left">
-              <h2 class="text-2xl font-semibold text-gray-800">{{ userName }}</h2>
-              <p v-if="userEmail" class="text-gray-600 mt-1 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                {{ userEmail }}
-              </p>
-              <p v-else class="text-gray-500 mt-1">新注册用户</p>
-              <div class="mt-4 flex flex-wrap gap-2 justify-center md:justify-start">
-                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">读者</span>
-                <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">新用户</span>
-              </div>
+
+      <!-- 基础信息标签页内容 -->
+      <div v-if="activeTab === 'basic'" class="p-6">
+        <div class="border-b border-gray-200 py-4">
+          <div class="flex justify-between items-center">
+            <div>
+              <div class="text-gray-700 mb-1">用户名：</div>
+              <div class="text-gray-900">{{ userName }}</div>
             </div>
           </div>
-          
-          <!-- 欢迎消息 -->
-          <div class="mt-8 bg-blue-50 p-6 rounded-lg">
-            <h3 class="text-lg font-medium text-blue-800">欢迎加入我们的电子书平台！</h3>
-            <p class="mt-2 text-blue-600">
-              您的账户已成功创建。现在您可以开始浏览和借阅我们丰富的电子书籍。
-            </p>
-            <button @click="goToPersonalCenter" class="mt-4 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition">
-              前往个人中心
-            </button>
+        </div>
+
+        <div class="border-b border-gray-200 py-4">
+          <div class="flex justify-between items-center">
+            <div>
+              <div class="text-gray-700 mb-1">账号邮箱：</div>
+              <div class="text-gray-900">{{ userEmail || '未设置' }}</div>
+            </div>
           </div>
-          
-          <!-- 快速操作区域 -->
-          <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-gray-50 p-4 rounded-lg">
-              <h4 class="font-medium text-gray-800">借阅电子书</h4>
-              <p class="text-sm text-gray-600 mt-1">浏览我们的电子书库，找到您感兴趣的书籍</p>
-              <router-link to="/books" class="mt-2 inline-block text-blue-600 text-sm">探索书库 →</router-link>
+        </div>
+
+        <div class="border-b border-gray-200 py-4">
+          <div class="flex justify-between items-center">
+            <div>
+              <div class="text-gray-700 mb-1">账号余额：</div>
+              <div class="text-gray-900">{{ userBalance }} 元</div>
             </div>
-            <div class="bg-gray-50 p-4 rounded-lg">
-              <h4 class="font-medium text-gray-800">阅读历史</h4>
-              <p class="text-sm text-gray-600 mt-1">查看您的阅读记录和阅读进度</p>
-              <router-link to="/user/reading-duration" class="mt-2 inline-block text-blue-600 text-sm">查看历史 →</router-link>
-            </div>
-            <div class="bg-gray-50 p-4 rounded-lg">
-              <h4 class="font-medium text-gray-800">心愿单</h4>
-              <p class="text-sm text-gray-600 mt-1">管理您想要阅读的书籍清单</p>
-              <router-link to="/user/wishlist" class="mt-2 inline-block text-blue-600 text-sm">查看心愿单 →</router-link>
+          </div>
+        </div>
+
+        <div class="py-4">
+          <div class="flex justify-between items-center">
+            <div>
+              <div class="text-gray-700 mb-1">注册时间：</div>
+              <div class="text-gray-900">{{ registrationDate || '未知' }}</div>
             </div>
           </div>
         </div>
       </div>
+
+      <!-- 安全设置标签页内容 -->
+      <div v-if="activeTab === 'security'" class="p-6">
+        <div class="border-b border-gray-200 py-4">
+          <div class="flex justify-between items-center">
+            <div>
+              <div class="text-gray-900 font-medium">登录密码</div>
+              <div class="text-gray-500 text-sm mt-1">已设置，密码至少6位字符，支持数字、字母和除空格外的特殊字符，且必须同时包含数字和大小写字母。</div>
+            </div>
+            <button class="text-blue-600 hover:text-blue-700">修改</button>
+          </div>
+        </div>
+
+        <div class="border-b border-gray-200 py-4">
+          <div class="flex justify-between items-center">
+            <div>
+              <div class="text-gray-900 font-medium">安全邮箱</div>
+              <div class="text-gray-500 text-sm mt-1">{{ userEmail ? `已绑定: ${userEmail}` : '您暂未设置邮箱，绑定后可以用来接收通知、找回密码等。' }}</div>
+            </div>
+            <button class="text-blue-600 hover:text-blue-700">{{ userEmail ? '修改' : '设置' }}</button>
+          </div>
+        </div>
+
+        <div class="py-4">
+          <div class="flex justify-between items-center">
+            <div>
+              <div class="text-gray-900 font-medium">安全手机</div>
+              <div class="text-gray-500 text-sm mt-1">已绑定: 150******50</div>
+            </div>
+            <button class="text-blue-600 hover:text-blue-700">修改</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 实名认证标签页内容 -->
+      <div v-if="activeTab === 'verify'" class="p-6">
+        <p class="text-gray-500 text-center py-12">您尚未进行实名认证</p>
+      </div>
     </div>
-  </div>
+  </UserLayout>
 </template>
 
 <style scoped>
@@ -125,4 +189,10 @@ const goToPersonalCenter = () => {
   height: 100%;
   object-fit: cover;
 }
-</style> 
+
+/* 确保页面内容在中间 */
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+</style>

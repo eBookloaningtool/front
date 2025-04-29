@@ -5,6 +5,10 @@ import './index.css' // Import Tailwind CSS
 import axios from 'axios'
 import 'remixicon/fonts/remixicon.css'
 import mockAPI from './mock-api' // 导入mock API实现
+import { createPinia } from 'pinia'
+
+// 创建Pinia实例
+const pinia = createPinia()
 
 // 开发环境中模拟数据
 // 强制设置mockMode为true，确保开发环境下可以正常使用
@@ -18,11 +22,11 @@ axios.interceptors.request.use(
     if (window.mockMode && config.url.startsWith('/api/')) {
       console.log(`[Mock] 拦截请求: ${config.method.toUpperCase()} ${config.url}`);
       const method = config.method.toLowerCase();
-      
+
       // 获取认证头，确保传递给mock API
       const headers = config.headers || {};
       let authHeader = {};
-      
+
       // 从请求中获取认证令牌
       if (config.headers && config.headers.Authorization) {
         authHeader = { Authorization: config.headers.Authorization };
@@ -33,7 +37,7 @@ axios.interceptors.request.use(
           authHeader = { Authorization: `Bearer ${token}` };
         }
       }
-      
+
       if (method === 'get') {
         return Promise.reject({
           config,
@@ -47,7 +51,7 @@ axios.interceptors.request.use(
       }
     }
     return config;
-  }, 
+  },
   error => Promise.reject(error)
 );
 
@@ -65,7 +69,7 @@ axios.interceptors.response.use(
         config: error.config,
       });
     }
-    
+
     return Promise.reject(error);
   }
 );
@@ -78,5 +82,6 @@ axios.defaults.baseURL = import.meta.env.VITE_API_URL || ''
 // 挂载axios到全局属性
 app.config.globalProperties.$axios = axios
 
+app.use(pinia)    // 添加Pinia
 app.use(router)   // Install router functionality
 app.mount('#app') // Mount App.vue to <div id="app"> in HTML
