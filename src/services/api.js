@@ -132,7 +132,23 @@ export const cartAPI = {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`
     }
-  })
+  }),
+
+  // 清空购物车
+  clearCart: async () => {
+    try {
+      // 先获取当前购物车中的所有书籍ID
+      const response = await cartAPI.getCart();
+      if (response.data && response.data.bookId && response.data.bookId.length > 0) {
+        // 使用remove API删除所有书籍
+        return await cartAPI.removeFromCart(response.data.bookId);
+      }
+      return { state: 'success' };
+    } catch (error) {
+      console.error('清空购物车失败:', error);
+      throw error;
+    }
+  }
 };
 
 // 评论相关API
