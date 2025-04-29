@@ -2,8 +2,10 @@
 import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import mockAPI from '../mock-api.js';
+import { useUserStore } from '../stores/userStore';
 
 const router = useRouter();
+const userStore = useUserStore();
 const emit = defineEmits(['login-success']);
 
 // Form data
@@ -185,16 +187,17 @@ const handleLogin = async () => {
       // Show success status
       loginSuccess.value = true;
 
-      // Save token to localStorage
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('uuid', data.UUID);
+      // 使用store保存用户状态
+      userStore.login({
+        token: data.token,
+        UUID: data.UUID,
+        name: data.name || localStorage.getItem('userName'),
+        email: email.value
+      });
 
-      // Emit login success event for parent component
-      emit('login-success');
-
-      // Redirect to home page after delay
+      // Emit login success event for parent component to handle redirection
       setTimeout(() => {
-        router.push('/');
+        emit('login-success');
       }, 1000);
     } else {
       // Handle login failure with specific error message
@@ -210,9 +213,7 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="login-form-container p-8 bg-white rounded-xl shadow-lg border border-gray-100">
-    <h2 class="text-2xl font-bold mb-6 text-center text-indigo-800">Login</h2>
-
+  <div class="login-form-container py-4">
     <!-- Login success message -->
     <div v-if="loginSuccess" class="success-message">
       <div class="success-icon">
@@ -224,9 +225,9 @@ const handleLogin = async () => {
       <p class="text-center text-gray-600 mt-2">Redirecting to home page...</p>
     </div>
 
-    <form v-else @submit.prevent="handleLogin" class="space-y-5">
+    <form v-else @submit.prevent="handleLogin" class="space-y-7">
       <!-- Error message display -->
-      <div v-if="errorMessage" class="bg-red-50 border-l-4 border-red-400 text-red-700 p-4 rounded-md mb-4 transition-all duration-300" role="alert">
+      <div v-if="errorMessage" class="bg-red-50 border-l-4 border-red-400 text-red-700 p-4 rounded-md mb-5 transition-all duration-300" role="alert">
         <div class="flex">
           <div class="flex-shrink-0">
             <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -241,101 +242,72 @@ const handleLogin = async () => {
 
       <!-- Email input -->
       <div class="form-group">
-        <label for="email" class="block text-sm font-medium mb-1" :class="[
-          fieldStatus.email.focused ? 'text-indigo-600' : 'text-gray-700',
-          !fieldStatus.email.valid ? 'text-red-600' : ''
-        ]">Email</label>
-        <div class="relative rounded-md shadow-sm">
-          <input
-            id="email"
-            v-model="email"
-            type="email"
-            class="w-full px-4 py-3 border rounded-lg transition-colors"
-            :class="[
-              fieldStatus.email.focused ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300',
-              !fieldStatus.email.valid ? 'border-red-500 ring-2 ring-red-200' : ''
-            ]"
-            placeholder="Enter your email"
-            required
-            @focus="setFieldFocus('email', true)"
-            @blur="setFieldFocus('email', false); validateField('email')"
-            @input="validateField('email')"
-          />
-          <div v-if="!fieldStatus.email.valid" class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-            <svg class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-            </svg>
-          </div>
+        <input
+          id="email"
+          v-model="email"
+          type="email"
+          class="w-full px-6 py-4 bg-gray-100 border-none rounded-lg transition-colors text-base"
+          :class="[
+            fieldStatus.email.focused ? 'ring-2 ring-blue-200' : '',
+            !fieldStatus.email.valid ? 'ring-2 ring-red-200' : ''
+          ]"
+          placeholder="Username/Email"
+          required
+          @focus="setFieldFocus('email', true)"
+          @blur="setFieldFocus('email', false); validateField('email')"
+          @input="validateField('email')"
+        />
+        <div v-if="!fieldStatus.email.valid" class="text-red-500 text-xs mt-1">
+          Please enter a valid email address
         </div>
       </div>
 
       <!-- Password input -->
       <div class="form-group">
-        <label for="password" class="block text-sm font-medium mb-1" :class="[
-          fieldStatus.password.focused ? 'text-indigo-600' : 'text-gray-700',
-          !fieldStatus.password.valid ? 'text-red-600' : ''
-        ]">Password</label>
-        <div class="relative rounded-md shadow-sm">
-          <input
-            id="password"
-            v-model="password"
-            type="password"
-            class="w-full px-4 py-3 border rounded-lg transition-colors"
-            :class="[
-              fieldStatus.password.focused ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300',
-              !fieldStatus.password.valid ? 'border-red-500 ring-2 ring-red-200' : ''
-            ]"
-            placeholder="Enter your password"
-            required
-            @focus="setFieldFocus('password', true)"
-            @blur="setFieldFocus('password', false); validateField('password')"
-            @input="validateField('password')"
-          />
-          <div v-if="!fieldStatus.password.valid" class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-            <svg class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-            </svg>
-          </div>
+        <input
+          id="password"
+          v-model="password"
+          type="password"
+          class="w-full px-6 py-4 bg-gray-100 border-none rounded-lg transition-colors text-base"
+          :class="[
+            fieldStatus.password.focused ? 'ring-2 ring-blue-200' : '',
+            !fieldStatus.password.valid ? 'ring-2 ring-red-200' : ''
+          ]"
+          placeholder="Password"
+          required
+          @focus="setFieldFocus('password', true)"
+          @blur="setFieldFocus('password', false); validateField('password')"
+          @input="validateField('password')"
+        />
+        <div v-if="!fieldStatus.password.valid" class="text-red-500 text-xs mt-1">
+          Please enter your password
         </div>
       </div>
 
       <!-- Login button -->
       <button
         type="submit"
-        class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition duration-300 mt-6 transform hover:scale-105 active:scale-95"
+        class="w-full py-4 px-4 bg-yellow-400 hover:bg-yellow-500 text-white font-medium rounded-lg transition duration-300 text-base"
         :disabled="isSubmitting"
       >
-        <span v-if="isSubmitting" class="flex items-center justify-center">
-          <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          Logging in...
-        </span>
+        <span v-if="isSubmitting">Logging in...</span>
         <span v-else>Login</span>
       </button>
 
-      <!-- Don't have an account? Register -->
-      <div class="text-center mt-6">
-        <router-link to="/register" class="text-indigo-600 hover:text-indigo-800 font-medium transition-colors hover:underline">
-          Don't have an account? Register
-        </router-link>
-      </div>
-
       <!-- Forgot password link -->
-      <div class="text-center mt-2">
-        <a href="#" class="text-gray-500 hover:text-gray-700 text-sm transition-colors hover:underline" @click.prevent="openForgetPasswordModal">
-          Forgot password?
+      <div class="text-center mt-6">
+        <a href="#" @click.prevent="openForgetPasswordModal" class="text-gray-600 hover:text-gray-800 text-base">
+          Forgot Password?
         </a>
       </div>
     </form>
 
-    <!-- 忘记密码模态框 -->
+    <!-- Forgot password modal -->
     <div v-if="showForgetPasswordModal" class="forget-password-modal">
       <div class="modal-overlay" @click="closeForgetPasswordModal"></div>
       <div class="modal-container">
         <div class="modal-header">
-          <h3 class="text-xl font-semibold text-gray-800">忘记密码</h3>
+          <h3 class="text-xl font-semibold text-gray-800">Forgot Password</h3>
           <button class="close-button" @click="closeForgetPasswordModal">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -344,16 +316,16 @@ const handleLogin = async () => {
         </div>
 
         <div class="modal-body">
-          <p class="text-gray-600 mb-4">请输入您的邮箱地址，我们会向您发送重置密码的邮件。</p>
+          <p class="text-gray-600 mb-6 text-base">Please enter your email address and we'll send you a password reset link.</p>
 
-          <!-- 消息显示 -->
+          <!-- Message display -->
           <div v-if="forgetPasswordMessage.text"
                class="message-alert mb-4"
                :class="forgetPasswordMessage.type === 'success' ? 'success-alert' : 'error-alert'">
             <div class="flex">
               <div class="flex-shrink-0">
                 <svg v-if="forgetPasswordMessage.type === 'success'" class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 10-1.414 1.414L8.586 12l-1.293 1.293a1 1 0 101.414 1.414L10 13.414l1.293 1.293a1 1 0 001.414-1.414L11.414 12l1.293-1.293a1 1 0 00-1.414-1.414L10 10.586 8.707 9.293z" clip-rule="evenodd" />
                 </svg>
                 <svg v-else class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                   <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
@@ -365,15 +337,15 @@ const handleLogin = async () => {
             </div>
           </div>
 
-          <!-- 邮箱输入 -->
-          <div class="form-group">
-            <label for="forget-email" class="block text-sm font-medium text-gray-700 mb-1">邮箱地址</label>
+          <!-- Email input -->
+          <div class="form-group mb-8">
+            <label for="forget-email" class="block text-base font-medium text-gray-700 mb-2">Email Address</label>
             <input
               id="forget-email"
               v-model="forgetPasswordEmail"
               type="email"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg transition-colors focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-              placeholder="请输入您的邮箱"
+              class="w-full px-6 py-4 bg-gray-100 border-none rounded-lg transition-colors text-base"
+              placeholder="Please enter your email"
               required
             />
           </div>
@@ -385,21 +357,15 @@ const handleLogin = async () => {
             @click="closeForgetPasswordModal"
             :disabled="forgetPasswordSubmitting"
           >
-            取消
+            Cancel
           </button>
           <button
-            class="submit-button"
+            class="submit-button bg-yellow-400 hover:bg-yellow-500"
             @click="handleForgetPassword"
             :disabled="forgetPasswordSubmitting"
           >
-            <span v-if="forgetPasswordSubmitting" class="flex items-center justify-center">
-              <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              处理中...
-            </span>
-            <span v-else>发送重置邮件</span>
+            <span v-if="forgetPasswordSubmitting">Processing...</span>
+            <span v-else>Send Reset Link</span>
           </button>
         </div>
       </div>
@@ -409,13 +375,7 @@ const handleLogin = async () => {
 
 <style scoped>
 .login-form-container {
-  animation: fadeIn 0.5s ease-out;
   transition: all 0.3s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .success-message {
@@ -441,14 +401,22 @@ const handleLogin = async () => {
 
 input {
   transition: all 0.3s ease;
+  height: 3.5rem;
+  font-size: 1rem;
+  border: none;
+  outline: none;
+  box-shadow: none;
 }
 
 input:focus {
   outline: none;
+  border: none;
+  box-shadow: none;
 }
 
 button {
   transition: all 0.3s ease;
+  height: 3.5rem;
 }
 
 button:disabled {
@@ -456,7 +424,7 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* 忘记密码模态框样式 */
+/* Forgot password modal styles */
 .forget-password-modal {
   position: fixed;
   top: 0;
@@ -488,7 +456,7 @@ button:disabled {
 .modal-container {
   position: relative;
   width: 90%;
-  max-width: 450px;
+  max-width: 480px;
   background-color: white;
   border-radius: 1rem;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
@@ -505,7 +473,7 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
+  padding: 1.75rem;
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -513,8 +481,8 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 9999px;
   color: #6b7280;
   transition: all 0.2s;
@@ -526,25 +494,26 @@ button:disabled {
 }
 
 .modal-body {
-  padding: 1.5rem;
+  padding: 1.75rem;
 }
 
 .modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
-  padding: 1.5rem;
+  gap: 1.5rem;
+  padding: 1.75rem;
   border-top: 1px solid #e5e7eb;
 }
 
 .cancel-button {
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.5rem;
   font-weight: 500;
   font-size: 0.875rem;
   color: #6b7280;
   background-color: white;
   border: 1px solid #d1d5db;
+  height: auto;
 }
 
 .cancel-button:hover {
@@ -552,20 +521,16 @@ button:disabled {
 }
 
 .submit-button {
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.5rem;
   font-weight: 500;
   font-size: 0.875rem;
   color: white;
-  background-color: #4f46e5;
   border: 1px solid transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.submit-button:hover {
-  background-color: #4338ca;
+  height: auto;
 }
 
 .message-alert {
