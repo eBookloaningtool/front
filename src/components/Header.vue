@@ -94,7 +94,7 @@ const handleSearch = () => {
   if (searchQuery.value.trim()) {
     router.push({
       path: '/search',
-      query: { q: searchQuery.value.trim() }
+      query: { title: searchQuery.value.trim() }
     })
     searchQuery.value = ''
   }
