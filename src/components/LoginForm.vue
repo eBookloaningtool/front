@@ -1,8 +1,8 @@
 <script setup>
 import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
-import mockAPI from '../mock-api.js';
 import { useUserStore } from '../stores/userStore';
+import { userAPI } from '../services/api';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -106,54 +106,46 @@ const validateEmail = (email) => {
   return emailRegex.test(email);
 };
 
-// 处理忘记密码请求
+// 处理忘记密码
 const handleForgetPassword = async () => {
-  // 验证邮箱
-  if (!forgetPasswordEmail.value) {
-    forgetPasswordMessage.value = {
-      text: '请输入邮箱地址',
-      type: 'error'
-    };
-    return;
-  }
-
-  if (!validateEmail(forgetPasswordEmail.value)) {
-    forgetPasswordMessage.value = {
-      text: '请输入有效的邮箱地址',
-      type: 'error'
-    };
-    return;
-  }
-
   try {
     forgetPasswordSubmitting.value = true;
     forgetPasswordMessage.value = { text: '', type: '' };
 
-    // 调用忘记密码API
-    const response = await mockAPI.post('/api/auth/forget', {
+    // 验证邮箱格式
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(forgetPasswordEmail.value)) {
+      forgetPasswordMessage.value = {
+        text: '请输入有效的邮箱地址',
+        type: 'error'
+      };
+      return;
+    }
+
+    // 发送忘记密码请求
+    const response = await userAPI.forgetPassword({
       email: forgetPasswordEmail.value
     });
 
-    if (response.state === 'success') {
+    if (response.data.state === 'success') {
       forgetPasswordMessage.value = {
-        text: '密码重置邮件已发送，请检查您的邮箱',
+        text: '重置密码链接已发送到您的邮箱',
         type: 'success'
       };
-
-      // 3秒后关闭弹窗
+      // 关闭模态框
       setTimeout(() => {
-        closeForgetPasswordModal();
-      }, 3000);
+        showForgetPasswordModal.value = false;
+      }, 2000);
     } else {
       forgetPasswordMessage.value = {
-        text: response.message || '密码重置失败，请稍后再试',
+        text: response.data.message || '发送重置密码链接失败',
         type: 'error'
       };
     }
   } catch (error) {
-    console.error('Password reset error:', error);
+    console.error('Forget password error:', error);
     forgetPasswordMessage.value = {
-      text: '发生错误，请稍后再试',
+      text: '发送重置密码链接时发生错误',
       type: 'error'
     };
   } finally {
@@ -180,20 +172,12 @@ const handleLogin = async () => {
       password: password.value
     };
 
-    // Use mock API to send login request
-    const data = await mockAPI.post('/api/auth/login', loginData);
+    // 使用API服务发送登录请求
+    const response = await userStore.login(loginData);
 
-    if (data.state === 'success') {
+    if (response.state === 'success') {
       // Show success status
       loginSuccess.value = true;
-
-      // 使用store保存用户状态
-      userStore.login({
-        token: data.token,
-        UUID: data.UUID,
-        name: data.name || localStorage.getItem('userName'),
-        email: email.value
-      });
 
       // Emit login success event for parent component to handle redirection
       setTimeout(() => {
@@ -201,11 +185,11 @@ const handleLogin = async () => {
       }, 1000);
     } else {
       // Handle login failure with specific error message
-      errorMessage.value = data.message || 'Login failed, please check your email and password';
+      errorMessage.value = response.message || '登录失败，请检查邮箱和密码';
     }
   } catch (error) {
     console.error('Login error:', error);
-    errorMessage.value = 'An error occurred during login, please try again later';
+    errorMessage.value = '登录过程中发生错误，请稍后重试';
   } finally {
     isSubmitting.value = false;
   }

@@ -32,21 +32,6 @@ export interface LoginResponse {
   UUID: string;
 }
 
-// 更新用户信息请求参数
-export interface UpdateUserParams {
-  email?: string;
-  password?: string;
-  name?: string;
-}
-
-// 更新用户信息响应
-export interface UpdateUserResponse {
-  state: string;
-  UUID: string;
-  email: string;
-  name: string;
-}
-
 // 用户信息响应
 export interface UserInfoResponse {
   UUID: string;
@@ -56,12 +41,27 @@ export interface UserInfoResponse {
   createdat: string;
 }
 
-// 通用成功响应
-export interface SuccessResponse {
+// 更新用户请求参数
+export interface UpdateUserParams {
+  email?: string;
+  password?: string;
+  name?: string;
+}
+
+// 更新用户响应
+export interface UpdateUserResponse {
   state: string;
+  UUID: string;
+  email: string;
+  name: string;
 }
 
 // 忘记密码请求参数
 export interface ForgetPasswordParams {
   email: string;
+}
+
+// 通用成功响应
+export interface SuccessResponse {
+  state: string;
 } 

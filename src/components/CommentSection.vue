@@ -128,7 +128,7 @@ const submitComment = async () => {
     
     // 实际API请求
     /*
-    const response = await fetch(`/api/books/${props.bookId}/reviews`, {
+    const response = await fetch(`/api/reviews/book?bookId=${props.bookId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -182,7 +182,7 @@ const loadComments = async () => {
     
     // 实际API请求
     /*
-    const response = await fetch(`/api/books/${props.bookId}/reviews`)
+    const response = await fetch(`/api/reviews/book?bookId=${props.bookId}`)
     if (response.ok) {
       comments.value = await response.json()
     }

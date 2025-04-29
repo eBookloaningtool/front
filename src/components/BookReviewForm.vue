@@ -98,7 +98,7 @@ const submitReview = async () => {
   try {
     submitting.value = true
 
-    const response = await fetch(`/api/books/${props.bookId}/reviews`, {
+    const response = await fetch(`/api/reviews/book?bookId=${props.bookId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

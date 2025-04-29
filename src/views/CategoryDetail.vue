@@ -77,7 +77,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Header from '../components/Header.vue';
 import Footer from '../components/Footer.vue';
-import { getMockCategories, getMockBooksByCategory } from '../mock-api.js';
+import { categoryAPI, bookAPI } from '../services/api';
 
 const route = useRoute();
 const router = useRouter();
@@ -97,19 +97,13 @@ const fetchCategory = async () => {
   error.value = null;
   
   try {
-    // 获取所有分类
-    const allCategories = getMockCategories();
+    // 获取分类信息
+    const categoryResponse = await categoryAPI.getCategoryDetail(categoryId.value);
+    category.value = categoryResponse.data;
     
-    // 查找匹配的分类
-    const foundCategory = allCategories.find(cat => cat.id === categoryId.value);
-    
-    if (foundCategory) {
-      category.value = foundCategory;
-      // 获取该分类下的图书
-      books.value = getMockBooksByCategory(foundCategory.id);
-    } else {
-      error.value = '未找到该分类';
-    }
+    // 获取该分类下的图书
+    const booksResponse = await bookAPI.getBooksByCategory(categoryId.value);
+    books.value = booksResponse.data;
     
     loading.value = false;
   } catch (err) {

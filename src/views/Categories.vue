@@ -80,7 +80,7 @@ import { useRoute, useRouter } from 'vue-router';
 import Header from '../components/Header.vue';
 import Footer from '../components/Footer.vue';
 import BookList from '../components/BookList.vue';
-import { getMockCategories, getMockBooksByCategory, getMockCategoriesWithBooks } from '../mock-api.js';
+import { categoryAPI, bookAPI } from '../services/api';
 
 const route = useRoute();
 const router = useRouter();
@@ -118,14 +118,18 @@ const selectCategory = (categoryId) => {
 
 // 获取所有分类的图书
 const fetchCategorizedBooks = async () => {
+  loading.value = true;
+  error.value = null;
+  
   try {
-    // 直接获取带书籍的分类数据
-    categorizedBooks.value = getMockCategoriesWithBooks();
-    console.log('获取到的分类书籍数据:', categorizedBooks.value);
-    return categorizedBooks.value;
+    const response = await categoryAPI.getCategoriesWithBooks();
+    categorizedBooks.value = response.data.categoriesList || [];
   } catch (err) {
-    console.error('获取分类图书失败:', err);
-    return [];
+    console.error('获取分类书籍失败:', err);
+    error.value = '获取分类书籍失败，请稍后再试';
+    categorizedBooks.value = [];
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -135,38 +139,31 @@ const fetchCategories = async () => {
   error.value = null;
   
   try {
-    // 获取分类数据
-    categories.value = getMockCategories();
-    
-    // 获取并处理所有分类的图书
-    await fetchCategorizedBooks();
-    
-    // 默认选中第一个分类
-    if (categories.value.length > 0) {
-      // 如果URL中有分类ID参数，则选中该分类
-      const categoryParam = route.query.category;
-      if (categoryParam && categories.value.some(cat => cat.id === categoryParam)) {
-        selectCategory(categoryParam);
-      } else {
-        selectCategory(categories.value[0].id);
-      }
-    }
-    
-    loading.value = false;
+    const response = await categoryAPI.getAllCategories();
+    categories.value = response.data.categoriesList || [];
   } catch (err) {
-    console.error('获取分类数据失败:', err);
-    error.value = '获取分类数据失败，请稍后再试';
+    console.error('获取分类列表失败:', err);
+    error.value = '获取分类列表失败，请稍后再试';
+    categories.value = [];
+  } finally {
     loading.value = false;
   }
 };
 
 // 获取指定分类下的图书
-const fetchBooksByCategory = (categoryId) => {
+const fetchBooksByCategory = async (categoryId) => {
+  loading.value = true;
+  error.value = null;
+  
   try {
-    selectedCategoryBooks.value = getMockBooksByCategory(categoryId);
+    const response = await bookAPI.getBooksByCategory(categoryId);
+    selectedCategoryBooks.value = response.data.books || [];
   } catch (err) {
-    console.error('获取分类图书失败:', err);
+    console.error('获取分类书籍失败:', err);
+    error.value = '获取分类书籍失败，请稍后再试';
     selectedCategoryBooks.value = [];
+  } finally {
+    loading.value = false;
   }
 };
 

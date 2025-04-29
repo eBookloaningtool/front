@@ -11,7 +11,6 @@
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Header from './components/Header.vue'
-import { getMockBooksByCategory } from '@/mock-api'
 import { checkAndSendDueSoonNotifications } from '@/utils/emailService'
 import ToastContainer from './components/ToastContainer.vue'
 import { useUserStore } from './stores/userStore'
@@ -57,8 +56,6 @@ onMounted(() => {
     }, timeUntilMidnight)
   }
 })
-
-const books = getMockBooksByCategory('生活休闲') // 使用正确的分类ID
 
 const goToBookDetail = (id) => {
   router.push({ name: 'BookDetail', params: { id } })

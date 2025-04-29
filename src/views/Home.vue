@@ -22,7 +22,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { bookAPI } from '../services/api'
+import { useUserStore } from '../stores/userStore'
 import Header from '../components/Header.vue'
 import SearchSection from '../components/SearchSection.vue'
 import LoginSection from '../components/LoginSection.vue'
@@ -32,10 +33,12 @@ import Footer from '../components/Footer.vue'
 import PopularBooks from '../components/PopularBooks.vue'
 
 const router = useRouter()
+const userStore = useUserStore()
 const isLoggedIn = ref(false)
 const newBooks = ref([])
 const fictionBooks = ref([])
 const historyBooks = ref([])
+const popularBooks = ref([])
 const loading = ref(true)
 
 // 路由导航函数
@@ -69,13 +72,20 @@ const viewAllHistory = () => {
 
 // 随机选择n个元素
 const getRandomItems = (array, n) => {
+  if (!Array.isArray(array) || array.length === 0) {
+    return []
+  }
   const shuffled = [...array].sort(() => 0.5 - Math.random())
-  return shuffled.slice(0, n)
+  return shuffled.slice(0, Math.min(n, array.length))
 }
 
 // 根据分类筛选书籍
 const filterBooksByCategory = (books, category) => {
+  if (!Array.isArray(books)) {
+    return []
+  }
   return books.filter(book => {
+    if (!book || !book.category) return false
     const bookCategory = book.category.toLowerCase()
     return bookCategory.includes(category.toLowerCase())
   })
@@ -83,12 +93,24 @@ const filterBooksByCategory = (books, category) => {
 
 onMounted(async () => {
   // 检查登录状态
-  isLoggedIn.value = !!localStorage.getItem('token')
+  isLoggedIn.value = userStore.isAuthenticated
   
-  // 获取所有书籍数据
   try {
-    const response = await axios.get('/books.json')
-    const allBooks = response.data
+    // 获取热门书籍
+    const popularResponse = await bookAPI.getPopularBooks()
+    const popularBookIds = popularResponse.data.bookId || []
+    
+    // 获取热门书籍详情
+    const popularBooksDetails = await Promise.all(
+      popularBookIds.map(bookId => bookAPI.getBookDetail(bookId))
+    )
+    popularBooks.value = popularBooksDetails
+      .map(response => response.data)
+      .filter(book => book !== null)
+    
+    // 获取所有书籍数据
+    const response = await bookAPI.getAllBooks()
+    const allBooks = Array.isArray(response.data) ? response.data : []
     
     // 随机选择10本作为新书展示
     newBooks.value = getRandomItems(allBooks, 10)
@@ -111,6 +133,7 @@ onMounted(async () => {
     loading.value = false
     
     // 加载失败时使用空数组
+    popularBooks.value = []
     newBooks.value = []
     fictionBooks.value = []
     historyBooks.value = []

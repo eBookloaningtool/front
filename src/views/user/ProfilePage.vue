@@ -1,23 +1,20 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useUserStore } from '../../stores/userStore';
 
 const router = useRouter();
-const userAvatar = ref('https://ui-avatars.com/api/?background=random');
-const userName = ref('New User');
-const userEmail = ref('');
+const userStore = useUserStore();
+
+// 使用计算属性从userStore获取用户信息
+const userName = computed(() => userStore.userName || 'New User');
+const userEmail = computed(() => userStore.userEmail || '');
+const userAvatar = computed(() => `https://ui-avatars.com/api/?name=${encodeURIComponent(userName.value)}&background=random`);
 
 onMounted(() => {
-  // 获取用户名（假设在注册过程中存储）
-  const name = localStorage.getItem('userName');
-  if (name) {
-    userName.value = name;
-  }
-  
-  // 获取用户邮箱
-  const email = localStorage.getItem('registeredEmail');
-  if (email) {
-    userEmail.value = email;
+  // 确保用户状态已初始化
+  if (!userStore.isAuthenticated) {
+    userStore.initUserState();
   }
 });
 

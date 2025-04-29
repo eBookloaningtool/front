@@ -77,7 +77,7 @@ export const getBookDetail = async (bookId: string): Promise<BookDetail | null> 
     return null;
   }
   try {
-    const response = await axios.get<BookDetail>(`/api/books/${bookId}`);
+    const response = await axios.get<BookDetail>(`/api/books/get?bookId=${bookId}`);
     return response.data;
   } catch (error) {
     console.error(`获取书籍详情失败 (ID: ${bookId}):`, error instanceof AxiosError ? error.message : error);

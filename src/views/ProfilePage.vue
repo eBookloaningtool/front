@@ -86,7 +86,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
+import { userAPI } from '../services/api';
 
 const router = useRouter();
 
@@ -118,11 +118,7 @@ const fetchUserProfile = async () => {
       return;
     }
 
-    const response = await axios.get('/api/user/profile', {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    const response = await userAPI.getUserInfo();
 
     const data = response.data;
 

@@ -122,13 +122,18 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import mockAPI from '../../mock-api.js';
+import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { useUserStore } from '../../stores/userStore';
+import { userAPI } from '../../services/api';
 
-// 模拟用户数据
-const username = ref('用户名');
-const email = ref('user@example.com');
-const phone = ref('1388888XXXX');
+const router = useRouter();
+const userStore = useUserStore();
+
+// 从userStore获取用户信息
+const username = ref(userStore.userName || '');
+const email = ref(userStore.userEmail || '');
+const phone = ref(''); // 手机号码可能需要从API获取
 const isSubmitting = ref(false);
 const message = ref({ show: false, text: '', type: '' });
 
@@ -156,18 +161,20 @@ const saveSettings = async () => {
     isSubmitting.value = true;
     
     // 调用API保存设置
-    // const response = await mockAPI.post('/api/user/update', {
-    //   name: username.value,
-    //   email: email.value,
-    //   phone: phone.value
-    // }, {
-    //   Authorization: `Bearer ${localStorage.getItem('token')}`
-    // });
+    const response = await userAPI.updateUserInfo({
+      name: username.value,
+      email: email.value
+    });
     
-    // 模拟API调用成功
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    showMessage(message, '设置已保存', 'success');
+    if (response.data.state === 'success') {
+      // 更新userStore中的用户信息
+      userStore.userName = response.data.name;
+      userStore.userEmail = response.data.email;
+      
+      showMessage(message, '设置已保存', 'success');
+    } else {
+      showMessage(message, response.data.message || '保存设置失败', 'error');
+    }
   } catch (error) {
     console.error('保存设置失败:', error);
     showMessage(message, '保存设置失败，请稍后再试', 'error');
@@ -202,19 +209,12 @@ const changePassword = async () => {
   try {
     isPasswordSubmitting.value = true;
     
-    // 获取当前登录的邮箱
-    const userEmail = localStorage.getItem('registeredEmail') || email.value;
-    
     // 调用修改密码API
-    const response = await mockAPI.post('/api/user/change-password', {
-      email: userEmail,
-      currentPassword: currentPassword.value,
-      newPassword: newPassword.value
-    }, {
-      Authorization: `Bearer ${localStorage.getItem('token')}`
+    const response = await userAPI.updateUserInfo({
+      password: newPassword.value
     });
     
-    if (response.state === 'success') {
+    if (response.data.state === 'success') {
       showMessage(passwordMessage, '密码修改成功', 'success');
       
       // 清空密码输入框
@@ -222,7 +222,7 @@ const changePassword = async () => {
       newPassword.value = '';
       confirmPassword.value = '';
     } else {
-      showMessage(passwordMessage, response.message || '密码修改失败', 'error');
+      showMessage(passwordMessage, response.data.message || '密码修改失败', 'error');
     }
   } catch (error) {
     console.error('修改密码失败:', error);
@@ -231,6 +231,14 @@ const changePassword = async () => {
     isPasswordSubmitting.value = false;
   }
 };
+
+// 页面加载时初始化用户信息
+onMounted(() => {
+  // 确保用户状态已初始化
+  if (!userStore.isAuthenticated) {
+    userStore.initUserState();
+  }
+});
 </script>
 
 <style scoped>

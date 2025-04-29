@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import mockAPI from '../mock-api.js';
+import { userAPI } from '../services/api';
 
 const router = useRouter();
 
@@ -56,10 +56,10 @@ const handleSubmit = async () => {
       password: password.value
     };
 
-    // Use mock API to send registration request
-    const data = await mockAPI.post('/api/auth/register', userData);
+    // Send registration request
+    const response = await userAPI.register(userData);
 
-    if (data.state === 'success') {
+    if (response.data.state === 'success') {
       // Show success status
       registerSuccess.value = true;
 
@@ -71,21 +71,23 @@ const handleSubmit = async () => {
       setTimeout(() => {
         emit('registration-success', {
           name: name.value,
-          email: email.value
+          email: email.value,
+          UUID: response.data.UUID,
+          createdAt: response.data.createdat
         });
       }, 1000);
     } else {
       // Handle failure
-      errorMessage.value = data.message || 'Registration failed, please try again later';
+      errorMessage.value = response.data.message || 'Registration failed, please try again later';
 
       // 检查错误信息是否包含"Email already registered"或"邮箱已注册"
       if (
-        data.message && (
-          data.message.includes('Email already registered') ||
-          data.message.includes('email already registered') ||
-          data.message.includes('邮箱已注册') ||
-          data.message.includes('Email already') ||
-          data.message === 'Email already registered'
+        response.data.message && (
+          response.data.message.includes('Email already registered') ||
+          response.data.message.includes('email already registered') ||
+          response.data.message.includes('邮箱已注册') ||
+          response.data.message.includes('Email already') ||
+          response.data.message === 'Email already registered'
         )
       ) {
         // 显示错误消息1秒后跳转到登录页面

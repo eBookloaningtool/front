@@ -107,7 +107,7 @@ const fetchBooks = async () => {
   try {
     // 并行获取所有书籍信息
     const bookPromises = props.bookIds.map(bookId => 
-      fetch(`/api/books/${bookId}`)
+      fetch(`/api/books/get?bookId=${bookId}`)
         .then(response => {
           if (!response.ok) throw new Error(`获取书籍 ${bookId} 失败`);
           return response.json();

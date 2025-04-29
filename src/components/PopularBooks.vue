@@ -1,99 +1,93 @@
 <template>
   <div class="popular-books">
-    <h2 class="text-xl font-bold mb-4">{{ title }}</h2>
-    
-    <div v-if="loading" class="flex justify-center py-8">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+    <h2 class="text-2xl font-bold mb-6">{{ title }}</h2>
+    <div v-if="loading" class="flex justify-center items-center h-48">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
     </div>
-    
-    <div v-else-if="error" class="text-red-500 py-4">
+    <div v-else-if="error" class="text-red-500 text-center py-8">
       {{ error }}
     </div>
-    
-    <div v-else-if="books.length === 0" class="py-4">
+    <div v-else-if="books.length === 0" class="text-gray-500 text-center py-8">
       暂无热门书籍
     </div>
-    
-    <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-      <div v-for="book in books" :key="book.bookId" class="book-card">
-        <BookCard :book="book" />
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div v-for="book in books" :key="book.bookId" class="book-card" @click="$emit('book-click', book.bookId)">
+        <div class="relative pb-[140%]">
+          <img :src="book.coverUrl" :alt="book.title" class="absolute inset-0 w-full h-full object-cover rounded-lg shadow-md">
+        </div>
+        <div class="mt-4">
+          <h3 class="font-medium text-gray-900 line-clamp-2">{{ book.title }}</h3>
+          <p class="text-sm text-gray-500 mt-1">{{ book.author }}</p>
+          <div class="flex items-center mt-2">
+            <span class="text-yellow-400">★</span>
+            <span class="text-sm text-gray-600 ml-1">{{ book.rating ? book.rating.toFixed(1) : '0.0' }}</span>
+            <span class="text-sm text-gray-500 ml-2">借阅: {{ book.borrowTimes || 0 }}</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
-<script>
-import { ref, onMounted, watch } from 'vue';
-import { getPopularBooks, getBookDetail } from '../api/books';
-import BookCard from './BookCard.vue';
+<script setup>
+import { ref, onMounted } from 'vue'
+import { bookAPI } from '../services/api'
 
-export default {
-  name: 'PopularBooks',
-  components: {
-    BookCard
-  },
-  props: {
-    category: {
-      type: String,
-      default: ''
-    },
-    title: {
-      type: String,
-      default: '热门书籍'
-    }
-  },
-  setup(props) {
-    const books = ref([]);
-    const loading = ref(true);
-    const error = ref('');
-    
-    const fetchPopularBooks = async () => {
-      loading.value = true;
-      error.value = '';
-      
-      try {
-        const result = await getPopularBooks(props.category);
-        const bookIds = result.bookId || [];
-        
-        // 获取每本书的详细信息
-        const bookDetailsPromises = bookIds.map(id => getBookDetail(id));
-        const bookDetails = await Promise.all(bookDetailsPromises);
-        
-        // 过滤掉可能的null值
-        books.value = bookDetails.filter(book => book !== null);
-      } catch (err) {
-        console.error('加载热门书籍失败', err);
-        error.value = '加载热门书籍失败，请稍后再试';
-      } finally {
-        loading.value = false;
-      }
-    };
-    
-    // 监听分类变化，重新获取数据
-    watch(() => props.category, () => {
-      fetchPopularBooks();
-    });
-    
-    // 组件挂载时获取数据
-    onMounted(() => {
-      fetchPopularBooks();
-    });
-    
-    return {
-      books,
-      loading,
-      error
-    };
+const props = defineProps({
+  title: {
+    type: String,
+    default: '热门书籍'
   }
-};
+})
+
+defineEmits(['book-click'])
+
+const books = ref([])
+const loading = ref(true)
+const error = ref(null)
+
+onMounted(async () => {
+  try {
+    // 获取热门书籍ID列表
+    const popularResponse = await bookAPI.getPopularBooks()
+    const popularBookIds = popularResponse.data.bookId || []
+    
+    if (popularBookIds.length === 0) {
+      books.value = []
+      return
+    }
+    
+    // 获取热门书籍详情
+    const popularBooksDetails = await Promise.all(
+      popularBookIds.map(bookId => bookAPI.getBookDetail(bookId))
+    )
+    books.value = popularBooksDetails
+      .map(response => response.data)
+      .filter(book => book !== null)
+  } catch (err) {
+    console.error('获取热门书籍失败:', err)
+    error.value = '获取热门书籍失败，请稍后再试'
+    books.value = []
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <style scoped>
 .book-card {
-  transition: transform 0.3s ease;
+  cursor: pointer;
+  transition: transform 0.2s;
 }
 
 .book-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-4px);
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style> 

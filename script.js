@@ -297,7 +297,7 @@ function isValidEmail(email) {
 
 // 获取书籍详情
 async function getBookDetails(bookId) {
-    return await apiRequest(`/api/books/${bookId}`);
+    return await apiRequest(`/api/books/get?bookId=${bookId}`);
 }
 
 // 加载书籍详情
@@ -326,7 +326,7 @@ async function loadBookDetails() {
 // 加载书籍评论
 async function loadBookReviews(bookId) {
     try {
-        const reviews = await apiRequest(`/api/books/${bookId}/reviews`);
+        const reviews = await apiRequest(`/api/reviews/book?bookId=${bookId}`);
         const reviewsDiv = document.getElementById('bookReviews');
         if (!reviewsDiv) return;
 
