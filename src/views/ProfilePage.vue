@@ -48,6 +48,12 @@
             <span class="text">Payment Records</span>
           </a>
         </div>
+        <div class="menu-item" :class="{ active: currentView === 'Settings' }">
+          <a href="#" @click.prevent="switchView('Settings')">
+            <span class="icon"><i class="ri-settings-line"></i></span>
+            <span class="text">Settings</span>
+          </a>
+        </div>
         <div class="menu-item">
           <a href="#" @click.prevent="logout">
             <span class="icon"><i class="ri-logout-box-line"></i></span>
@@ -135,11 +141,11 @@
 
         <!-- 借阅历史视图 -->
         <div v-if="currentView === 'LoanHistory'" class="loan-history">
-          <h2 class="page-title">借阅历史</h2>
-          <p class="subtitle">查看您的所有借阅记录</p>
+          <h2 class="page-title">Loan History</h2>
+          <p class="subtitle">View all your borrowing records</p>
 
           <div v-if="loadingLoans" class="loading-state">
-            <p>加载中...</p>
+            <p>Loading...</p>
           </div>
 
           <div v-else>
@@ -149,33 +155,33 @@
                 <input
                   type="text"
                   v-model="searchQuery"
-                  placeholder="搜索书名或作者..."
+                  placeholder="Search by title or author..."
                   class="search-field"
                 />
               </div>
               <div class="status-select">
                 <select v-model="statusFilter" class="select-field">
-                  <option value="all">全部</option>
-                  <option value="active">借阅中</option>
-                  <option value="returned">已归还</option>
-                  <option value="overdue">已逾期</option>
+                  <option value="all">All</option>
+                  <option value="active">Active</option>
+                  <option value="returned">Returned</option>
+                  <option value="overdue">Overdue</option>
                 </select>
               </div>
             </div>
 
             <div v-if="filteredLoans.length === 0" class="empty-state">
-              <p>没有找到符合条件的借阅记录</p>
+              <p>No borrowing records found</p>
             </div>
 
             <div v-else class="loans-table-container">
               <table class="loans-table">
                 <thead>
                   <tr>
-                    <th>图书信息</th>
-                    <th>借阅日期</th>
-                    <th>应归还日期</th>
-                    <th>状态</th>
-                    <th class="text-right">操作</th>
+                    <th>Book Info</th>
+                    <th>Borrow Date</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th class="text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -213,13 +219,13 @@
                         @click="extendLoan(loan.id)"
                         class="extend-btn"
                       >
-                        延长借阅
+                        Extend
                       </button>
                       <button
                         @click="viewLoanDetail(loan.id)"
                         class="detail-btn"
                       >
-                        详情
+                        Details
                       </button>
                     </td>
                   </tr>
@@ -235,19 +241,19 @@
                   :disabled="currentPage === 1"
                   class="page-btn"
                 >
-                  上一页
+                  Previous
                 </button>
                 <button
                   @click="nextPage"
                   :disabled="currentPage >= totalPages"
                   class="page-btn"
                 >
-                  下一页
+                  Next
                 </button>
               </div>
               <div class="pagination-desktop">
                 <div class="pagination-info">
-                  显示 <span>{{ paginationStart }}</span> 到 <span>{{ paginationEnd }}</span> 条，共 <span>{{ filteredLoans.length }}</span> 条记录
+                  Showing <span>{{ paginationStart }}</span> to <span>{{ paginationEnd }}</span> of <span>{{ filteredLoans.length }}</span> records
                 </div>
                 <div class="pagination-controls">
                   <button
@@ -285,20 +291,20 @@
 
         <!-- 愿望清单视图 -->
         <div v-if="currentView === 'Wishlist'" class="wishlist">
-          <h2 class="page-title">我的愿望清单</h2>
-          <p class="subtitle">管理您收藏的图书</p>
+          <h2 class="page-title">My Wish List</h2>
+          <p class="subtitle">Manage your saved books</p>
 
           <div v-if="loadingWishlist" class="loading-state">
-            <p>加载中...</p>
+            <p>Loading...</p>
           </div>
 
           <div v-else-if="wishlistItems.length === 0" class="empty-state">
-            <p>您的愿望清单是空的</p>
+            <p>Your wish list is empty</p>
             <router-link
               to="/books"
               class="browse-btn"
             >
-              浏览图书馆
+              Browse Library
             </router-link>
           </div>
 
@@ -316,13 +322,13 @@
                     @click="viewBookDetails(book.id)"
                     class="view-btn"
                   >
-                    查看详情
+                    View Details
                   </button>
                   <button
                     @click="handleRemoveFromWishlist(book.id)"
                     class="remove-btn"
                   >
-                    移除
+                    Remove
                   </button>
                 </div>
               </div>
@@ -332,19 +338,19 @@
 
         <!-- 评论记录视图 -->
         <div v-if="currentView === 'MyReviews'" class="reviews">
-          <h2 class="page-title">我的评论</h2>
+          <h2 class="page-title">My Reviews</h2>
 
           <div v-if="loadingReviews" class="loading-state">
-            <p>加载中...</p>
+            <p>Loading...</p>
           </div>
 
           <div v-else-if="reviews.length === 0" class="empty-state">
-            <p>您还没有发表过评论</p>
+            <p>You haven't posted any reviews yet</p>
             <router-link
               to="/books"
               class="browse-btn"
             >
-              浏览图书
+              Browse Books
             </router-link>
           </div>
 
@@ -359,13 +365,13 @@
                     @click="editReview(review.id)"
                     class="edit-btn"
                   >
-                    编辑
+                    Edit
                   </button>
                   <button
                     @click="deleteReview(review.id)"
                     class="delete-btn"
                   >
-                    删除
+                    Delete
                   </button>
                 </div>
               </div>
@@ -492,6 +498,66 @@
             <p>The amount will be credited instantly to your account and can be used for book rentals.</p>
           </div>
         </div>
+
+        <!-- Settings View -->
+        <div v-if="currentView === 'Settings'" class="settings-view">
+          <h2 class="page-title">Account Settings</h2>
+          <p class="subtitle">Manage your personal information</p>
+
+          <form @submit.prevent="updateUserInfo" class="settings-form">
+            <!-- Username -->
+            <div class="form-group">
+              <label for="username">Username</label>
+              <input
+                type="text"
+                id="username"
+                v-model="updateForm.name"
+                placeholder="Enter new username"
+                class="form-control"
+              />
+            </div>
+
+            <!-- Email -->
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input
+                type="email"
+                id="email"
+                v-model="updateForm.email"
+                placeholder="Enter new email"
+                class="form-control"
+              />
+            </div>
+
+            <!-- Password -->
+            <div class="form-group">
+              <label for="password">Password</label>
+              <input
+                type="password"
+                id="password"
+                v-model="updateForm.password"
+                placeholder="Enter new password"
+                class="form-control"
+              />
+              <p class="password-hint">Leave blank if you don't want to change your password</p>
+            </div>
+
+            <!-- Status and Error Messages -->
+            <div v-if="updateError" class="error-message">
+              {{ updateError }}
+            </div>
+
+            <!-- Submit Button -->
+            <button
+              type="submit"
+              class="update-btn"
+              :disabled="isUpdating"
+            >
+              <i v-if="isUpdating" class="ri-loader-4-line loading-icon"></i>
+              <span v-else>Save Changes</span>
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   </div>
@@ -550,11 +616,20 @@ const selectedTopUpAmount = ref(null);
 const customTopUpAmount = ref('');
 const processingTopUp = ref(false);
 
+// 用户信息更新相关状态
+const updateForm = ref({
+  name: '',
+  email: '',
+  password: ''
+});
+const isUpdating = ref(false);
+const updateError = ref('');
+
 // 支付记录标签页选项
 const orderTabs = [
-  { id: 'unpaid', name: '待支付' },
-  { id: 'completed', name: '已完成' },
-  { id: 'cancelled', name: '已取消' }
+  { id: 'unpaid', name: 'Unpaid' },
+  { id: 'completed', name: 'Completed' },
+  { id: 'cancelled', name: 'Cancelled' }
 ];
 
 // 当前视图，默认为Profile
@@ -636,9 +711,18 @@ const switchView = (view) => {
   } else if (view === 'PaymentOrders') {
     fetchOrders();
   } else if (view === 'TopUp') {
-    // 加载充值页面时获取当前余额
+    // Load current balance when accessing top up page
     const savedBalance = localStorage.getItem('accountBalance');
     accountBalance.value = savedBalance ? Number(savedBalance) : 0;
+  } else if (view === 'Settings') {
+    // Reset form fields
+    updateForm.value = {
+      name: '',
+      email: '',
+      password: ''
+    };
+    // Clear any previous error messages
+    updateError.value = '';
   }
 };
 
@@ -669,10 +753,15 @@ const getStatusText = (status) => {
 };
 
 // 登出方法
-const logout = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('uuid');
-  router.push('/login');
+const logout = async () => {
+  try {
+    const userStore = useUserStore();
+    await userStore.logout();
+    router.push('/login');
+  } catch (error) {
+    console.error('登出失败:', error);
+    showToast('登出失败，请重试', 'error');
+  }
 };
 
 // 拉取用户信息
@@ -960,7 +1049,7 @@ const viewOrderDetail = (orderId) => {
 
 // 取消订单
 const cancelOrder = (orderId) => {
-  if (confirm('确定要取消这个订单吗？')) {
+  if (confirm('Are you sure you want to cancel this order?')) {
     // 这里应该调用API取消订单
     const orderIndex = orders.value.findIndex(order => order.id === orderId);
     if (orderIndex !== -1) {
@@ -995,7 +1084,7 @@ const confirmPayment = () => {
     orders.value = [...orders.value]; // 触发响应式更新
   }
   showPaymentModal.value = false;
-  alert(`使用${paymentMethod.value === 'alipay' ? '支付宝' : paymentMethod.value === 'wechat' ? '微信支付' : '银行卡'}支付成功！`);
+  alert(`Payment successful using ${paymentMethod.value === 'alipay' ? 'Alipay' : paymentMethod.value === 'wechat' ? 'WeChat Pay' : 'Credit Card'}!`);
 };
 
 // 根据当前路由设置初始视图
@@ -1111,7 +1200,7 @@ const viewLoanDetail = (loanId) => {
 // 延长借阅
 const extendLoan = (loanId) => {
   // 这里应该调用API延长借阅
-  alert(`将会延长借阅ID: ${loanId}`);
+  alert(`Loan extension requested for ID: ${loanId}`);
 };
 
 // 继续阅读函数 - 页面跳转
@@ -1125,9 +1214,58 @@ const viewBookDetails = (bookId) => {
 };
 
 const deleteReview = (reviewId) => {
-  if (confirm('确定要删除这条评论吗？')) {
+  if (confirm('Are you sure you want to delete this comment?')) {
     reviews.value = reviews.value.filter(review => review.id !== reviewId);
     // 这里应该有API调用来同步服务器数据
+  }
+};
+
+// 更新用户信息方法
+const updateUserInfo = async () => {
+  if (isUpdating.value) return;
+
+  // Validate form
+  if (!updateForm.value.name && !updateForm.value.email && !updateForm.value.password) {
+    updateError.value = 'Please fill at least one field to update';
+    return;
+  }
+
+  isUpdating.value = true;
+  updateError.value = '';
+
+  try {
+    // Prepare request data
+    const userData = {};
+    if (updateForm.value.name) userData.name = updateForm.value.name;
+    if (updateForm.value.email) userData.email = updateForm.value.email;
+    if (updateForm.value.password) userData.password = updateForm.value.password;
+
+    // Call userStore update method
+    const userStore = useUserStore();
+    const result = await userStore.updateUserInfo(userData);
+
+    if (result.state === 'success') {
+      // Update successful
+      showToast('Account information updated successfully', 'success');
+
+      // Update displayed user info
+      username.value = result.name || username.value;
+      email.value = result.email || email.value;
+
+      // Clear form
+      updateForm.value = {
+        name: '',
+        email: '',
+        password: ''
+      };
+    } else {
+      updateError.value = 'Failed to update user information';
+    }
+  } catch (error) {
+    console.error('Update user info error:', error);
+    updateError.value = error.response?.data?.message || 'An error occurred while updating your information';
+  } finally {
+    isUpdating.value = false;
   }
 };
 </script>
@@ -2356,5 +2494,85 @@ const deleteReview = (reviewId) => {
   .form-row {
     grid-template-columns: 1fr;
   }
+}
+
+/* 设置视图样式 */
+.settings-view {
+  max-width: 100%;
+  width: 100%;
+}
+
+.settings-view .page-title {
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.settings-view .subtitle {
+  color: #666;
+  margin-top: -5px;
+  margin-bottom: 25px;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.form-control {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.password-hint {
+  font-size: 14px;
+  color: #666;
+  margin-top: 5px;
+}
+
+.error-message {
+  font-size: 14px;
+  color: #b91c1c;
+  margin-top: 5px;
+}
+
+.update-btn {
+  width: 100%;
+  padding: 15px;
+  background: #e9a84c;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.update-btn:hover:not(:disabled) {
+  background: #d89638;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.update-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
 }
 </style>
