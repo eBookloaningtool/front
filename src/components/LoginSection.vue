@@ -1,6 +1,6 @@
 <!-- LoginSection.vue -->
 <template>
-  <section class="login-section">
+  <section class="login-section" v-if="!isLoggedIn">
     <div class="login-banner">
       <div class="banner-content">
         <h2>Join Our eBook World</h2>
@@ -18,7 +18,11 @@
 </template>
 
 <script setup>
-// No additional logic needed
+import { computed } from 'vue';
+import { useUserStore } from '../stores/userStore';
+
+const userStore = useUserStore();
+const isLoggedIn = computed(() => userStore.isAuthenticated);
 </script>
 
 <style scoped>
