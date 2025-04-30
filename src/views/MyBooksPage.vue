@@ -28,7 +28,15 @@
             <p class="author" @click="viewAuthorBooks(book.author)" style="cursor: pointer;">{{ book.author }}</p>
             <p class="due-date">到期时间: {{ book.dueDate }}</p>
             <div class="book-actions">
-              <button class="renew-btn" @click="openRenewModal(book.bookId)">续借</button>
+              <button 
+                class="renew-btn" 
+                :class="{ 'loading': isRenewing && currentBookId === book.bookId }"
+                :disabled="isRenewing && currentBookId === book.bookId"
+                @click="openRenewModal(book.bookId)"
+              >
+                <i v-if="isRenewing && currentBookId === book.bookId" class="ri-loader-4-line loading-icon"></i>
+                {{ isRenewing && currentBookId === book.bookId ? '续借中...' : '续借' }}
+              </button>
               <button class="return-btn" @click="openReturnModal(book.bookId)">归还</button>
             </div>
           </div>
@@ -84,7 +92,16 @@
 
           <div class="modal-actions">
             <button class="cancel-btn" @click="closeRenewModal">取消</button>
-            <button v-if="userBalance >= renewFee" class="confirm-btn" @click="handleRenewBook">确认续借</button>
+            <button 
+              v-if="userBalance >= renewFee" 
+              class="confirm-btn" 
+              :class="{ 'loading': isRenewing }"
+              :disabled="isRenewing"
+              @click="handleRenewBook"
+            >
+              <i v-if="isRenewing" class="ri-loader-4-line loading-icon"></i>
+              {{ isRenewing ? '续借中...' : '确认续借' }}
+            </button>
             <button v-else class="topup-btn" @click="goToTopUp">充值</button>
           </div>
         </div>
@@ -116,7 +133,15 @@
 
           <div class="modal-actions">
             <button class="cancel-btn" @click="closeReturnModal">取消</button>
-            <button class="confirm-btn" @click="handleReturnBook">确认归还</button>
+            <button 
+              class="confirm-btn" 
+              :class="{ 'loading': isReturning }"
+              :disabled="isReturning"
+              @click="handleReturnBook"
+            >
+              <i v-if="isReturning" class="ri-loader-4-line loading-icon"></i>
+              {{ isReturning ? '归还中...' : '确认归还' }}
+            </button>
           </div>
         </div>
       </div>
@@ -142,6 +167,8 @@ const renewError = ref('');
 const renewSuccess = ref(false);
 const returnError = ref('');
 const returnSuccess = ref(false);
+const isReturning = ref(false);
+const isRenewing = ref(false);
 
 // 借阅的书籍和历史记录
 const borrowedBooks = ref([]);
@@ -287,22 +314,23 @@ const viewAuthorBooks = (author) => {
 // 打开续借确认窗口
 const openRenewModal = async (bookId) => {
   console.log('打开续借确认窗口，bookId:', bookId);
+  isRenewing.value = true;
   try {
     currentBookId.value = bookId;
     renewError.value = '';
     renewSuccess.value = false;
 
     console.log('开始获取用户余额...');
-  try {
-    const response = await getUserInfo();
-    console.log('getUserInfo API响应:', response);
-    if (response.balance) {
-      userBalance.value = response.balance || 0;
-      console.log('更新用户余额:', userBalance.value);
+    try {
+      const response = await getUserInfo();
+      console.log('getUserInfo API响应:', response);
+      if (response.balance) {
+        userBalance.value = response.balance || 0;
+        console.log('更新用户余额:', userBalance.value);
+      }
+    } catch (error) {
+      console.error('获取用户余额失败:', error);
     }
-  } catch (error) {
-    console.error('获取用户余额失败:', error);
-  }
 
     // 获取书籍详情以获取价格
     console.log('获取书籍详情...');
@@ -346,6 +374,8 @@ const openRenewModal = async (bookId) => {
     console.error('检查续借状态失败:', error);
     renewError.value = '检查续借状态失败，请稍后重试';
     showRenewModal.value = true;
+  } finally {
+    isRenewing.value = false;
   }
 };
 
@@ -360,20 +390,28 @@ const closeRenewModal = () => {
 
 // 续借书籍
 const handleRenewBook = async () => {
-  console.log('开始处理续借，当前余额:', userBalance.value, '续借费用:', renewFee.value);
+  isRenewing.value = true;
   try {
-    // 扣除余额
-    userBalance.value -= renewFee.value;
-    console.log('扣除余额后:', userBalance.value);
-
-    // 3秒后自动关闭窗口
-    setTimeout(() => {
-      console.log('自动关闭续借窗口');
-      closeRenewModal();
-    }, 3000);
+    const result = await renewBook(currentBookId.value);
+    if (result.state === 'success') {
+      renewSuccess.value = true;
+      // 更新借阅列表中的到期日期
+      const book = borrowedBooks.value.find(b => b.bookId === currentBookId.value);
+      if (book) {
+        book.dueDate = result.newDueDate;
+      }
+      // 3秒后自动关闭窗口
+      setTimeout(() => {
+        closeRenewModal();
+      }, 3000);
+    } else {
+      renewError.value = result.message || '续借失败，请稍后重试';
+    }
   } catch (error) {
-    console.error('处理续借后续操作失败:', error);
-    renewError.value = '处理续借后续操作失败，请稍后重试';
+    console.error('续借失败:', error);
+    renewError.value = '续借失败，请稍后重试';
+  } finally {
+    isRenewing.value = false;
   }
 };
 
@@ -402,23 +440,19 @@ const closeReturnModal = () => {
 
 // 归还书籍
 const handleReturnBook = async () => {
+  isReturning.value = true;
   try {
-    // 调用归还API
     const result = await returnBook(currentBookId.value);
-
     if (result.state === 'success') {
       // 找到当前借阅的书籍
       const bookIndex = borrowedBooks.value.findIndex(b => b.bookId === currentBookId.value);
-
       if (bookIndex !== -1) {
         // 从借阅列表中移除
         borrowedBooks.value.splice(bookIndex, 1);
       }
-
       // 显示成功信息
       returnSuccess.value = true;
       returnError.value = '';
-
       // 3秒后自动关闭窗口
       setTimeout(() => {
         closeReturnModal();
@@ -429,6 +463,8 @@ const handleReturnBook = async () => {
   } catch (error) {
     console.error('归还失败:', error);
     returnError.value = '归还失败，请稍后重试';
+  } finally {
+    isReturning.value = false;
   }
 };
 </script>
@@ -545,6 +581,10 @@ const handleReturnBook = async () => {
   border: none;
   cursor: pointer;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .renew-btn {
@@ -555,6 +595,20 @@ const handleReturnBook = async () => {
 .return-btn {
   background: #3498db;
   color: white;
+}
+
+.renew-btn.loading, .return-btn.loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.loading-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .empty-state {
@@ -654,6 +708,15 @@ const handleReturnBook = async () => {
 .confirm-btn {
   background: #e9a84c;
   color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.confirm-btn.loading {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .topup-btn {
