@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosError } from 'axios';
-import { post } from '../utils/request';
+import { post, get } from '../utils/request';
 
 // --- 接口定义 ---
 
@@ -72,6 +72,9 @@ interface BorrowRecord {
 interface BorrowHistoryRecord extends BorrowRecord {
   returnDate: string;
   status: string; // 例如 "returned"
+  bookTitle: string;
+  bookAuthor: string;
+  bookCover?: string;
 }
 
 /** 借阅列表响应 */
@@ -235,7 +238,38 @@ export const getBorrowHistory = async (): Promise<BorrowHistoryResponse> => {
       url: '/api/borrow/history',
       data: {}
     });
-    return response;
+
+    // 确保每个借阅记录都有正确的封面 URL 和书名
+    const historyWithCovers = await Promise.all(
+      response.data.map(async (loan) => {
+        try {
+          // 获取书籍详情以获取封面 URL 和书名
+          const bookDetail = await get({
+            url: `/api/books/get?bookId=${loan.bookId}`
+          });
+          
+          return {
+            ...loan,
+            cover: bookDetail.coverUrl || '/images/books/default-cover.jpg',
+            title: bookDetail.title || loan.bookTitle,
+            author: bookDetail.author || loan.bookAuthor
+          };
+        } catch (error) {
+          console.error(`获取书籍 ${loan.bookId} 详情失败:`, error);
+          return {
+            ...loan,
+            cover: '/images/books/default-cover.jpg',
+            title: loan.bookTitle,
+            author: loan.bookAuthor
+          };
+        }
+      })
+    );
+
+    return {
+      state: response.state,
+      data: historyWithCovers
+    };
   } catch (error) {
     console.error('获取借阅历史失败:', error);
     return { state: 'error', data: [] };

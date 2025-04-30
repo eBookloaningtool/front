@@ -19,17 +19,46 @@ axios.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('[Axios] 已添加认证token到请求头');
+    } else {
+      console.warn('[Axios] 未找到认证token');
     }
+    console.log('[Axios] 发送请求:', {
+      url: config.url,
+      method: config.method,
+      headers: {
+        ...config.headers,
+        Authorization: config.headers.Authorization ? 'Bearer ***' : undefined
+      }
+    });
     return config;
   },
-  error => Promise.reject(error)
+  error => {
+    console.error('[Axios] 请求拦截器错误:', error);
+    return Promise.reject(error);
+  }
 );
 
 // 添加响应拦截器处理错误
 axios.interceptors.response.use(
-  response => response,
+  response => {
+    console.log('[Axios] 收到响应:', {
+      url: response.config.url,
+      status: response.status,
+      statusText: response.statusText,
+      data: response.data
+    });
+    return response;
+  },
   error => {
     if (error.response) {
+      console.error('[Axios] 响应错误:', {
+        url: error.config?.url,
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+        headers: error.response.headers
+      });
       switch (error.response.status) {
         case 401:
           // 未认证，清除token并跳转到登录页
@@ -38,19 +67,23 @@ axios.interceptors.response.use(
           break;
         case 403:
           // 权限不足
-          console.error('权限不足');
+          console.error('[Axios] 权限不足');
           break;
         case 404:
           // 资源不存在
-          console.error('请求的资源不存在');
+          console.error('[Axios] 请求的资源不存在');
           break;
         case 500:
           // 服务器错误
-          console.error('服务器错误');
+          console.error('[Axios] 服务器错误');
           break;
         default:
-          console.error('请求失败:', error.response.data);
+          console.error('[Axios] 请求失败:', error.response.data);
       }
+    } else if (error.request) {
+      console.error('[Axios] 请求未收到响应:', error.request);
+    } else {
+      console.error('[Axios] 请求配置错误:', error.message);
     }
     return Promise.reject(error);
   }

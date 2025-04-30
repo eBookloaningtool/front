@@ -123,15 +123,18 @@
               <div class="book-info">
                 <div class="book-header">
                   <h3 class="book-title">{{ book.title }}</h3>
-                  <span class="book-progress">阅读进度: {{ book.progress }}%</span>
+                  <div class="book-dates">
+                    <div class="borrow-date">借阅日期: {{ formatDate(book.borrowDate) }}</div>
+                    <div class="due-date">应归还日期: {{ formatDate(book.dueDate) }}</div>
+                  </div>
                 </div>
                 <p class="book-author">{{ book.author }}</p>
                 <div class="book-actions">
                   <button
-                    @click="continueReading(book.id)"
+                    @click="viewBookDetails(book.id)"
                     class="read-btn"
                   >
-                    继续阅读
+                    查看详情
                   </button>
                 </div>
               </div>
@@ -189,13 +192,13 @@
                     <td>
                       <div class="book-info-cell">
                         <div class="loan-book-cover">
-                          <img v-if="loan.book.cover" :src="loan.book.cover" :alt="loan.book.title" />
+                          <img v-if="loan.cover" :src="loan.cover" :alt="loan.title" />
                         </div>
                         <div class="loan-book-meta">
-                          <div class="loan-book-title" @click="viewBookDetails(loan.book.id)">
-                            {{ loan.book.title }}
+                          <div class="loan-book-title" @click="viewBookDetails(loan.bookId)">
+                            {{ loan.title }}
                           </div>
-                          <div class="loan-book-author">{{ loan.book.author }}</div>
+                          <div class="loan-book-author">{{ loan.author }}</div>
                         </div>
                       </div>
                     </td>
@@ -206,7 +209,7 @@
                         class="status-badge"
                         :class="{
                           'status-returned': loan.status === 'returned',
-                          'status-active': loan.status === 'active',
+                          'status-borrowed': loan.status === 'borrowed',
                           'status-overdue': loan.status === 'overdue'
                         }"
                       >
@@ -220,12 +223,6 @@
                         class="extend-btn"
                       >
                         Extend
-                      </button>
-                      <button
-                        @click="viewLoanDetail(loan.id)"
-                        class="detail-btn"
-                      >
-                        Details
                       </button>
                     </td>
                   </tr>
@@ -312,11 +309,11 @@
             <div v-for="book in wishlistItems" :key="book.id" class="wishlist-item">
               <div class="wishlist-book-cover">
                 <img v-if="book.cover" :src="book.cover" :alt="book.title" />
-          </div>
+              </div>
               <div class="wishlist-book-info">
                 <h3 class="wishlist-book-title">{{ book.title }}</h3>
                 <p class="wishlist-book-author">{{ book.author }}</p>
-                <p class="wishlist-book-price">¥{{ book.price }}</p>
+                <p class="wishlist-book-price">￡{{ book.price }}</p>
                 <div class="wishlist-actions">
                   <button
                     @click="viewBookDetails(book.id)"
@@ -325,12 +322,12 @@
                     View Details
                   </button>
                   <button
-                    @click="removeFromWishlist(book.id)"
+                    @click="handleRemoveFromWishlist(book.id)"
                     class="remove-btn"
                   >
                     Remove
                   </button>
-          </div>
+                </div>
               </div>
             </div>
           </div>
@@ -362,12 +359,6 @@
                 </h3>
                 <div class="review-actions">
                   <button
-                    @click="editReview(review.id)"
-                    class="edit-btn"
-                  >
-                    Edit
-                  </button>
-                  <button
                     @click="deleteReview(review.id)"
                     class="delete-btn"
                   >
@@ -390,276 +381,51 @@
 
         <!-- 支付记录视图 -->
         <div v-if="currentView === 'PaymentOrders'" class="payment-orders">
-          <h2 class="page-title">支付和订单</h2>
-          <p class="subtitle">管理您的订单和支付记录</p>
+          <h2 class="page-title">支付记录</h2>
+          <p class="subtitle">查看您的充值记录</p>
 
           <div v-if="loadingOrders" class="loading-state">
             <p>加载中...</p>
           </div>
 
           <div v-else>
-            <!-- 切换标签 -->
-            <div class="tab-container">
-              <button
-                v-for="tab in orderTabs"
-                :key="tab.id"
-                @click="currentOrderTab = tab.id"
-                class="tab-button"
-                :class="{ 'tab-active': currentOrderTab === tab.id }"
+            <div v-if="completedOrders.length === 0" class="empty-state">
+              <p>暂无充值记录</p>
+              <router-link
+                to="/top-up"
+                class="browse-btn"
               >
-                {{ tab.name }}
-              </button>
+                立即充值
+              </router-link>
             </div>
 
-            <!-- 未支付订单 -->
-            <div v-if="currentOrderTab === 'unpaid'" class="orders-list">
-              <div v-if="unpaidOrders.length === 0" class="empty-state">
-                <p>您没有待支付的订单</p>
-                <router-link
-                  to="/books"
-                  class="browse-btn"
-                >
-                  浏览图书
-                </router-link>
-              </div>
-
-              <div v-else>
-                <div
-                  v-for="order in unpaidOrders"
-                  :key="order.id"
-                  class="order-item"
-                >
-                  <div class="order-header">
-                    <div class="order-info">
-                      <span class="order-number">订单号: {{ order.orderNumber }}</span>
-                      <span class="order-date">{{ formatDate(order.createdAt) }}</span>
-                    </div>
-                    <span
-                      class="order-status"
-                      :class="{
-                        'status-pending': order.status === 'pending',
-                        'status-overdue': order.status === 'overdue'
-                      }"
-                    >
-                      {{ getOrderStatusText(order.status) }}
-                    </span>
+            <div v-else class="orders-list">
+              <div
+                v-for="order in completedOrders"
+                :key="order.id"
+                class="order-item"
+              >
+                <div class="order-header">
+                  <div class="order-info">
+                    <span class="order-number">订单号: {{ order.orderNumber }}</span>
+                    <span class="order-date">{{ formatDate(order.createdAt) }}</span>
                   </div>
-
-                  <div class="order-content">
-                    <div class="order-book">
-                      <div class="order-book-cover">
-                        <img
-                          v-if="order.book && order.book.cover"
-                          :src="order.book.cover"
-                          :alt="order.book.title"
-                        />
-                      </div>
-                      <div class="order-book-info">
-                        <div
-                          class="order-book-title"
-                          @click="viewBookDetails(order.book.id)"
-                        >
-                          {{ order.book.title }}
-                        </div>
-                        <div class="order-book-author">{{ order.book.author }}</div>
-                        <div class="order-type">
-                          {{ order.type === 'purchase' ? '购买' : '租借' }} - ¥{{ order.amount.toFixed(2) }}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="order-actions">
-                      <button
-                        @click="cancelOrder(order.id)"
-                        class="cancel-btn"
-                      >
-                        取消
-                      </button>
-                      <button
-                        @click="payOrder(order)"
-                        class="pay-btn"
-                      >
-                        立即支付
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 已完成订单 -->
-            <div v-else-if="currentOrderTab === 'completed'" class="orders-list">
-              <div v-if="completedOrders.length === 0" class="empty-state">
-                <p>您没有已完成的订单</p>
-              </div>
-
-              <div v-else>
-                <div
-                  v-for="order in completedOrders"
-                  :key="order.id"
-                  class="order-item"
-                >
-                  <div class="order-header">
-                    <div class="order-info">
-                      <span class="order-number">订单号: {{ order.orderNumber }}</span>
-                      <span class="order-date">{{ formatDate(order.createdAt) }}</span>
-                    </div>
-                    <span class="order-status status-completed">
-                      {{ getOrderStatusText(order.status) }}
-                    </span>
-                  </div>
-
-                  <div class="order-content">
-                    <div class="order-book">
-                      <div class="order-book-cover">
-                        <img
-                          v-if="order.book && order.book.cover"
-                          :src="order.book.cover"
-                          :alt="order.book.title"
-                        />
-                      </div>
-                      <div class="order-book-info">
-                        <div
-                          class="order-book-title"
-                          @click="viewBookDetails(order.book.id)"
-                        >
-                          {{ order.book.title }}
-                        </div>
-                        <div class="order-book-author">{{ order.book.author }}</div>
-                        <div class="order-type">
-                          {{ order.type === 'purchase' ? '购买' : '租借' }} - ¥{{ order.amount.toFixed(2) }}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="order-payment-info">
-                      <div class="payment-label">支付时间</div>
-                      <div class="payment-value">{{ formatDate(order.paidAt) }}</div>
-                    </div>
-                  </div>
-
-                  <div class="order-footer">
-                    <button
-                      @click="viewOrderDetail(order.id)"
-                      class="detail-btn"
-                    >
-                      查看详情
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 已取消订单 -->
-            <div v-else-if="currentOrderTab === 'cancelled'" class="orders-list">
-              <div v-if="cancelledOrders.length === 0" class="empty-state">
-                <p>您没有已取消的订单</p>
-              </div>
-
-              <div v-else>
-                <div
-                  v-for="order in cancelledOrders"
-                  :key="order.id"
-                  class="order-item cancelled"
-                >
-                  <div class="order-header">
-                    <div class="order-info">
-                      <span class="order-number">订单号: {{ order.orderNumber }}</span>
-                      <span class="order-date">{{ formatDate(order.createdAt) }}</span>
-                    </div>
-                    <span class="order-status status-cancelled">
-                      已取消
-                    </span>
-                  </div>
-
-                  <div class="order-content">
-                    <div class="order-book">
-                      <div class="order-book-cover">
-                        <img
-                          v-if="order.book && order.book.cover"
-                          :src="order.book.cover"
-                          :alt="order.book.title"
-                        />
-                      </div>
-                      <div class="order-book-info">
-                        <div
-                          class="order-book-title"
-                          @click="viewBookDetails(order.book.id)"
-                        >
-                          {{ order.book.title }}
-                        </div>
-                        <div class="order-book-author">{{ order.book.author }}</div>
-                        <div class="order-type">
-                          {{ order.type === 'purchase' ? '购买' : '租借' }} - ¥{{ order.amount.toFixed(2) }}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="order-payment-info">
-                      <div class="payment-label">取消时间</div>
-                      <div class="payment-value">{{ formatDate(order.cancelledAt) }}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 支付对话框 -->
-          <div v-if="showPaymentModal" class="payment-modal-overlay" @click.self="closePaymentModal">
-            <div class="payment-modal">
-              <div class="payment-modal-header">
-                <h3 class="payment-modal-title">确认支付</h3>
-              </div>
-              <div class="payment-modal-body">
-                <div class="payment-info-row">
-                  <div class="payment-info-label">订单号</div>
-                  <div class="payment-info-value">{{ currentOrder.orderNumber }}</div>
+                  <span class="order-status status-completed">
+                    已完成
+                  </span>
                 </div>
 
-                <div class="payment-info-row">
-                  <div class="payment-info-label">图书</div>
-                  <div class="payment-info-value">{{ currentOrder.book?.title }}</div>
-                </div>
+                <div class="order-content">
+                  <div class="order-payment-info">
+                    <div class="payment-label">充值金额</div>
+                    <div class="payment-value">£{{ order.amount.toFixed(2) }}</div>
+                  </div>
 
-                <div class="payment-info-row">
-                  <div class="payment-info-label">支付金额</div>
-                  <div class="payment-info-value payment-amount">¥{{ currentOrder.amount?.toFixed(2) }}</div>
-                </div>
-
-                <div class="payment-info-row">
-                  <div class="payment-info-label">选择支付方式</div>
-                  <div class="payment-methods">
-                    <label class="payment-method-option">
-                      <input type="radio" v-model="paymentMethod" value="alipay" />
-                      <span class="payment-method-name">支付宝</span>
-                    </label>
-                    <label class="payment-method-option">
-                      <input type="radio" v-model="paymentMethod" value="wechat" />
-                      <span class="payment-method-name">微信支付</span>
-                    </label>
-                    <label class="payment-method-option">
-                      <input type="radio" v-model="paymentMethod" value="creditcard" />
-                      <span class="payment-method-name">银行卡</span>
-                    </label>
+                  <div class="order-payment-info">
+                    <div class="payment-label">支付时间</div>
+                    <div class="payment-value">{{ formatDate(order.paidAt) }}</div>
                   </div>
                 </div>
-              </div>
-              <div class="payment-modal-footer">
-                <button
-                  @click="closePaymentModal"
-                  class="cancel-payment-btn"
-                >
-                  取消
-                </button>
-                <button
-                  @click="confirmPayment"
-                  :disabled="!paymentMethod"
-                  class="confirm-payment-btn"
-                  :class="{ 'disabled': !paymentMethod }"
-                >
-                  确认支付
-                </button>
               </div>
             </div>
           </div>
@@ -794,6 +560,13 @@ import { useRouter, useRoute } from 'vue-router';
 import Header from '../components/Header.vue';
 import { useUserStore } from '../stores/userStore';
 import { useToast } from '../composables/useToast';
+import { getPaymentHistory, topUpBalance } from '../api/payments';
+import { getWishlist, getBookDetail, removeFromWishlist } from '../api/booksApi';
+import { getBorrowHistory, getBorrowList } from '../api/borrowApi';
+import { get, post } from '../utils/request';
+
+// 默认封面图片
+const defaultCover = '/images/books/default-cover.jpg';
 
 const router = useRouter();
 const route = useRoute();
@@ -890,18 +663,16 @@ const handleTopUp = async () => {
   processingTopUp.value = true;
 
   try {
-    // mock支付处理
-    await new Promise(resolve => setTimeout(resolve, 1000)); // 模拟网络延迟
-    const result = {
-      success: true,
-      amount: finalTopUpAmount.value
-    };
-
-    if (result.success) {
-      accountBalance.value += finalTopUpAmount.value;
-      localStorage.setItem('accountBalance', accountBalance.value); // 持久化
-
-      alert(`Top up successful! £${finalTopUpAmount.value} has been added to your account.`);
+    const result = await topUpBalance(finalTopUpAmount.value);
+    
+    if (result.state === 'success') {
+      // 更新账户余额
+      accountBalance.value = result.balance;
+      // 更新 UserStore 中的余额
+      const userStore = useUserStore();
+      userStore.balance = result.balance;
+      
+      showToast(`充值成功！已添加 £${finalTopUpAmount.value} 到您的账户`, 'success');
 
       // 重置表单
       selectedTopUpAmount.value = null;
@@ -910,11 +681,11 @@ const handleTopUp = async () => {
       // 显示支付记录
       switchView('PaymentOrders');
     } else {
-      throw new Error('Payment failed');
+      throw new Error('充值失败');
     }
   } catch (error) {
-    console.error('Top up failed:', error);
-    alert('Top up failed. Please try again.');
+    console.error('充值失败:', error);
+    showToast('充值失败，请稍后重试', 'error');
   } finally {
     processingTopUp.value = false;
   }
@@ -936,9 +707,8 @@ const switchView = (view) => {
   } else if (view === 'PaymentOrders') {
     fetchOrders();
   } else if (view === 'TopUp') {
-    // Load current balance when accessing top up page
-    const savedBalance = localStorage.getItem('accountBalance');
-    accountBalance.value = savedBalance ? Number(savedBalance) : 0;
+    // 加载充值页面时获取当前余额
+    fetchUserInfo();
   } else if (view === 'Settings') {
     // Reset form fields
     updateForm.value = {
@@ -970,7 +740,7 @@ const formatDate = (dateStr) => {
 // 获取状态文本
 const getStatusText = (status) => {
   switch (status) {
-    case 'active': return 'Active';
+    case 'borrowed': return 'Borrowed';
     case 'returned': return 'Returned';
     case 'overdue': return 'Overdue';
     default: return status;
@@ -989,37 +759,30 @@ const logout = async () => {
   }
 };
 
-// 拉取用户信息
-const fetchUserProfile = async () => {
+// 获取用户信息
+const fetchUserInfo = async () => {
   try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/login');
-      return;
+    const response = await post({
+      url: '/api/users/info'
+    });
+    
+    if (response) {
+      // 更新用户信息
+      username.value = response.name;
+      email.value = response.email;
+      registrationDate.value = formatDate(response.createdat);
+      accountBalance.value = response.balance;
+      
+      // 更新 UserStore 中的信息
+      const userStore = useUserStore();
+      userStore.userName = response.name;
+      userStore.userEmail = response.email;
+      userStore.createdAt = response.createdat;
+      userStore.balance = response.balance;
     }
-
-    // 调用API获取用户信息
-    const userStore = useUserStore();
-
-    // 如果UserStore中已有数据，先使用已有数据
-    if (userStore.isAuthenticated) {
-      username.value = userStore.userName;
-      email.value = userStore.userEmail;
-      registrationDate.value = formatDate(userStore.createdAt);
-      accountBalance.value = userStore.balance;
-    }
-
-    // 刷新用户信息
-    await userStore.initUserState();
-
-    // 更新页面显示的用户信息
-    username.value = userStore.userName;
-    email.value = userStore.userEmail;
-    registrationDate.value = formatDate(userStore.createdAt);
-    accountBalance.value = userStore.balance;
   } catch (error) {
-    console.error('获取用户资料失败:', error);
-    showToast('加载用户信息失败，请稍后再试', 'error');
+    console.error('获取用户信息失败:', error);
+    showToast('获取用户信息失败，请稍后重试', 'error');
   }
 };
 
@@ -1027,26 +790,45 @@ const fetchUserProfile = async () => {
 const fetchRecentBooks = async () => {
   loadingBooks.value = true;
   try {
-    // 这里应该是API调用，现在用模拟数据
-    await new Promise(resolve => setTimeout(resolve, 500));
-    recentBooks.value = [
-      {
-        id: 1,
-        title: '三体',
-        author: '刘慈欣',
-        cover: '/images/books/threebody.jpg',
-        progress: 45
-      },
-      {
-        id: 2,
-        title: '百年孤独',
-        author: '加西亚·马尔克斯',
-        cover: '/images/books/solitude.jpg',
-        progress: 62
-      }
-    ];
+    // 获取当前借阅列表
+    const borrowListResponse = await getBorrowList();
+    
+    if (borrowListResponse.state === 'success') {
+      // 获取每本书的详细信息
+      const bookDetailsPromises = borrowListResponse.data.map(async (borrow) => {
+        try {
+          const bookDetail = await get({
+            url: `/api/books/get?bookId=${borrow.bookId}`
+          });
+          
+          return {
+            id: borrow.bookId,
+            title: bookDetail.title,
+            author: bookDetail.author,
+            cover: bookDetail.coverUrl || '/images/books/default-cover.jpg',
+            borrowDate: borrow.borrowDate,
+            dueDate: borrow.dueDate
+          };
+        } catch (error) {
+          console.error(`获取书籍 ${borrow.bookId} 详情失败:`, error);
+          return {
+            id: borrow.bookId,
+            title: '未知书籍',
+            author: '未知作者',
+            cover: '/images/books/default-cover.jpg',
+            borrowDate: borrow.borrowDate,
+            dueDate: borrow.dueDate
+          };
+        }
+      });
+
+      recentBooks.value = await Promise.all(bookDetailsPromises);
+    } else {
+      throw new Error('获取借阅列表失败');
+    }
   } catch (error) {
     console.error('获取最近阅读图书失败:', error);
+    showToast('获取最近阅读图书失败，请稍后重试', 'error');
   } finally {
     loadingBooks.value = false;
   }
@@ -1054,94 +836,16 @@ const fetchRecentBooks = async () => {
 
 // 获取借阅历史
 const fetchLoanHistory = async () => {
-  loadingLoans.value = true;
   try {
-    // 这里应该是API调用，现在用模拟数据
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // 模拟借阅数据
-    loans.value = [
-      {
-        id: 1,
-        book: {
-          id: 101,
-          title: '三体',
-          author: '刘慈欣',
-          cover: '/images/books/threebody.jpg'
-        },
-        borrowDate: '2023-10-15',
-        dueDate: '2023-11-15',
-        returnDate: null,
-        status: 'active'
-      },
-      {
-        id: 2,
-        book: {
-          id: 102,
-          title: '百年孤独',
-          author: '加西亚·马尔克斯',
-          cover: '/images/books/solitude.jpg'
-        },
-        borrowDate: '2023-09-01',
-        dueDate: '2023-10-01',
-        returnDate: '2023-09-28',
-        status: 'returned'
-      },
-      {
-        id: 3,
-        book: {
-          id: 103,
-          title: '追风筝的人',
-          author: '卡勒德·胡赛尼',
-          cover: '/images/books/kiterunner.jpg'
-        },
-        borrowDate: '2023-08-10',
-        dueDate: '2023-09-10',
-        returnDate: null,
-        status: 'overdue'
-      },
-      {
-        id: 4,
-        book: {
-          id: 104,
-          title: '活着',
-          author: '余华',
-          cover: '/images/books/tolive.jpg'
-        },
-        borrowDate: '2023-07-22',
-        dueDate: '2023-08-22',
-        returnDate: '2023-08-20',
-        status: 'returned'
-      },
-      {
-        id: 5,
-        book: {
-          id: 105,
-          title: '月亮与六便士',
-          author: '毛姆',
-          cover: '/images/books/moon.jpg'
-        },
-        borrowDate: '2023-06-15',
-        dueDate: '2023-07-15',
-        returnDate: '2023-07-10',
-        status: 'returned'
-      },
-      {
-        id: 6,
-        book: {
-          id: 106,
-          title: '解忧杂货店',
-          author: '东野圭吾',
-          cover: '/images/books/grocery.jpg'
-        },
-        borrowDate: '2023-05-05',
-        dueDate: '2023-06-05',
-        returnDate: '2023-06-01',
-        status: 'returned'
-      }
-    ];
+    loadingLoans.value = true;
+    const response = await getBorrowHistory();
+    loans.value = response.data.map(loan => ({
+      ...loan,
+      cover: loan.cover || loan.bookCover || '/images/books/default-cover.jpg'
+    }));
   } catch (error) {
     console.error('获取借阅历史失败:', error);
+    showToast('获取借阅历史失败，请稍后重试', 'error');
   } finally {
     loadingLoans.value = false;
   }
@@ -1151,28 +855,42 @@ const fetchLoanHistory = async () => {
 const fetchWishlist = async () => {
   loadingWishlist.value = true;
   try {
-    // 这里应该是API调用，现在用模拟数据
-    await new Promise(resolve => setTimeout(resolve, 500));
-    wishlistItems.value = [
-      {
-        id: 1,
-        title: '三体',
-        author: '刘慈欣',
-        cover: '/images/books/threebody.jpg',
-        price: '49.00'
-      },
-      {
-        id: 2,
-        title: '百年孤独',
-        author: '加西亚·马尔克斯',
-        cover: '/images/books/solitude.jpg',
-        price: '42.50'
-      }
-    ];
+    // 获取愿望清单中的书籍ID列表
+    const wishlistData = await getWishlist();
+    
+    // 获取每本书的详情
+    const bookPromises = wishlistData.bookId.map(bookId => getBookDetail(bookId));
+    const bookDetails = await Promise.all(bookPromises);
+    
+    // 转换数据格式
+    wishlistItems.value = bookDetails.map(book => ({
+      id: book.bookId,
+      title: book.title,
+      author: book.author,
+      cover: book.coverUrl,
+      price: book.price.toFixed(2)
+    }));
   } catch (error) {
     console.error('获取愿望清单失败:', error);
+    showToast('获取愿望清单失败，请稍后重试', 'error');
   } finally {
     loadingWishlist.value = false;
+  }
+};
+
+// 从愿望清单中移除书籍
+const handleRemoveFromWishlist = async (bookId) => {
+  try {
+    const result = await removeFromWishlist(bookId);
+    if (result.state === 'success') {
+      wishlistItems.value = wishlistItems.value.filter(item => item.id !== bookId);
+      showToast('已从愿望清单中移除', 'success');
+    } else {
+      throw new Error('移除失败');
+    }
+  } catch (error) {
+    console.error('移除书籍失败:', error);
+    showToast('移除书籍失败，请稍后重试', 'error');
   }
 };
 
@@ -1180,28 +898,53 @@ const fetchWishlist = async () => {
 const fetchReviews = async () => {
   loadingReviews.value = true;
   try {
-    // 这里应该是API调用，现在用模拟数据
-    await new Promise(resolve => setTimeout(resolve, 500));
-    reviews.value = [
-      {
-        id: 1,
-        bookId: 101,
-        bookTitle: '三体',
-        rating: 5,
-        content: '这本书改变了我对科幻小说的看法，刘慈欣的想象力令人惊叹！',
-        createdAt: '2023-09-15T14:30:00Z'
-      },
-      {
-        id: 2,
-        bookId: 102,
-        bookTitle: '百年孤独',
-        rating: 4,
-        content: '马尔克斯的魔幻现实主义风格非常迷人，但有些段落需要反复阅读才能理解。',
-        createdAt: '2023-08-22T10:15:00Z'
-      }
-    ];
+    // 获取用户的评论ID列表
+    const userCommentsResponse = await post({
+      url: '/api/reviews/user'
+    });
+    
+    if (userCommentsResponse && userCommentsResponse.state === 'success' && userCommentsResponse.commentIds) {
+      // 获取每个评论的详细内容
+      const reviewPromises = userCommentsResponse.commentIds.map(async (commentId) => {
+        try {
+          const response = await get({
+            url: `/api/reviews/content?commentId=${commentId}`
+          });
+          
+          if (response.state === 'success') {
+            // 获取书籍详情
+            const bookResponse = await get({
+              url: `/api/books/get?bookId=${response.bookId}`
+            });
+            
+            return {
+              id: commentId,
+              bookId: response.bookId,
+              bookTitle: bookResponse.title || 'Unknown Book',
+              rating: response.rating,
+              content: response.comment,
+              createdAt: response.createdAt || new Date().toISOString(),
+              username: response.username
+            };
+          }
+          return null;
+        } catch (error) {
+          console.error(`获取评论 ${commentId} 详情失败:`, error);
+          return null;
+        }
+      });
+
+      // 等待所有评论详情获取完成
+      const reviewResults = await Promise.all(reviewPromises);
+      // 过滤掉获取失败的评论
+      reviews.value = reviewResults.filter(review => review !== null);
+    } else {
+      reviews.value = [];
+    }
   } catch (error) {
     console.error('获取评论失败:', error);
+    showToast('获取评论失败，请稍后重试', 'error');
+    reviews.value = [];
   } finally {
     loadingReviews.value = false;
   }
@@ -1211,121 +954,46 @@ const fetchReviews = async () => {
 const fetchOrders = async () => {
   loadingOrders.value = true;
   try {
-    // 这里应该是API调用，现在用模拟数据
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // 模拟订单数据
-    orders.value = [
-      {
-        id: 1,
-        orderNumber: 'ORD202404150001',
-        book: {
-          id: 101,
-          title: '三体',
-          author: '刘慈欣',
-          cover: '/images/books/threebody.jpg'
-        },
-        type: 'purchase',
-        amount: 49.90,
-        status: 'pending',
-        createdAt: '2024-04-15T10:30:00Z',
-        paidAt: null,
-        cancelledAt: null
-      },
-      {
-        id: 2,
-        orderNumber: 'ORD202404120002',
-        book: {
-          id: 102,
-          title: '百年孤独',
-          author: '加西亚·马尔克斯',
-          cover: '/images/books/solitude.jpg'
-        },
-        type: 'rental',
-        amount: 15.00,
-        status: 'overdue',
-        createdAt: '2024-04-12T14:15:00Z',
-        paidAt: null,
-        cancelledAt: null
-      },
-      {
-        id: 3,
-        orderNumber: 'ORD202404100003',
-        book: {
-          id: 103,
-          title: '活着',
-          author: '余华',
-          cover: '/images/books/tolive.jpg'
-        },
-        type: 'purchase',
-        amount: 38.50,
+    const result = await getPaymentHistory();
+    if (result.state === 'success') {
+      // 将 API 返回的数据转换为页面需要的格式
+      orders.value = result.data.map(payment => ({
+        id: payment.paymentId,
+        orderNumber: payment.paymentId,
+        amount: payment.amount,
         status: 'completed',
-        createdAt: '2024-04-10T09:45:00Z',
-        paidAt: '2024-04-10T09:50:00Z',
-        cancelledAt: null
-      },
-      {
-        id: 4,
-        orderNumber: 'ORD202404050004',
-        book: {
-          id: 104,
-          title: '月亮与六便士',
-          author: '毛姆',
-          cover: '/images/books/moon.jpg'
-        },
-        type: 'purchase',
-        amount: 42.00,
-        status: 'cancelled',
-        createdAt: '2024-04-05T16:20:00Z',
-        paidAt: null,
-        cancelledAt: '2024-04-05T18:10:00Z'
-      },
-      {
-        id: 5,
-        orderNumber: 'ORD202404010005',
-        book: {
-          id: 105,
-          title: '追风筝的人',
-          author: '卡勒德·胡赛尼',
-          cover: '/images/books/kiterunner.jpg'
-        },
-        type: 'rental',
-        amount: 12.00,
-        status: 'completed',
-        createdAt: '2024-04-01T11:30:00Z',
-        paidAt: '2024-04-01T11:35:00Z',
-        cancelledAt: null
-      }
-    ];
+        createdAt: payment.date,
+        paidAt: payment.date,
+        type: 'top-up'
+      }));
+    } else {
+      throw new Error('获取支付历史失败');
+    }
   } catch (error) {
-    console.error('获取订单数据失败:', error);
+    console.error('获取支付历史失败:', error);
+    showToast('获取支付历史失败，请稍后重试', 'error');
+    orders.value = [];
   } finally {
     loadingOrders.value = false;
   }
 };
 
 // 根据状态筛选订单
-const unpaidOrders = computed(() => {
-  return orders.value.filter(order => order.status === 'pending' || order.status === 'overdue');
+const completedOrders = computed(() => {
+  return orders.value;
 });
 
-const completedOrders = computed(() => {
-  return orders.value.filter(order => order.status === 'completed');
+const unpaidOrders = computed(() => {
+  return [];
 });
 
 const cancelledOrders = computed(() => {
-  return orders.value.filter(order => order.status === 'cancelled');
+  return [];
 });
 
 // 获取订单状态文本
 const getOrderStatusText = (status) => {
-  switch (status) {
-    case 'pending': return 'Pending';
-    case 'completed': return 'Completed';
-    case 'cancelled': return 'Cancelled';
-    case 'overdue': return 'Overdue';
-    default: return status;
-  }
+  return '已完成';
 };
 
 // 查看订单详情
@@ -1376,11 +1044,7 @@ const confirmPayment = () => {
 // 根据当前路由设置初始视图
 onMounted(() => {
   // 获取用户信息
-  fetchUserProfile();
-
-  // 获取账户余额
-  const savedBalance = localStorage.getItem('accountBalance');
-  accountBalance.value = savedBalance ? Number(savedBalance) : 0;
+  fetchUserInfo();
 
   // 根据路由路径设置初始视图
   const path = route.path;
@@ -1416,8 +1080,8 @@ const filteredLoans = computed(() => {
     // 搜索过滤
     if (searchQuery.value) {
       const query = searchQuery.value.toLowerCase();
-      return loan.book.title.toLowerCase().includes(query) ||
-              loan.book.author.toLowerCase().includes(query);
+      return loan.title.toLowerCase().includes(query) ||
+              loan.author.toLowerCase().includes(query);
     }
 
     return true;
@@ -1484,7 +1148,7 @@ const goToPage = (page) => {
 
 // 查看借阅详情
 const viewLoanDetail = (loanId) => {
-  router.push(`/loans/${loanId}`);
+  router.push(`/book/${loanId}`);
 };
 
 // 延长借阅
@@ -1500,13 +1164,29 @@ const continueReading = (bookId) => {
 
 // 查看图书详情
 const viewBookDetails = (bookId) => {
-  router.push(`/books/${bookId}`);
+  router.push(`/book/${bookId}`);
 };
 
-const deleteReview = (reviewId) => {
+// 删除评论
+const deleteReview = async (reviewId) => {
   if (confirm('Are you sure you want to delete this comment?')) {
-    reviews.value = reviews.value.filter(review => review.id !== reviewId);
-    // 这里应该有API调用来同步服务器数据
+    try {
+      const response = await post({
+        url: '/api/reviews/delete',
+        data: { commentId: reviewId }
+      });
+      
+      if (response.state === 'success') {
+        // 从列表中移除已删除的评论
+        reviews.value = reviews.value.filter(review => review.id !== reviewId);
+        showToast('评论已删除', 'success');
+      } else {
+        throw new Error('删除评论失败');
+      }
+    } catch (error) {
+      console.error('删除评论失败:', error);
+      showToast('删除评论失败，请稍后重试', 'error');
+    }
   }
 };
 
@@ -1739,9 +1419,18 @@ const updateUserInfo = async () => {
   margin: 0;
 }
 
-.book-progress {
-  font-size: 14px;
+.book-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
   color: #666;
+}
+
+.borrow-date, .due-date {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .book-author {
@@ -1876,24 +1565,24 @@ const updateUserInfo = async () => {
 .status-badge {
   display: inline-block;
   padding: 4px 8px;
-  border-radius: 50px;
+  border-radius: 4px;
   font-size: 12px;
   font-weight: 500;
 }
 
-.status-active {
-  background-color: #e6f0ff;
-  color: #3182ce;
+.status-returned {
+  background-color: #ecfdf5;
+  color: #059669;
 }
 
-.status-returned {
-  background-color: #e6ffed;
-  color: #2f855a;
+.status-borrowed {
+  background-color: #fff7ed;
+  color: #d97706;
 }
 
 .status-overdue {
-  background-color: #ffebee;
-  color: #e53e3e;
+  background-color: #fef2f2;
+  color: #dc2626;
 }
 
 .extend-btn, .detail-btn {
@@ -2006,8 +1695,8 @@ const updateUserInfo = async () => {
   .page-btn {
     padding: 8px 16px;
     background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
   }
 
   .filter-container {
@@ -2153,27 +1842,16 @@ const updateUserInfo = async () => {
   gap: 8px;
 }
 
-.edit-btn, .delete-btn {
+.delete-btn {
   padding: 5px 10px;
   border: none;
   border-radius: 4px;
   font-size: 12px;
   cursor: pointer;
   transition: background-color 0.3s;
-}
-
-.edit-btn {
-  background-color: #f0f0f0;
-  color: #333;
-}
-
-.delete-btn {
   background-color: #fee2e2;
   color: #b91c1c;
-}
-
-.edit-btn:hover {
-  background-color: #e0e0e0;
+  outline: none;
 }
 
 .delete-btn:hover {
@@ -2240,7 +1918,7 @@ const updateUserInfo = async () => {
 
 .orders-list {
   display: flex;
-    flex-direction: column;
+  flex-direction: column;
   gap: 20px;
 }
 
@@ -2262,7 +1940,7 @@ const updateUserInfo = async () => {
 .order-header {
   display: flex;
   justify-content: space-between;
-    align-items: center;
+  align-items: center;
   padding: 12px 15px;
   background-color: #f9f9f9;
   border-bottom: 1px solid #eee;

@@ -126,12 +126,7 @@ const routes = [
     component: () => import('../views/user/SettingsPage.vue'),
     meta: { requiresAuth: true }
   },
-  {
-    path: '/reader/:id',
-    name: 'ReaderPage',
-    component: ReaderPage,
-    meta: { requiresAuth: true }
-  },
+ 
   {
     path: '/help',
     name: 'Help',
@@ -146,6 +141,11 @@ const routes = [
     path: '/privacy',
     name: 'Privacy',
     component: PrivacyPage
+  },
+  {
+    path: '/reader',
+    name: 'Reader',
+    component: () => import('@/views/Reader.vue'),
   }
 ]
 

@@ -54,6 +54,13 @@
             </button>
           </div>
 
+          <button
+             class="mt-6 px-6 py-2 rounded text-white bg-amber-500 hover:bg-amber-600"
+              @click="readBook"
+              >
+              阅读
+             </button>
+
           <div class="book-comments">
             <CommentSection :book-id="bookId" />
           </div>
@@ -82,8 +89,10 @@ import AddToCartButton from '../components/AddToCartButton.vue';
 import BorrowButton from '../components/BorrowButton.vue';
 import CommentSection from '../components/CommentSection.vue';
 import { borrowBook } from '@/api/borrowApi';
+import axios from 'axios';
 import { formatPrice } from '@/utils/format';
 import { sendEmailNotification } from '@/utils/emailService';
+import { get } from '@/utils/request';
 
 const route = useRoute();
 const router = useRouter();
@@ -111,21 +120,16 @@ async function fetchBookDetail() {
   error.value = null;
 
   try {
-    // 此处使用模拟数据或实际API
-    if (window.mockMode) {
-      // 模拟数据获取
-      setTimeout(() => {
-        import('../mock-api.js').then(mockApi => {
-          const bookData = mockApi.getMockBook(bookId.value);
-          if (bookData) {
-            book.value = bookData;
-            cacheBookData(bookData);
-          } else {
-            error.value = '未找到书籍';
-          }
-          isLoading.value = false;
-        });
-      }, 500);
+    console.log('开始获取书籍详情，bookId:', bookId.value);
+    const response = await get({
+      url: `/api/books/get?bookId=${bookId.value}`
+    });
+    console.log('获取书籍详情响应:', response);
+    
+    if (response) {
+      book.value = response;
+      console.log('书籍详情数据:', book.value);
+      cacheBookData(response);
     } else {
       // 实际API调用
       const response = await fetch(`https://api.borrowbee.wcy.one:61700/api/books/get?bookId=${bookId.value}`, {
@@ -159,6 +163,7 @@ async function fetchBookDetail() {
   } catch (err) {
     console.error('获取书籍详情错误:', err);
     error.value = `无法加载书籍详情: ${err.message}`;
+  } finally {
     isLoading.value = false;
   }
 }
