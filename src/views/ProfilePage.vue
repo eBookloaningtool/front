@@ -36,6 +36,12 @@
             <span class="text">Comment Records</span>
           </a>
         </div>
+        <div class="menu-item" :class="{ active: currentView === 'TopUp' }">
+          <a href="#" @click.prevent="switchView('TopUp')">
+            <span class="icon"><i class="ri-wallet-3-line"></i></span>
+            <span class="text">Top Up</span>
+          </a>
+        </div>
         <div class="menu-item" :class="{ active: currentView === 'PaymentOrders' }">
           <a href="#" @click.prevent="switchView('PaymentOrders')">
             <span class="icon"><i class="ri-time-line"></i></span>
@@ -75,6 +81,13 @@
               <span class="label-text">Registration Date:</span>
             </div>
             <div class="detail-value">{{ registrationDate }}</div>
+          </div>
+
+          <div class="detail-item">
+            <div class="detail-label">
+              <span class="label-text">Account Balance:</span>
+            </div>
+            <div class="detail-value">£{{ accountBalance.toFixed(2) }}</div>
           </div>
         </div>
 
@@ -293,7 +306,7 @@
             <div v-for="book in wishlistItems" :key="book.id" class="wishlist-item">
               <div class="wishlist-book-cover">
                 <img v-if="book.cover" :src="book.cover" :alt="book.title" />
-              </div>
+          </div>
               <div class="wishlist-book-info">
                 <h3 class="wishlist-book-title">{{ book.title }}</h3>
                 <p class="wishlist-book-author">{{ book.author }}</p>
@@ -311,7 +324,7 @@
                   >
                     移除
                   </button>
-                </div>
+          </div>
               </div>
             </div>
           </div>
@@ -342,7 +355,7 @@
                   {{ review.bookTitle }}
                 </h3>
                 <div class="review-actions">
-                  <button
+          <button
                     @click="editReview(review.id)"
                     class="edit-btn"
                   >
@@ -351,18 +364,18 @@
                   <button
                     @click="deleteReview(review.id)"
                     class="delete-btn"
-                  >
+          >
                     删除
-                  </button>
-                </div>
+          </button>
+        </div>
               </div>
 
               <div class="review-meta">
                 <div class="rating-stars">
                   <span v-for="i in 5" :key="i" class="star" :class="{ 'filled': i <= review.rating }">★</span>
-                </div>
+    </div>
                 <span class="review-date">{{ formatDate(review.createdAt) }}</span>
-              </div>
+  </div>
 
               <p class="review-content">{{ review.content }}</p>
             </div>
@@ -645,6 +658,65 @@
             </div>
           </div>
         </div>
+
+        <!-- 充值视图 -->
+        <div v-if="currentView === 'TopUp'" class="topup-view">
+          <h2 class="page-title">Account Top Up</h2>
+          <p class="subtitle">Add funds to your account</p>
+
+          <!-- 当前余额显示 -->
+          <div class="balance-display">
+            <i class="ri-wallet-3-line"></i>
+            <span>Current Balance: £{{ accountBalance }}</span>
+          </div>
+
+          <!-- 充值金额选项 -->
+          <div class="amount-options">
+            <h3>Select Amount</h3>
+            <div class="amount-grid">
+              <button
+                v-for="amount in presetTopUpAmounts"
+                :key="amount"
+                :class="['amount-btn', { 'selected': selectedTopUpAmount === amount }]"
+                @click="selectTopUpAmount(amount)"
+              >
+                £{{ amount }}
+              </button>
+            </div>
+          </div>
+
+          <!-- 自定义金额输入 -->
+          <div class="custom-amount">
+            <h3>Custom Amount</h3>
+            <div class="input-group">
+              <span class="currency-symbol">£</span>
+              <input
+                type="number"
+                v-model="customTopUpAmount"
+                placeholder="Enter amount"
+                @input="handleCustomTopUpAmount"
+                min="1"
+                step="1"
+              />
+            </div>
+          </div>
+
+          <!-- 确认充值按钮 -->
+          <button
+            class="confirm-btn"
+            :disabled="!isTopUpAmountValid || processingTopUp"
+            @click="handleTopUp"
+          >
+            <i v-if="processingTopUp" class="ri-loader-4-line loading-icon"></i>
+            <span v-else>Confirm Top Up</span>
+          </button>
+
+          <!-- 充值说明 -->
+          <div class="topup-info">
+            <i class="ri-information-line"></i>
+            <p>The amount will be credited instantly to your account and can be used for book rentals.</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -654,15 +726,18 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import Header from '../components/Header.vue';
+import { useUserStore } from '../stores/userStore';
+import { useToast } from '../composables/useToast';
 
 const router = useRouter();
 const route = useRoute();
+const { showToast } = useToast();
 
-const username = ref('测试用户');
-const email = ref('test@example.com');
+const username = ref('');
+const email = ref('');
 const registrationDate = ref('');
-const balance = ref('0.00');
 const userId = ref('');
+const accountBalance = ref(0);
 
 // 当前借阅相关状态
 const recentBooks = ref([]);
@@ -692,6 +767,12 @@ const showPaymentModal = ref(false);
 const currentOrder = ref({});
 const paymentMethod = ref('alipay');
 
+// 充值相关状态
+const presetTopUpAmounts = [50, 100, 200, 500, 1000];
+const selectedTopUpAmount = ref(null);
+const customTopUpAmount = ref('');
+const processingTopUp = ref(false);
+
 // 支付记录标签页选项
 const orderTabs = [
   { id: 'unpaid', name: '待支付' },
@@ -701,6 +782,68 @@ const orderTabs = [
 
 // 当前视图，默认为Profile
 const currentView = ref('Profile');
+
+// 计算最终充值金额
+const finalTopUpAmount = computed(() => {
+  return selectedTopUpAmount.value || Number(customTopUpAmount.value) || 0;
+});
+
+// 验证金额是否有效
+const isTopUpAmountValid = computed(() => {
+  return finalTopUpAmount.value > 0 && finalTopUpAmount.value <= 10000;
+});
+
+// 选择预设金额
+const selectTopUpAmount = (amount) => {
+  selectedTopUpAmount.value = amount;
+  customTopUpAmount.value = '';
+};
+
+// 处理自定义金额输入
+const handleCustomTopUpAmount = () => {
+  selectedTopUpAmount.value = null;
+  // 限制最大金额为10000
+  if (Number(customTopUpAmount.value) > 10000) {
+    customTopUpAmount.value = '10000';
+  }
+};
+
+// 处理充值
+const handleTopUp = async () => {
+  if (!isTopUpAmountValid.value || processingTopUp.value) return;
+
+  processingTopUp.value = true;
+
+  try {
+    // mock支付处理
+    await new Promise(resolve => setTimeout(resolve, 1000)); // 模拟网络延迟
+    const result = {
+      success: true,
+      amount: finalTopUpAmount.value
+    };
+
+    if (result.success) {
+      accountBalance.value += finalTopUpAmount.value;
+      localStorage.setItem('accountBalance', accountBalance.value); // 持久化
+
+      alert(`Top up successful! £${finalTopUpAmount.value} has been added to your account.`);
+
+      // 重置表单
+      selectedTopUpAmount.value = null;
+      customTopUpAmount.value = '';
+
+      // 显示支付记录
+      switchView('PaymentOrders');
+    } else {
+      throw new Error('Payment failed');
+    }
+  } catch (error) {
+    console.error('Top up failed:', error);
+    alert('Top up failed. Please try again.');
+  } finally {
+    processingTopUp.value = false;
+  }
+};
 
 // 切换视图的方法
 const switchView = (view) => {
@@ -717,6 +860,10 @@ const switchView = (view) => {
     fetchReviews();
   } else if (view === 'PaymentOrders') {
     fetchOrders();
+  } else if (view === 'TopUp') {
+    // 加载充值页面时获取当前余额
+    const savedBalance = localStorage.getItem('accountBalance');
+    accountBalance.value = savedBalance ? Number(savedBalance) : 0;
   }
 };
 
@@ -727,23 +874,21 @@ const avatarUrl = computed(() => {
 
 // 格式化日期
 const formatDate = (dateStr) => {
-  if (!dateStr) return '未知';
+  if (!dateStr) return 'Unknown';
   const d = new Date(dateStr);
-  if (isNaN(d)) return '未知';
+  if (isNaN(d)) return 'Unknown';
 
-  // 转换为更友好的日期格式，例如 2023年10月15日
-  const year = d.getFullYear();
-  const month = d.getMonth() + 1;
-  const day = d.getDate();
-  return `${year}年${month}月${day}日`;
+  // 使用英文格式
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  return d.toLocaleDateString('en-US', options);
 };
 
 // 获取状态文本
 const getStatusText = (status) => {
   switch (status) {
-    case 'active': return '借阅中';
-    case 'returned': return '已归还';
-    case 'overdue': return '已逾期';
+    case 'active': return 'Active';
+    case 'returned': return 'Returned';
+    case 'overdue': return 'Overdue';
     default: return status;
   }
 };
@@ -764,22 +909,28 @@ const fetchUserProfile = async () => {
       return;
     }
 
-    // 使用mock数据替代API调用
-    username.value = '测试用户';
-    email.value = 'test@example.com';
+    // 调用API获取用户信息
+    const userStore = useUserStore();
 
-    // 模拟从API获取的注册时间
-    const mockRegisterDate = new Date(2023, 5, 15); // 2023年6月15日
-    registrationDate.value = formatDate(mockRegisterDate);
+    // 如果UserStore中已有数据，先使用已有数据
+    if (userStore.isAuthenticated) {
+      username.value = userStore.userName;
+      email.value = userStore.userEmail;
+      registrationDate.value = formatDate(userStore.createdAt);
+      accountBalance.value = userStore.balance;
+    }
 
-    balance.value = parseFloat(100).toFixed(2);
-    userId.value = 'user123';
+    // 刷新用户信息
+    await userStore.initUserState();
 
-    // 实际API调用时，将使用API返回的注册时间
-    // 例如：registrationDate.value = formatDate(response.data.registrationDate);
+    // 更新页面显示的用户信息
+    username.value = userStore.userName;
+    email.value = userStore.userEmail;
+    registrationDate.value = formatDate(userStore.createdAt);
+    accountBalance.value = userStore.balance;
   } catch (error) {
     console.error('获取用户资料失败:', error);
-    alert('加载用户信息失败，请稍后再试');
+    showToast('加载用户信息失败，请稍后再试', 'error');
   }
 };
 
@@ -1137,6 +1288,10 @@ const confirmPayment = () => {
 onMounted(() => {
   // 获取用户信息
   fetchUserProfile();
+
+  // 获取账户余额
+  const savedBalance = localStorage.getItem('accountBalance');
+  accountBalance.value = savedBalance ? Number(savedBalance) : 0;
 
   // 根据路由路径设置初始视图
   const path = route.path;
@@ -1713,8 +1868,8 @@ const deleteReview = (reviewId) => {
   .page-btn {
     padding: 8px 16px;
     background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
   }
 
   .filter-container {
@@ -1947,7 +2102,7 @@ const deleteReview = (reviewId) => {
 
 .orders-list {
   display: flex;
-  flex-direction: column;
+    flex-direction: column;
   gap: 20px;
 }
 
@@ -1969,7 +2124,7 @@ const deleteReview = (reviewId) => {
 .order-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+    align-items: center;
   padding: 12px 15px;
   background-color: #f9f9f9;
   border-bottom: 1px solid #eee;
@@ -2250,5 +2405,246 @@ const deleteReview = (reviewId) => {
 .confirm-payment-btn.disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* 充值视图样式 */
+.topup-view {
+  max-width: 100%;
+  width: 100%;
+}
+
+.topup-view .page-title {
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.topup-view .subtitle {
+  color: #666;
+  margin-top: -5px;
+  margin-bottom: 25px;
+}
+
+.balance-display {
+  display: flex;
+  align-items: center;
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 25px;
+}
+
+.balance-display i {
+  font-size: 22px;
+  color: #e9a84c;
+  margin-right: 10px;
+}
+
+.amount-options h3, .custom-amount h3, .payment-methods h3 {
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.amount-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.amount-btn {
+  padding: 12px 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  color: #333;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.amount-btn:hover {
+  border-color: #e9a84c;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.amount-btn.selected {
+  background: #e9a84c;
+  border-color: #e9a84c;
+  color: white;
+}
+
+.custom-amount {
+  margin-bottom: 25px;
+}
+
+.input-group {
+  position: relative;
+}
+
+.currency-symbol {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  font-size: 16px;
+}
+
+.custom-amount input {
+  width: 100%;
+  padding: 12px 15px 12px 30px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.custom-amount input:focus {
+  border-color: #e9a84c;
+  outline: none;
+}
+
+.payment-methods {
+  margin-bottom: 25px;
+}
+
+.payment-options {
+  display: flex;
+  gap: 10px;
+}
+
+.payment-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.payment-option:hover {
+  border-color: #e9a84c;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.payment-option.selected {
+  background: #f8f9fa;
+  border-color: #e9a84c;
+}
+
+.payment-option i {
+  font-size: 24px;
+  color: #666;
+}
+
+.card-payment-form {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #333;
+  font-size: 14px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.form-group input:focus {
+  border-color: #e9a84c;
+  outline: none;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.confirm-btn {
+  width: 100%;
+  padding: 15px;
+  background: #e9a84c;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.confirm-btn:hover:not(:disabled) {
+  background: #d89638;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.confirm-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.loading-icon {
+  animation: spin 1s linear infinite;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.topup-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+.topup-info i {
+  color: #e9a84c;
+  font-size: 18px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .amount-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .payment-options {
+    flex-direction: column;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
