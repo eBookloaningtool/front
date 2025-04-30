@@ -234,10 +234,10 @@ const handleClearCart = async () => {
     // 清空本地购物车数据
     cartItems.value = [];
     localStorage.removeItem('cartItems');
-    
+
     // 显示成功消息
     showToast('购物车已清空', 'success');
-    
+
     // 重新获取购物车数据
     if (cartListRef.value && typeof cartListRef.value.fetchCartItems === 'function') {
       await cartListRef.value.fetchCartItems();
