@@ -91,13 +91,20 @@ const toggleWishlist = async (event) => {
   try {
     if (isInWishlist.value) {
       await removeFromWishlist(props.book.bookId);
+      isInWishlist.value = false;
+      showToast('已从心愿单移除', 'success');
     } else {
-      await addToWishlist(props.book.bookId);
+      const response = await addToWishlist(props.book.bookId);
+      if (response.state === 'success') {
+        isInWishlist.value = true;
+        showToast('已添加到心愿单', 'success');
+      } else if (response.state === 'Book already exist.') {
+        showToast('这本书已经在您的愿望清单中', 'info');
+        isInWishlist.value = false; // 保持非激活状态
+      } else {
+        throw new Error('添加失败');
+      }
     }
-
-    // 更新状态
-    isInWishlist.value = !isInWishlist.value;
-    showToast(isInWishlist.value ? '已添加到心愿单' : '已从心愿单移除', 'success');
 
     // 通知父组件
     emit('favorite-change', {
