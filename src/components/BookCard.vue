@@ -203,13 +203,17 @@ const handleBorrow = async (event) => {
   try {
     const result = await borrowBook(props.book.bookId);
 
+    // 检查是否是余额不足的响应
+    if (result?.state === 'insufficient balance' || result?.message?.includes('insufficient balance')) {
+      showToast('Insufficient balance, please recharge first', 'error');
+      return;
+    }
+
+    // 处理其他响应状态
     if (result.state === 'success') {
       saveBorrowedBook(result.dueDate);
-      setBalance(result.balance); // 使用 API 返回的最新余额
-      showToast('借阅成功，前往我的书籍查看', 'success');
-    } else if (result.state === 'insufficient balance') {
-      showToast('余额不足，请先充值', 'error');
-      router.push({ name: 'TopUp', query: { amount: result.newPayment } });
+      setBalance(result.balance);
+      showToast('Borrowed successfully, go to My Books to view', 'success');
     } else if (result.state === 'Reach borrow limit') {
       showToast('已达到借阅上限', 'error');
     } else if (result.state === 'Borrow failed.') {
@@ -223,10 +227,11 @@ const handleBorrow = async (event) => {
       }
       showToast(errorMessage, 'error');
     } else {
-      showToast(result.message || '借阅失败，请稍后重试', 'error');
+      showToast(result.message || 'Borrowing failed, please try again later', 'error');
     }
   } catch (error) {
-    handleApiError(error);
+    // 这里只处理真正的异常情况
+    showToast('Request exception, please try again later', 'error');
   } finally {
     isBorrowing.value = false;
   }
@@ -244,17 +249,6 @@ const saveBorrowedBook = (dueDate) => {
     borrowDate: new Date().toISOString().split('T')[0]
   });
   localStorage.setItem('borrowedBooks', JSON.stringify(borrowedBooks));
-};
-
-// 统一处理接口异常
-const handleApiError = (error) => {
-  if (error.response) {
-    showToast(`服务器错误(${error.response.status})`, 'error');
-  } else if (error.request) {
-    showToast('连接服务器失败，请检查网络', 'error');
-  } else {
-    showToast('请求异常，请稍后再试', 'error');
-  }
 };
 
 // 组件挂载时检查心愿单状态
