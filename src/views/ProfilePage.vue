@@ -306,11 +306,11 @@
             <div v-for="book in wishlistItems" :key="book.id" class="wishlist-item">
               <div class="wishlist-book-cover">
                 <img v-if="book.cover" :src="book.cover" :alt="book.title" />
-          </div>
+              </div>
               <div class="wishlist-book-info">
                 <h3 class="wishlist-book-title">{{ book.title }}</h3>
                 <p class="wishlist-book-author">{{ book.author }}</p>
-                <p class="wishlist-book-price">¥{{ book.price }}</p>
+                <p class="wishlist-book-price">￡{{ book.price }}</p>
                 <div class="wishlist-actions">
                   <button
                     @click="viewBookDetails(book.id)"
@@ -319,12 +319,12 @@
                     查看详情
                   </button>
                   <button
-                    @click="removeFromWishlist(book.id)"
+                    @click="handleRemoveFromWishlist(book.id)"
                     class="remove-btn"
                   >
                     移除
                   </button>
-          </div>
+                </div>
               </div>
             </div>
           </div>
@@ -355,7 +355,7 @@
                   {{ review.bookTitle }}
                 </h3>
                 <div class="review-actions">
-          <button
+                  <button
                     @click="editReview(review.id)"
                     class="edit-btn"
                   >
@@ -364,18 +364,18 @@
                   <button
                     @click="deleteReview(review.id)"
                     class="delete-btn"
-          >
+                  >
                     删除
-          </button>
-        </div>
+                  </button>
+                </div>
               </div>
 
               <div class="review-meta">
                 <div class="rating-stars">
                   <span v-for="i in 5" :key="i" class="star" :class="{ 'filled': i <= review.rating }">★</span>
-    </div>
+                </div>
                 <span class="review-date">{{ formatDate(review.createdAt) }}</span>
-  </div>
+              </div>
 
               <p class="review-content">{{ review.content }}</p>
             </div>
@@ -504,6 +504,7 @@ import Header from '../components/Header.vue';
 import { useUserStore } from '../stores/userStore';
 import { useToast } from '../composables/useToast';
 import { getPaymentHistory, topUpBalance } from '../api/payments';
+import { getWishlist, getBookDetail, removeFromWishlist } from '../api/booksApi';
 
 const router = useRouter();
 const route = useRoute();
@@ -836,28 +837,42 @@ const fetchLoanHistory = async () => {
 const fetchWishlist = async () => {
   loadingWishlist.value = true;
   try {
-    // 这里应该是API调用，现在用模拟数据
-    await new Promise(resolve => setTimeout(resolve, 500));
-    wishlistItems.value = [
-      {
-        id: 1,
-        title: '三体',
-        author: '刘慈欣',
-        cover: '/images/books/threebody.jpg',
-        price: '49.00'
-      },
-      {
-        id: 2,
-        title: '百年孤独',
-        author: '加西亚·马尔克斯',
-        cover: '/images/books/solitude.jpg',
-        price: '42.50'
-      }
-    ];
+    // 获取愿望清单中的书籍ID列表
+    const wishlistData = await getWishlist();
+    
+    // 获取每本书的详情
+    const bookPromises = wishlistData.bookId.map(bookId => getBookDetail(bookId));
+    const bookDetails = await Promise.all(bookPromises);
+    
+    // 转换数据格式
+    wishlistItems.value = bookDetails.map(book => ({
+      id: book.bookId,
+      title: book.title,
+      author: book.author,
+      cover: book.coverUrl,
+      price: book.price.toFixed(2)
+    }));
   } catch (error) {
     console.error('获取愿望清单失败:', error);
+    showToast('获取愿望清单失败，请稍后重试', 'error');
   } finally {
     loadingWishlist.value = false;
+  }
+};
+
+// 从愿望清单中移除书籍
+const handleRemoveFromWishlist = async (bookId) => {
+  try {
+    const result = await removeFromWishlist(bookId);
+    if (result.state === 'success') {
+      wishlistItems.value = wishlistItems.value.filter(item => item.id !== bookId);
+      showToast('已从愿望清单中移除', 'success');
+    } else {
+      throw new Error('移除失败');
+    }
+  } catch (error) {
+    console.error('移除书籍失败:', error);
+    showToast('移除书籍失败，请稍后重试', 'error');
   }
 };
 
@@ -1106,7 +1121,7 @@ const continueReading = (bookId) => {
 
 // 查看图书详情
 const viewBookDetails = (bookId) => {
-  router.push(`/books/${bookId}`);
+  router.push(`/book/${bookId}`);
 };
 
 const deleteReview = (reviewId) => {
@@ -1563,8 +1578,8 @@ const deleteReview = (reviewId) => {
   .page-btn {
     padding: 8px 16px;
     background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
   }
 
   .filter-container {
@@ -1797,7 +1812,7 @@ const deleteReview = (reviewId) => {
 
 .orders-list {
   display: flex;
-    flex-direction: column;
+  flex-direction: column;
   gap: 20px;
 }
 
@@ -1819,7 +1834,7 @@ const deleteReview = (reviewId) => {
 .order-header {
   display: flex;
   justify-content: space-between;
-    align-items: center;
+  align-items: center;
   padding: 12px 15px;
   background-color: #f9f9f9;
   border-bottom: 1px solid #eee;
