@@ -3,6 +3,20 @@
     <div class="book-cover">
       <BookCover :src="book.cover || book.coverUrl || fallbackCover" :alt="book.title" />
 
+      <!-- 心愿单按钮 -->
+      <div v-if="showWishlist" class="wishlist-button-container" @click.stop>
+        <button
+          @click="toggleWishlist"
+          :disabled="loading"
+          class="wishlist-btn"
+          :class="{ 'active': isInWishlist, 'loading': loading }"
+          :title="isInWishlist ? '从心愿单移除' : '添加到心愿单'"
+        >
+          <i v-if="loading" class="ri-loader-4-line loading-icon"></i>
+          <i v-else-if="isInWishlist" class="ri-heart-fill"></i>
+          <i v-else class="ri-heart-line"></i>
+        </button>
+      </div>
     </div>
 
     <h3 class="book-title">{{ book.title || '未命名书籍' }}</h3>
@@ -33,17 +47,19 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import AddToCartButton from './AddToCartButton.vue';
 import BookCover from './BookCover.vue';
 import { borrowBook } from '../api/borrowApi.ts';
 import { useToast } from '../composables/useToast';
+import { getWishlist, addToWishlist, removeFromWishlist } from '../api/wishlist';
 
 const props = defineProps({
   book: { type: Object, required: true },
   showRating: { type: Boolean, default: true },
-  showCart: { type: Boolean, default: true }
+  showCart: { type: Boolean, default: true },
+  showWishlist: { type: Boolean, default: true }
 });
 
 const emit = defineEmits(['favorite-change']);
@@ -53,14 +69,61 @@ const { showToast } = useToast();
 const fallbackCover = 'https://source.unsplash.com/collection/1320303/300x450?sig=fallback';
 
 const isBorrowing = ref(false);
+const loading = ref(false);
+const isInWishlist = ref(false);
 
 const isAvailable = computed(() => {
   return true; // 默认视为可用（如果有库存字段可以做判断）
 });
 
-// 处理收藏状态变化
-const handleFavoriteChange = (event) => {
-  emit('favorite-change', event);
+// 心愿单相关函数
+const toggleWishlist = async (event) => {
+  event.stopPropagation();
+  if (loading.value) return;
+
+  const token = localStorage.getItem('token');
+  if (!token) {
+    showToast('请先登录', 'error');
+    return;
+  }
+
+  loading.value = true;
+  try {
+    if (isInWishlist.value) {
+      await removeFromWishlist(props.book.bookId);
+    } else {
+      await addToWishlist(props.book.bookId);
+    }
+
+    // 更新状态
+    isInWishlist.value = !isInWishlist.value;
+    showToast(isInWishlist.value ? '已添加到心愿单' : '已从心愿单移除', 'success');
+
+    // 通知父组件
+    emit('favorite-change', {
+      bookId: props.book.bookId,
+      isFavorite: isInWishlist.value
+    });
+  } catch (error) {
+    console.error('操作心愿单失败:', error);
+    showToast('操作失败，请稍后重试', 'error');
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 检查心愿单状态
+const checkWishlistStatus = async () => {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+
+  try {
+    const response = await getWishlist();
+    const bookIds = response?.bookId?.map(id => String(id)) || [];
+    isInWishlist.value = bookIds.includes(String(props.book.bookId));
+  } catch (error) {
+    console.error('检查心愿单状态失败:', error);
+  }
 };
 
 // 跳转到书籍详情
@@ -151,6 +214,11 @@ const handleApiError = (error) => {
     showToast('请求异常，请稍后再试', 'error');
   }
 };
+
+// 组件挂载时检查心愿单状态
+onMounted(() => {
+  checkWishlistStatus();
+});
 </script>
 
 <style scoped>
@@ -175,10 +243,58 @@ const handleApiError = (error) => {
   overflow: hidden;
   border-radius: 5px;
   background-color: #f0f0f0;
+  position: relative;
 }
 
 .book-card:hover .book-cover img {
   transform: scale(1.05);
+}
+
+/* 心愿单按钮容器样式 */
+.wishlist-button-container {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+}
+
+/* 心愿单按钮样式 */
+.wishlist-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  color: #888;
+  font-size: 18px;
+}
+
+.wishlist-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+
+.wishlist-btn.active {
+  color: #e74c3c;
+}
+
+.wishlist-btn.loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.loading-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .book-title {

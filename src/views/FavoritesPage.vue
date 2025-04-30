@@ -3,8 +3,8 @@
     <Header />
     <main class="container mx-auto px-4 py-8">
       <div class="page-header">
-        <h1 class="text-3xl font-bold">我的收藏</h1>
-        <p class="text-gray-600 mt-2">您收藏的书籍将在这里显示</p>
+        <h1 class="text-3xl font-bold">心愿单</h1>
+        <p class="text-gray-600 mt-2">您想要的书籍将在这里显示</p>
       </div>
 
       <div v-if="loading" class="loading-state">
@@ -16,7 +16,7 @@
         <div class="empty-icon">
           <i class="ri-heart-line"></i>
         </div>
-        <p class="text-gray-500">您还没有收藏任何书籍</p>
+        <p class="text-gray-500">您的心愿单中还没有书籍</p>
         <router-link to="/" class="browse-btn">
           浏览图书馆
         </router-link>

@@ -49,13 +49,13 @@
           :showWishlist="showWishlist"
         />
       </template>
-      
+
       <!-- 加载更多提示 -->
       <div v-if="loadingMore" class="loading-more">
         <div class="simple-spinner"></div>
         <p>正在加载更多...</p>
       </div>
-      
+
       <!-- 没有更多数据提示 -->
       <div v-else-if="!hasMore" class="no-more">
         <p>没有更多书籍了</p>
