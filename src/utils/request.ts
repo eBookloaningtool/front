@@ -56,7 +56,22 @@ export const get = async ({ url, params = {}, headers = {} }: {
   headers?: Record<string, string>;
 }): Promise<any> => {
   try {
-    console.log(`[API] 发送GET请求: ${url}`, { params, headers: { ...headers, Authorization: headers.Authorization ? 'Bearer ***' : undefined } });
+    console.log(`[API] 发送GET请求: ${url}`, { 
+      params, 
+      headers: { 
+        ...headers, 
+        Authorization: headers.Authorization ? 'Bearer ***' : undefined 
+      }
+    });
+    
+    // 获取token并添加到headers
+    const token = localStorage.getItem('token');
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+      console.log('[API] 已添加认证token到请求头');
+    } else {
+      console.warn('[API] 未找到认证token');
+    }
     
     // 发送请求
     const response = await axios.get(url, { params, headers });
@@ -64,6 +79,7 @@ export const get = async ({ url, params = {}, headers = {} }: {
     // 记录响应（不含敏感数据）
     console.log(`[API] 收到响应: ${url}`, { 
       status: response.status,
+      statusText: response.statusText,
       data: response.data
     });
     
@@ -75,7 +91,8 @@ export const get = async ({ url, params = {}, headers = {} }: {
         status: error.response?.status,
         statusText: error.response?.statusText,
         data: error.response?.data,
-        message: error.message
+        message: error.message,
+        headers: error.response?.headers
       });
       
       // 如果服务器返回了错误响应，使用其数据

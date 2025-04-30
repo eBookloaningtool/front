@@ -17,21 +17,11 @@ export default defineConfig({
       overlay: false
     },
     proxy: {
-      '/api/pay': {
-        target: 'http://homepages.cs.ncl.ac.uk/daniel.nesbitt/CSC8019/HorsePay',
+      '/api': {
+        target: 'https://api.borrowbee.wcy.one:61700',
         changeOrigin: true,
-        rewrite: path => path.replace(/^\/api\/pay/, ''),
-        configure: (proxy, options) => {
-          proxy.on('error', (err, req, res) => {
-            console.log('proxy error', err);
-            res.statusCode = 500;
-            res.end('Mock API Error: ' + err.message);
-          });
-        },
-        bypass: (req, res, options) => {
-          console.log('Bypassing proxy for:', req.url);
-          return req.url;
-        }
+        secure: false,
+        rewrite: path => path.replace(/^\/api/, '')
       }
     }
   }
