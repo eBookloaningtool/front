@@ -44,13 +44,19 @@
         {{ isAvailable ? (isBorrowing ? '借阅中...' : '借阅') : '暂不可用' }}
       </button>
 
-      <AddToCartButton v-if="showCart" :book-id="book.bookId" @click.stop class="cart-btn-container" />
+      <AddToCartButton 
+        v-if="showCart" 
+        :book-id="book.bookId" 
+        @click.stop 
+        class="cart-btn-container"
+        @not-logged-in="showToast('请先登录', 'error')"
+      />
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import AddToCartButton from './AddToCartButton.vue';
 import BookCover from './BookCover.vue';
@@ -75,6 +81,29 @@ const isBorrowing = ref(false);
 const loading = ref(false);
 const isInWishlist = ref(false);
 
+// 监听登录状态变化
+const checkLoginStatus = () => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    isInWishlist.value = false;
+  }
+};
+
+// 在组件挂载时添加登录状态监听
+onMounted(() => {
+  checkLoginStatus();
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'token') {
+      checkLoginStatus();
+    }
+  });
+});
+
+// 在组件卸载时移除监听
+onUnmounted(() => {
+  window.removeEventListener('storage', checkLoginStatus);
+});
+
 const isAvailable = computed(() => {
   return true; // 默认视为可用（如果有库存字段可以做判断）
 });
@@ -94,13 +123,20 @@ const toggleWishlist = async (event) => {
   try {
     if (isInWishlist.value) {
       await removeFromWishlist(props.book.bookId);
+      isInWishlist.value = false;
+      showToast('已从心愿单移除', 'success');
     } else {
-      await addToWishlist(props.book.bookId);
+      const response = await addToWishlist(props.book.bookId);
+      if (response.state === 'success') {
+        isInWishlist.value = true;
+        showToast('已添加到心愿单', 'success');
+      } else if (response.state === 'Book already exist.') {
+        showToast('这本书已经在您的愿望清单中', 'info');
+        isInWishlist.value = false; // 保持非激活状态
+      } else {
+        throw new Error('添加失败');
+      }
     }
-
-    // 更新状态
-    isInWishlist.value = !isInWishlist.value;
-    showToast(isInWishlist.value ? '已添加到心愿单' : '已从心愿单移除', 'success');
 
     // 通知父组件
     emit('favorite-change', {
@@ -158,19 +194,29 @@ const setBalance = (val) => localStorage.setItem('accountBalance', val);
 const handleBorrow = async (event) => {
   event.stopPropagation();
 
+  const token = localStorage.getItem('token');
+  if (!token) {
+    showToast('请先登录', 'error');
+    return;
+  }
+
   if (isBorrowing.value || !isAvailable.value) return;
 
   isBorrowing.value = true;
   try {
     const result = await borrowBook(props.book.bookId);
 
+    // 检查是否是余额不足的响应
+    if (result?.state === 'insufficient balance' || result?.message?.includes('insufficient balance')) {
+      showToast('Insufficient balance, please recharge first', 'error');
+      return;
+    }
+
+    // 处理其他响应状态
     if (result.state === 'success') {
       saveBorrowedBook(result.dueDate);
-      setBalance(result.balance); // 使用 API 返回的最新余额
-      showToast('借阅成功，前往我的书籍查看', 'success');
-    } else if (result.state === 'insufficient balance') {
-      showToast('余额不足，请先充值', 'error');
-      router.push({ name: 'TopUp', query: { amount: result.newPayment } });
+      setBalance(result.balance);
+      showToast('Borrowed successfully, go to My Books to view', 'success');
     } else if (result.state === 'Reach borrow limit') {
       showToast('已达到借阅上限', 'error');
     } else if (result.state === 'Borrow failed.') {
@@ -184,10 +230,11 @@ const handleBorrow = async (event) => {
       }
       showToast(errorMessage, 'error');
     } else {
-      showToast(result.message || '借阅失败，请稍后重试', 'error');
+      showToast(result.message || 'Borrowing failed, please try again later', 'error');
     }
   } catch (error) {
-    handleApiError(error);
+    // 这里只处理真正的异常情况
+    showToast('Request exception, please try again later', 'error');
   } finally {
     isBorrowing.value = false;
   }
@@ -205,17 +252,6 @@ const saveBorrowedBook = (dueDate) => {
     borrowDate: new Date().toISOString().split('T')[0]
   });
   localStorage.setItem('borrowedBooks', JSON.stringify(borrowedBooks));
-};
-
-// 统一处理接口异常
-const handleApiError = (error) => {
-  if (error.response) {
-    showToast(`服务器错误(${error.response.status})`, 'error');
-  } else if (error.request) {
-    showToast('连接服务器失败，请检查网络', 'error');
-  } else {
-    showToast('请求异常，请稍后再试', 'error');
-  }
 };
 
 // 组件挂载时检查心愿单状态

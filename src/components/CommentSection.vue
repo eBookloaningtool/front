@@ -1,12 +1,11 @@
 <!-- CommentSection.vue -->
 <template>
   <div class="comment-section">
-    <h2 class="section-title">用户评论</h2>
-
+    <h2 class="section-title">User Reviews</h2>
     <div class="comment-form" v-if="isLoggedIn">
-      <h3>发表评论</h3>
+      <h3>Post a Review</h3>
       <div class="rating-input">
-        <span>评分：</span>
+        <span>Rating:</span>
         <div class="star-rating">
           <i v-for="n in 5"
              :key="n"
@@ -18,19 +17,19 @@
         </div>
       </div>
       <textarea v-model="commentText"
-                placeholder="写下你的评论..."
+                placeholder="Write your review..."
                 @input="validateComment">
       </textarea>
       <button class="submit-comment"
               :disabled="!isValid"
               @click="submitComment">
-        发表评论
+        Submit Review
       </button>
     </div>
 
     <div v-else class="login-prompt">
-      <p>登录后才能发表评论</p>
-      <button class="login-btn" @click="redirectToLogin">登录</button>
+      <p>Please login to post a review</p>
+      <button class="login-btn" @click="redirectToLogin">Login</button>
     </div>
 
     <div class="comments-list">
@@ -52,7 +51,7 @@
       </div>
 
       <div v-if="comments.length === 0" class="no-comments">
-        <p>暂无评论，快来发表第一条评论吧！</p>
+        <p>No reviews yet. Be the first to review!</p>
       </div>
     </div>
   </div>
@@ -101,10 +100,9 @@ const redirectToLogin = () => {
 }
 
 const formatDate = (dateString) => {
-  if (!dateString) return '未知时间'
-
+  if (!dateString) return 'Unknown date'
   const date = new Date(dateString)
-  return date.toLocaleDateString('zh-CN', {
+  return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
@@ -117,7 +115,7 @@ const submitComment = async () => {
   try {
     const token = localStorage.getItem('token')
     if (!token) {
-      error.value = '请先登录后再发表评论'
+      error.value = 'Please login to post a review'
       return
     }
 
@@ -133,53 +131,52 @@ const submitComment = async () => {
         comment: commentText.value.trim()
       })
     })
-
     const result = await response.json()
     if (result.state === 'success') {
-      showToast('评论发表成功', 'success')
+      showToast('success', 'success')
       // 提交成功后重新加载评论
       await loadComments()
       commentText.value = ''
       currentRating.value = 0
       isValid.value = false
     } else {
-      showToast(result.state || '提交评论失败', 'error')
+      showToast(result.state || 'Failed to add comment', 'error')
     }
   } catch (error) {
-    console.error('提交评论失败:', error)
-    showToast('提交评论失败', 'error')
+    console.error('Failed to add comment:', error)
+    showToast('Failed to add comment', 'error')
     error.value = error.message
   }
 }
 
 const loadComments = async () => {
-  console.log('开始加载评论，bookId:', props.bookId)
+  console.log('Loading comments for bookId:', props.bookId)
   isLoading.value = true
   try {
-    // 获取评论ID列表
+    // Get comment ID list
     const response = await fetch(`https://api.borrowbee.wcy.one:61700/api/reviews/book?bookId=${props.bookId}`)
-    console.log('获取评论ID列表响应:', response)
+    console.log('Comment ID list response:', response)
 
     if (!response.ok) {
-      throw new Error('获取评论失败')
+      throw new Error('Failed to get comments')
     }
 
     const data = await response.json()
-    console.log('评论ID列表数据:', data)
+    console.log('Comment ID list data:', data)
     const commentIds = data.commentIds || []
 
-    // 获取每个评论的详细内容
+    // Get detailed content for each comment
     const commentPromises = commentIds.map(async (commentId) => {
       try {
-        console.log('获取评论内容，commentId:', commentId)
+        console.log('Getting comment content for commentId:', commentId)
         const commentResponse = await fetch(`https://api.borrowbee.wcy.one:61700/api/reviews/content?commentId=${commentId}`)
         if (!commentResponse.ok) {
-          console.error(`获取评论 ${commentId} 失败`)
+          console.error(`Failed to get comment ${commentId}`)
           return null
         }
         const commentData = await commentResponse.json()
-        console.log('评论数据:', commentData)
-        console.log('评论内容字段:', commentData.comment)
+        console.log('Comment data:', commentData)
+        console.log('Comment content:', commentData.comment)
         const comment = {
           id: commentData.uuid,
           rating: commentData.rating,
@@ -191,32 +188,32 @@ const loadComments = async () => {
         console.log('处理后的评论对象:', comment)
         return comment
       } catch (err) {
-        console.error(`处理评论 ${commentId} 时出错:`, err)
+        console.error(`Error processing comment ${commentId}:`, err)
         return null
       }
     })
 
     const commentResults = await Promise.all(commentPromises)
     comments.value = commentResults.filter(comment => comment !== null)
-    console.log('最终评论列表:', comments.value)
+    console.log('Final comments list:', comments.value)
   } catch (error) {
-    console.error('加载评论失败:', error)
+    console.error('Failed to load comments:', error)
     error.value = error.message
   } finally {
     isLoading.value = false
   }
 }
 
-// 监听 bookId 变化
+// Watch for bookId changes
 watch(() => props.bookId, (newVal) => {
-  console.log('bookId 变化:', newVal)
+  console.log('bookId changed:', newVal)
   if (newVal) {
     loadComments()
   }
 })
 
 onMounted(() => {
-  console.log('组件挂载，当前bookId:', props.bookId)
+  console.log('Component mounted, current bookId:', props.bookId)
   isLoggedIn.value = !!localStorage.getItem('token')
   if (props.bookId) {
     loadComments()
@@ -227,9 +224,9 @@ onMounted(() => {
 <style scoped>
 .comment-section {
   margin: 40px 0;
-  background-color: white;
+  background-color: #fffbf0;
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   padding: 30px;
 }
 
@@ -242,16 +239,17 @@ onMounted(() => {
 }
 
 .comment-form {
-  background-color: #f9f9f9;
+  background-color: white;
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 30px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
 .comment-form h3 {
   margin-top: 0;
   margin-bottom: 15px;
-  color: #555;
+  color: #333;
   font-size: 18px;
 }
 
@@ -288,15 +286,16 @@ textarea {
   resize: vertical;
   font-size: 14px;
   transition: border-color 0.3s;
+  background-color: #ffffff;
 }
 
 textarea:focus {
-  border-color: #4a90e2;
+  border-color: #f0ad4e;
   outline: none;
 }
 
 .submit-comment {
-  background-color: #4a90e2;
+  background-color: #3498db;
   color: white;
   padding: 10px 20px;
   border: none;
@@ -308,7 +307,7 @@ textarea:focus {
 }
 
 .submit-comment:hover:not(:disabled) {
-  background-color: #357abd;
+  background-color: #2980b9;
   transform: translateY(-2px);
 }
 
@@ -318,11 +317,12 @@ textarea:focus {
 }
 
 .login-prompt {
-  background-color: #f9f9f9;
+  background-color: white;
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 30px;
   text-align: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
 .login-prompt p {
@@ -331,7 +331,7 @@ textarea:focus {
 }
 
 .login-btn {
-  background-color: #4a90e2;
+  background-color: #3498db;
   color: white;
   padding: 8px 16px;
   border: none;
@@ -342,7 +342,7 @@ textarea:focus {
 }
 
 .login-btn:hover {
-  background-color: #357abd;
+  background-color: #2980b9;
 }
 
 .comments-list {
@@ -352,10 +352,10 @@ textarea:focus {
 }
 
 .review-item {
-  background-color: #f9f9f9;
+  background-color: white;
   border-radius: 8px;
   padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -411,7 +411,7 @@ textarea:focus {
   color: #999;
 }
 
-/* 响应式设计 */
+/* Responsive design */
 @media (max-width: 768px) {
   .comment-section {
     padding: 20px;

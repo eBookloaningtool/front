@@ -138,7 +138,7 @@ export const borrowBook = async (bookId: string | string[]): Promise<BorrowApiRe
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     } else {
-      console.warn('借阅书籍时未找到认证令牌，可能导致认证失败');
+      console.warn('Token not found when borrowing books, authentication might fail');
     }
 
     const response = await post({
@@ -148,7 +148,7 @@ export const borrowBook = async (bookId: string | string[]): Promise<BorrowApiRe
     });
     return response;
   } catch (error) {
-    console.error('借阅书籍失败:', error);
+    console.error('Failed to borrow book:', error);
     throw error;
   }
 };
@@ -166,7 +166,7 @@ export const returnBook = async (bookId: string): Promise<ReturnApiResponse> => 
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     } else {
-      console.warn('归还书籍时未找到认证令牌，可能导致认证失败');
+      console.warn('Token not found when returning books, authentication might fail');
     }
 
     const response = await post({
@@ -176,7 +176,7 @@ export const returnBook = async (bookId: string): Promise<ReturnApiResponse> => 
     });
     return response;
   } catch (error) {
-    console.error('归还电子书失败:', error);
+    console.error('Failed to return book:', error);
     return { state: 'error', message: (error as Error).message || 'Unknown error occurred' };
   }
 };
@@ -194,7 +194,7 @@ export const renewBook = async (bookId: string): Promise<RenewApiResponse> => {
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     } else {
-      console.warn('续借书籍时未找到认证令牌，可能导致认证失败');
+      console.warn('Token not found when renewing books, authentication might fail');
     }
 
     const response = await post({
@@ -204,7 +204,7 @@ export const renewBook = async (bookId: string): Promise<RenewApiResponse> => {
     });
     return response;
   } catch (error) {
-    console.error('续借电子书失败:', error);
+    console.error('Failed to renew book:', error);
     return { state: 'error', message: (error as Error).message || 'Unknown error occurred' };
   }
 };
@@ -222,7 +222,7 @@ export const getBorrowList = async (): Promise<BorrowListResponse> => {
     );
     return response.data;
   } catch (error) {
-    console.error('获取借阅列表失败:', (error as AxiosError)?.response?.data || (error as Error).message);
+    console.error('Failed to get borrow list:', (error as AxiosError)?.response?.data || (error as Error).message);
     // 出错时返回空数据
     return { state: 'error', data: [] };
   }
@@ -247,7 +247,7 @@ export const getBorrowHistory = async (): Promise<BorrowHistoryResponse> => {
           const bookDetail = await get({
             url: `/api/books/get?bookId=${loan.bookId}`
           });
-          
+
           return {
             ...loan,
             cover: bookDetail.coverUrl || '/images/books/default-cover.jpg',
@@ -255,7 +255,7 @@ export const getBorrowHistory = async (): Promise<BorrowHistoryResponse> => {
             author: bookDetail.author || loan.bookAuthor
           };
         } catch (error) {
-          console.error(`获取书籍 ${loan.bookId} 详情失败:`, error);
+          console.error(`Failed to get book details for ${loan.bookId}:`, error);
           return {
             ...loan,
             cover: '/images/books/default-cover.jpg',
@@ -271,7 +271,7 @@ export const getBorrowHistory = async (): Promise<BorrowHistoryResponse> => {
       data: historyWithCovers
     };
   } catch (error) {
-    console.error('获取借阅历史失败:', error);
+    console.error('Failed to get borrow history:', error);
     return { state: 'error', data: [] };
   }
 };

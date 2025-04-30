@@ -3,16 +3,16 @@
     <button
       @click="handleBorrow"
       class="borrow-button"
-      :disabled="isLoading || isBorrowed || isBorrowing"
       :class="{ 'borrowed': isBorrowed }"
+      :disabled="isLoading || isBorrowed || isBorrowing"
     >
       <span v-if="isLoading || isBorrowing" class="loading-icon">
         <i class="fas fa-spinner fa-spin"></i>
       </span>
       <span v-else-if="isBorrowed">
-        已借阅 (归还日期: {{ formattedDueDate }})
+        Borrowed (Return date: {{ formattedDueDate }})
       </span>
-      <span v-else>借阅此书</span>
+      <span v-else>Borrow</span>
     </button>
 
     <div v-if="message" :class="['message', messageType]">
@@ -73,7 +73,7 @@ async function handleBorrow() {
 
 <style scoped>
 .borrow-button-container {
-  margin-top: 20px;
+  width: 100%;
 }
 
 .borrow-button {
@@ -90,7 +90,7 @@ async function handleBorrow() {
   transition: all 0.3s ease;
   position: relative;
   font-weight: 500;
-  min-width: 180px;
+  width: 100%;
   box-shadow: 0 4px 6px rgba(46, 204, 113, 0.2);
 }
 

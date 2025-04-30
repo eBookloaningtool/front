@@ -83,18 +83,6 @@ const routes = [
     component: MyBooksPage,
     meta: { requiresAuth: true }
   },
-  {
-    path: '/user/favorites',
-    name: 'Favorites',
-    component: FavoritesPage,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/user/topup',
-    name: 'TopUp',
-    component: () => import('../views/TopUpPage.vue'),
-    meta: { requiresAuth: true }
-  },
   // 用户资料页新增路由
   {
     path: '/user/recent-borrows',
@@ -132,7 +120,7 @@ const routes = [
     component: () => import('../views/user/SettingsPage.vue'),
     meta: { requiresAuth: true }
   },
- 
+
   {
     path: '/help',
     name: 'Help',
