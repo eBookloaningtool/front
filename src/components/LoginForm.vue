@@ -345,6 +345,7 @@ const handleLogin = async () => {
           </button>
           <button
             class="submit-button bg-yellow-400 hover:bg-yellow-500"
+            style="background-color: #F59E0B !important;"
             @click="handleForgetPassword"
             :disabled="forgetPasswordSubmitting"
           >
@@ -516,6 +517,13 @@ button:disabled {
   justify-content: center;
   height: auto;
 }
+
+.submit-button:disabled {
+  opacity: 0.7;
+  background-color: #facc15 !important;
+  cursor: not-allowed;
+}
+
 
 .message-alert {
   padding: 0.75rem 1rem;
