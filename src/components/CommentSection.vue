@@ -2,7 +2,6 @@
 <template>
   <div class="comment-section">
     <h2 class="section-title">User Reviews</h2>
-
     <div class="comment-form" v-if="isLoggedIn">
       <h3>Post a Review</h3>
       <div class="rating-input">
@@ -61,6 +60,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useToast } from '../composables/useToast';
 
 const props = defineProps({
   bookId: {
@@ -77,7 +77,7 @@ const currentRating = ref(0)
 const isValid = ref(false)
 const error = ref(null)
 const isLoading = ref(false)
-
+const { showToast } = useToast()
 const updateStars = (rating, isHover = false) => {
   if (isHover) {
     currentRating.value = rating
@@ -101,7 +101,6 @@ const redirectToLogin = () => {
 
 const formatDate = (dateString) => {
   if (!dateString) return 'Unknown date'
-
   const date = new Date(dateString)
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
@@ -132,23 +131,20 @@ const submitComment = async () => {
         comment: commentText.value.trim()
       })
     })
-
-    if (!response.ok) {
-      throw new Error('Failed to submit review')
-    }
-
     const result = await response.json()
     if (result.state === 'success') {
-      // Reload comments after successful submission
+      showToast('success', 'success')
+      // 提交成功后重新加载评论
       await loadComments()
       commentText.value = ''
       currentRating.value = 0
       isValid.value = false
     } else {
-      throw new Error(result.message || 'Failed to submit review')
+      showToast(result.state || 'Failed to add comment', 'error')
     }
   } catch (error) {
-    console.error('Failed to submit review:', error)
+    console.error('Failed to add comment:', error)
+    showToast('Failed to add comment', 'error')
     error.value = error.message
   }
 }
@@ -180,13 +176,17 @@ const loadComments = async () => {
         }
         const commentData = await commentResponse.json()
         console.log('Comment data:', commentData)
-        return {
+        console.log('Comment content:', commentData.comment)
+        const comment = {
           id: commentData.uuid,
           rating: commentData.rating,
-          content: commentData.comment,
-          username: 'Anonymous User',
+          content: commentData.content,
+          username: commentData.username,
+          bookId: commentData.bookId,
           createdAt: new Date().toISOString()
         }
+        console.log('处理后的评论对象:', comment)
+        return comment
       } catch (err) {
         console.error(`Error processing comment ${commentId}:`, err)
         return null
