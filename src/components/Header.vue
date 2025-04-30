@@ -12,7 +12,7 @@
         <ul>
           <li><router-link to="/">Home</router-link></li>
           <li><router-link to="/categories">Categories</router-link></li>
-          <li><router-link to="/books">Library</router-link></li>
+          <li><router-link to="/user/books">My Books</router-link></li>
         </ul>
       </nav>
 
