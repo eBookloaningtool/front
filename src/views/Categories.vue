@@ -36,7 +36,7 @@
           </div>
         </div>
         <!-- 选中分类的图书列表 -->
-        <div v-if="selectedCategory" class="book-section mt-12">
+        <div v-if="selectedCategory" ref="bookSection" class="book-section mt-12">
           <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
             <div>
               <h2 class="text-2xl font-bold text-gray-800">{{ selectedCategory }}</h2>
@@ -74,7 +74,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Header from '../components/Header.vue';
 import Footer from '../components/Footer.vue';
@@ -90,6 +90,19 @@ const categorizedBooks = ref({});
 const loading = ref(true);
 const error = ref('');
 const selectedCategory = ref('');
+const bookSection = ref(null);
+
+// 滚动到书本内容区域
+const scrollToBooks = () => {
+  nextTick(() => {
+    if (bookSection.value) {
+      bookSection.value.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  });
+};
 
 // 选择分类的方法
 const selectCategory = (categoryName) => {
@@ -152,6 +165,8 @@ const fetchBooksByCategory = async (categoryName) => {
     categorizedBooks.value[categoryName] = [];
   } finally {
     loading.value = false;
+    // 数据加载完成后，滚动到书本区域
+    scrollToBooks();
   }
 };
 
