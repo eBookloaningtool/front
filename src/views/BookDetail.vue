@@ -69,6 +69,7 @@ import CommentSection from '../components/CommentSection.vue';
 import { borrowBook } from '@/api/borrowApi';
 import { formatPrice } from '@/utils/format';
 import { sendEmailNotification } from '@/utils/emailService';
+import { get } from '@/utils/request';
 
 const route = useRoute();
 const router = useRouter();
@@ -94,54 +95,24 @@ async function fetchBookDetail() {
   error.value = null;
 
   try {
-    // 此处使用模拟数据或实际API
-    if (window.mockMode) {
-      // 模拟数据获取
-      setTimeout(() => {
-        import('../mock-api.js').then(mockApi => {
-          const bookData = mockApi.getMockBook(bookId.value);
-          if (bookData) {
-            book.value = bookData;
-            cacheBookData(bookData);
-          } else {
-            error.value = '未找到书籍';
-          }
-          isLoading.value = false;
-        });
-      }, 500);
+    console.log('开始获取书籍详情，bookId:', bookId.value);
+    const response = await get({
+      url: `/api/books/get?bookId=${bookId.value}`
+    });
+    console.log('获取书籍详情响应:', response);
+    
+    if (response) {
+      book.value = response;
+      console.log('书籍详情数据:', book.value);
+      cacheBookData(response);
     } else {
-      // 实际API调用
-      const response = await fetch(`https://api.borrowbee.wcy.one:61700/api/books/get?bookId=${bookId.value}`, {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`获取书籍详情失败: ${response.status} ${response.statusText}`);
-      }
-
-      // 检查响应类型
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('服务器返回了非JSON响应');
-      }
-
-      const bookData = await response.json();
-      
-      // 验证返回的数据结构
-      if (!bookData || typeof bookData !== 'object') {
-        throw new Error('返回的数据格式不正确');
-      }
-
-      book.value = bookData;
-      cacheBookData(bookData);
-      isLoading.value = false;
+      error.value = '未找到书籍';
+      console.error('未找到书籍详情数据');
     }
   } catch (err) {
     console.error('获取书籍详情错误:', err);
     error.value = `无法加载书籍详情: ${err.message}`;
+  } finally {
     isLoading.value = false;
   }
 }
