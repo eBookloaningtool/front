@@ -11,13 +11,7 @@ export const post = async ({ url, data = {}, headers = {} }: {
   headers?: Record<string, string>;
 }): Promise<any> => {
   try {
-    // 获取Token
-    const token = localStorage.getItem('token');
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-    
-    console.log(`[API] 发送POST请求: ${url}`, { data, headers: { ...headers, Authorization: token ? 'Bearer ***' : undefined } });
+    console.log(`[API] 发送POST请求: ${url}`, { data, headers: { ...headers, Authorization: headers.Authorization ? 'Bearer ***' : undefined } });
     
     // 发送请求
     const response = await axios.post(url, data, { headers });
@@ -62,13 +56,7 @@ export const get = async ({ url, params = {}, headers = {} }: {
   headers?: Record<string, string>;
 }): Promise<any> => {
   try {
-    // 获取Token
-    const token = localStorage.getItem('token');
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-    
-    console.log(`[API] 发送GET请求: ${url}`, { params, headers: { ...headers, Authorization: token ? 'Bearer ***' : undefined } });
+    console.log(`[API] 发送GET请求: ${url}`, { params, headers: { ...headers, Authorization: headers.Authorization ? 'Bearer ***' : undefined } });
     
     // 发送请求
     const response = await axios.get(url, { params, headers });
