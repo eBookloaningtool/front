@@ -41,13 +41,19 @@
         {{ isAvailable ? (isBorrowing ? '借阅中...' : '借阅') : '暂不可用' }}
       </button>
 
-      <AddToCartButton v-if="showCart" :book-id="book.bookId" @click.stop class="cart-btn-container" />
+      <AddToCartButton 
+        v-if="showCart" 
+        :book-id="book.bookId" 
+        @click.stop 
+        class="cart-btn-container"
+        @not-logged-in="showToast('请先登录', 'error')"
+      />
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import AddToCartButton from './AddToCartButton.vue';
 import BookCover from './BookCover.vue';
@@ -71,6 +77,29 @@ const fallbackCover = 'https://source.unsplash.com/collection/1320303/300x450?si
 const isBorrowing = ref(false);
 const loading = ref(false);
 const isInWishlist = ref(false);
+
+// 监听登录状态变化
+const checkLoginStatus = () => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    isInWishlist.value = false;
+  }
+};
+
+// 在组件挂载时添加登录状态监听
+onMounted(() => {
+  checkLoginStatus();
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'token') {
+      checkLoginStatus();
+    }
+  });
+});
+
+// 在组件卸载时移除监听
+onUnmounted(() => {
+  window.removeEventListener('storage', checkLoginStatus);
+});
 
 const isAvailable = computed(() => {
   return true; // 默认视为可用（如果有库存字段可以做判断）
@@ -161,6 +190,12 @@ const setBalance = (val) => localStorage.setItem('accountBalance', val);
 // 借阅处理
 const handleBorrow = async (event) => {
   event.stopPropagation();
+
+  const token = localStorage.getItem('token');
+  if (!token) {
+    showToast('请先登录', 'error');
+    return;
+  }
 
   if (isBorrowing.value || !isAvailable.value) return;
 
