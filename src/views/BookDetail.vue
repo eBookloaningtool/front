@@ -39,6 +39,13 @@
             <BorrowButton :book="book" @borrow="handleBorrow" :is-borrowing="isBorrowing" />
           </div>
 
+          <button
+             class="mt-6 px-6 py-2 rounded text-white bg-amber-500 hover:bg-amber-600"
+              @click="readBook"
+              >
+              阅读
+             </button>
+
           <div class="book-comments">
             <CommentSection :book-id="bookId" />
           </div>
@@ -67,6 +74,7 @@ import AddToCartButton from '../components/AddToCartButton.vue';
 import BorrowButton from '../components/BorrowButton.vue';
 import CommentSection from '../components/CommentSection.vue';
 import { borrowBook } from '@/api/borrowApi';
+import axios from 'axios';
 import { formatPrice } from '@/utils/format';
 import { sendEmailNotification } from '@/utils/emailService';
 
@@ -334,6 +342,21 @@ const getBorrowCount = () => {
 
   return 0; // 默认值
 };
+
+async function readBook() {
+  try {
+    const { data } = await axios.post('/api/books/content', {
+      bookId: route.params.id,     // 当前详情页的书籍 ID
+    })
+    router.push({
+      name: 'Reader',              // 需在路由表中注册 Reader 页面
+      query: { url: encodeURIComponent(data.contentURL) },
+    })
+  } catch (e) {
+    console.error(e)
+    alert('无法加载电子书，请稍后再试')
+  }
+}
 </script>
 
 <style scoped>
