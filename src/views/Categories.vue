@@ -200,160 +200,68 @@ onMounted(() => {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background-color: #f8f9fa;
+  padding: 0 10rem;
 }
 
 main {
   flex: 1;
   margin-top: 60px;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-/* 页面标题样式 */
 .page-header {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   margin-bottom: 2rem;
+  animation: fadeIn 0.5s ease-out;
 }
 
-.page-header h1 {
-  font-size: 38px;
-  font-weight: bold;
-  color: #3a4660;
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-
-.page-header h1::before {
-  content: "\ee27"; /* 书本图标 */
-  font-family: 'remixicon';
-  font-size: 40px;
-  margin-right: 20px;
-  color: #3a4660;
-}
-
-.page-header h1::after {
-  content: "\f1d6"; /* 植物图标 */
-  font-family: 'remixicon';
-  font-size: 40px;
-  margin-left: 20px;
-  color: #3a4660;
-}
-
-.page-header p {
-  display: none;
-}
-
-/* 将整个内容区域样式改为目标效果 */
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-/* 覆盖原有分类列表样式 */
-.flex.flex-col.md\:flex-row {
-  background-color: #fffcf5;
-  border-radius: 10px;
-  padding: 30px;
-}
-
-/* 隐藏右侧内容 */
-.md\:w-3\/4 {
-  display: none !important;
-}
-
-/* 扩展左侧到整个宽度 */
-.md\:w-1\/4 {
-  width: 100% !important;
-}
-
-/* 移除卡片背景和阴影 */
-.bg-white.rounded-xl.shadow-lg {
-  background-color: transparent !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-}
-
-/* 隐藏分类标题，使用页面标题 */
-.text-xl.font-semibold.mb-6.pb-3.border-b {
-  display: none;
-}
-
-/* 修改分类网格为三列布局 */
-.grid.grid-cols-1.gap-6 {
-  display: flex;
-  flex-wrap: wrap;
-}
-
-/* 每个分类项目 */
 .category-card {
-  width: 33.33%;
-  padding: 8px 15px !important;
-  background: none !important;
-  box-shadow: none !important;
-  border: none !important;
-  transition: transform 0.2s ease !important;
+  transition: all 0.3s ease;
 }
 
 .category-card:hover {
-  transform: translateX(5px) !important;
-  background-color: transparent !important;
+  transform: translateX(4px);
+  background-color: #fef3c7;
 }
 
-/* 隐藏图标 */
 .category-icon {
-  display: none !important;
+  transition: all 0.3s ease;
 }
 
-/* 分类名称 */
-.flex.items-center.space-x-3 {
-  justify-content: flex-start;
+.category-card:hover .category-icon {
+  transform: scale(1.1);
+  background-color: #fef3c7;
 }
 
-.text-gray-800.font-medium {
-  font-size: 16px;
-  color: #3a4660;
-  transition: color 0.2s ease;
-}
-
-.category-card:hover .text-gray-800 {
-  color: #e9a84c !important;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* 响应式调整 */
 @media (max-width: 768px) {
-  .grid.grid-cols-1.gap-6 {
-    flex-direction: column;
+  .page-header h1 {
+    font-size: 2rem;
+  }
+
+  .page-header p {
+    font-size: 0.9rem;
   }
 
   .category-card {
-    width: 100%;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 12px !important;
-    margin-bottom: 12px;
+    padding: 0.75rem;
   }
 
-  .category-card:last-child {
-    border-bottom: none;
-  }
-
-  .page-header h1 {
-    font-size: 32px;
-  }
-}
-
-@media (max-width: 480px) {
-  .page-header h1 {
-    font-size: 24px;
-  }
-
-  .page-header h1::before,
-  .page-header h1::after {
-    font-size: 30px;
-  }
-
-  .flex.flex-col.md\:flex-row {
-    padding: 15px;
+  .categories-page {
+    padding: 0 0.5rem;
   }
 }
 </style>
