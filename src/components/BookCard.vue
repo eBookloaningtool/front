@@ -25,7 +25,10 @@
 
     <div class="book-rating" v-if="showRating">
       <div class="stars">
-        <i v-for="n in 5" :key="n" :class="['fas', n <= (book.rating || 0) ? 'fa-star' : 'fa-star-o']"></i>
+        <i v-for="n in 5"
+           :key="n"
+           :class="['ri-star-' + (n <= (book.rating || 0) ? 'fill' : 'line')]">
+        </i>
       </div>
       <span class="rating-count">可借</span>
     </div>

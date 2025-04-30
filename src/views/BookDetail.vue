@@ -19,6 +19,15 @@
             <p class="book-author">作者: <a @click="viewAuthorBooks(book.author)">{{ book.author }}</a></p>
             <p class="book-category">分类: <RouterLink :to="`/category/${book.category}`">{{ book.category }}</RouterLink></p>
             <p class="book-price">价格: £{{ book.price }}</p>
+            <div class="book-rating">
+              <div class="stars">
+                <i v-for="n in 5"
+                   :key="n"
+                   :class="['ri-star-' + (n <= (book.rating || 0) ? 'fill' : 'line')]">
+                </i>
+              </div>
+              <span class="rating-value">{{ Number.isInteger(book.rating) ? (book.rating || 0) + '.0' : (book.rating || 0) }}</span>
+            </div>
             <p class="book-available">
               可借副本:
               <span :class="{'out-of-stock': book.availableCopies <= 0, 'in-stock': book.availableCopies > 0}">
@@ -108,7 +117,7 @@ async function fetchBookDetail() {
       url: `/api/books/get?bookId=${bookId.value}`
     });
     console.log('获取书籍详情响应:', response);
-    
+
     if (response) {
       book.value = response;
       console.log('书籍详情数据:', book.value);
@@ -455,5 +464,27 @@ async function readBook() {
 .out-of-stock {
   color: #e74c3c;
   font-weight: bold;
+}
+
+.book-rating {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.book-rating .stars {
+  display: flex;
+  gap: 2px;
+}
+
+.book-rating .stars i {
+  color: #ffd700;
+  font-size: 18px;
+}
+
+.book-rating .rating-value {
+  color: #666;
+  font-size: 14px;
 }
 </style>

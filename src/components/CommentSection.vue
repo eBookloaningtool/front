@@ -2,14 +2,14 @@
 <template>
   <div class="comment-section">
     <h2 class="section-title">用户评论</h2>
-    
+
     <div class="comment-form" v-if="isLoggedIn">
       <h3>发表评论</h3>
       <div class="rating-input">
         <span>评分：</span>
         <div class="star-rating">
-          <i v-for="n in 5" 
-             :key="n" 
+          <i v-for="n in 5"
+             :key="n"
              :class="['ri-star-' + (n <= currentRating ? 'fill' : 'line')]"
              @mouseover="updateStars(n, true)"
              @mouseout="updateStars(currentRating)"
@@ -17,31 +17,31 @@
           </i>
         </div>
       </div>
-      <textarea v-model="commentText" 
+      <textarea v-model="commentText"
                 placeholder="写下你的评论..."
                 @input="validateComment">
       </textarea>
-      <button class="submit-comment" 
+      <button class="submit-comment"
               :disabled="!isValid"
               @click="submitComment">
         发表评论
       </button>
     </div>
-    
+
     <div v-else class="login-prompt">
       <p>登录后才能发表评论</p>
       <button class="login-btn" @click="redirectToLogin">登录</button>
     </div>
 
     <div class="comments-list">
-      <div v-for="comment in comments" 
-           :key="comment.id" 
+      <div v-for="comment in comments"
+           :key="comment.id"
            class="review-item">
         <div class="review-header">
           <span class="reviewer">{{ comment.username }}</span>
           <div class="star-display">
-            <i v-for="n in 5" 
-               :key="n" 
+            <i v-for="n in 5"
+               :key="n"
                :class="['ri-star-' + (n <= comment.rating ? 'fill' : 'line')]">
             </i>
             <span class="review-rating">{{ comment.rating }}.0</span>
@@ -50,7 +50,7 @@
         <p class="review-content">{{ comment.content }}</p>
         <div class="review-date">{{ formatDate(comment.createdAt) }}</div>
       </div>
-      
+
       <div v-if="comments.length === 0" class="no-comments">
         <p>暂无评论，快来发表第一条评论吧！</p>
       </div>
@@ -61,6 +61,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useToast } from '../composables/useToast';
 
 const props = defineProps({
   bookId: {
@@ -77,7 +78,7 @@ const currentRating = ref(0)
 const isValid = ref(false)
 const error = ref(null)
 const isLoading = ref(false)
-
+const { showToast } = useToast()
 const updateStars = (rating, isHover = false) => {
   if (isHover) {
     currentRating.value = rating
@@ -101,7 +102,7 @@ const redirectToLogin = () => {
 
 const formatDate = (dateString) => {
   if (!dateString) return '未知时间'
-  
+
   const date = new Date(dateString)
   return date.toLocaleDateString('zh-CN', {
     year: 'numeric',
@@ -133,22 +134,20 @@ const submitComment = async () => {
       })
     })
 
-    if (!response.ok) {
-      throw new Error('提交评论失败')
-    }
-
     const result = await response.json()
     if (result.state === 'success') {
+      showToast('评论发表成功', 'success')
       // 提交成功后重新加载评论
       await loadComments()
       commentText.value = ''
       currentRating.value = 0
       isValid.value = false
     } else {
-      throw new Error(result.message || '提交评论失败')
+      showToast(result.state || '提交评论失败', 'error')
     }
   } catch (error) {
     console.error('提交评论失败:', error)
+    showToast('提交评论失败', 'error')
     error.value = error.message
   }
 }
@@ -160,7 +159,7 @@ const loadComments = async () => {
     // 获取评论ID列表
     const response = await fetch(`https://api.borrowbee.wcy.one:61700/api/reviews/book?bookId=${props.bookId}`)
     console.log('获取评论ID列表响应:', response)
-    
+
     if (!response.ok) {
       throw new Error('获取评论失败')
     }
@@ -180,13 +179,17 @@ const loadComments = async () => {
         }
         const commentData = await commentResponse.json()
         console.log('评论数据:', commentData)
-        return {
+        console.log('评论内容字段:', commentData.comment)
+        const comment = {
           id: commentData.uuid,
           rating: commentData.rating,
-          content: commentData.comment,
-          username: '匿名用户',
+          content: commentData.content,
+          username: commentData.username,
+          bookId: commentData.bookId,
           createdAt: new Date().toISOString()
         }
+        console.log('处理后的评论对象:', comment)
+        return comment
       } catch (err) {
         console.error(`处理评论 ${commentId} 时出错:`, err)
         return null
@@ -413,11 +416,11 @@ textarea:focus {
   .comment-section {
     padding: 20px;
   }
-  
+
   .review-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
   }
 }
-</style> 
+</style>
