@@ -384,276 +384,51 @@
 
         <!-- 支付记录视图 -->
         <div v-if="currentView === 'PaymentOrders'" class="payment-orders">
-          <h2 class="page-title">支付和订单</h2>
-          <p class="subtitle">管理您的订单和支付记录</p>
+          <h2 class="page-title">支付记录</h2>
+          <p class="subtitle">查看您的充值记录</p>
 
           <div v-if="loadingOrders" class="loading-state">
             <p>加载中...</p>
           </div>
 
           <div v-else>
-            <!-- 切换标签 -->
-            <div class="tab-container">
-              <button
-                v-for="tab in orderTabs"
-                :key="tab.id"
-                @click="currentOrderTab = tab.id"
-                class="tab-button"
-                :class="{ 'tab-active': currentOrderTab === tab.id }"
+            <div v-if="completedOrders.length === 0" class="empty-state">
+              <p>暂无充值记录</p>
+              <router-link
+                to="/top-up"
+                class="browse-btn"
               >
-                {{ tab.name }}
-              </button>
+                立即充值
+              </router-link>
             </div>
 
-            <!-- 未支付订单 -->
-            <div v-if="currentOrderTab === 'unpaid'" class="orders-list">
-              <div v-if="unpaidOrders.length === 0" class="empty-state">
-                <p>您没有待支付的订单</p>
-                <router-link
-                  to="/books"
-                  class="browse-btn"
-                >
-                  浏览图书
-                </router-link>
-              </div>
-
-              <div v-else>
-                <div
-                  v-for="order in unpaidOrders"
-                  :key="order.id"
-                  class="order-item"
-                >
-                  <div class="order-header">
-                    <div class="order-info">
-                      <span class="order-number">订单号: {{ order.orderNumber }}</span>
-                      <span class="order-date">{{ formatDate(order.createdAt) }}</span>
-                    </div>
-                    <span
-                      class="order-status"
-                      :class="{
-                        'status-pending': order.status === 'pending',
-                        'status-overdue': order.status === 'overdue'
-                      }"
-                    >
-                      {{ getOrderStatusText(order.status) }}
-                    </span>
+            <div v-else class="orders-list">
+              <div
+                v-for="order in completedOrders"
+                :key="order.id"
+                class="order-item"
+              >
+                <div class="order-header">
+                  <div class="order-info">
+                    <span class="order-number">订单号: {{ order.orderNumber }}</span>
+                    <span class="order-date">{{ formatDate(order.createdAt) }}</span>
                   </div>
-
-                  <div class="order-content">
-                    <div class="order-book">
-                      <div class="order-book-cover">
-                        <img
-                          v-if="order.book && order.book.cover"
-                          :src="order.book.cover"
-                          :alt="order.book.title"
-                        />
-                      </div>
-                      <div class="order-book-info">
-                        <div
-                          class="order-book-title"
-                          @click="viewBookDetails(order.book.id)"
-                        >
-                          {{ order.book.title }}
-                        </div>
-                        <div class="order-book-author">{{ order.book.author }}</div>
-                        <div class="order-type">
-                          {{ order.type === 'purchase' ? '购买' : '租借' }} - ¥{{ order.amount.toFixed(2) }}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="order-actions">
-                      <button
-                        @click="cancelOrder(order.id)"
-                        class="cancel-btn"
-                      >
-                        取消
-                      </button>
-                      <button
-                        @click="payOrder(order)"
-                        class="pay-btn"
-                      >
-                        立即支付
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 已完成订单 -->
-            <div v-else-if="currentOrderTab === 'completed'" class="orders-list">
-              <div v-if="completedOrders.length === 0" class="empty-state">
-                <p>您没有已完成的订单</p>
-              </div>
-
-              <div v-else>
-                <div
-                  v-for="order in completedOrders"
-                  :key="order.id"
-                  class="order-item"
-                >
-                  <div class="order-header">
-                    <div class="order-info">
-                      <span class="order-number">订单号: {{ order.orderNumber }}</span>
-                      <span class="order-date">{{ formatDate(order.createdAt) }}</span>
-                    </div>
-                    <span class="order-status status-completed">
-                      {{ getOrderStatusText(order.status) }}
-                    </span>
-                  </div>
-
-                  <div class="order-content">
-                    <div class="order-book">
-                      <div class="order-book-cover">
-                        <img
-                          v-if="order.book && order.book.cover"
-                          :src="order.book.cover"
-                          :alt="order.book.title"
-                        />
-                      </div>
-                      <div class="order-book-info">
-                        <div
-                          class="order-book-title"
-                          @click="viewBookDetails(order.book.id)"
-                        >
-                          {{ order.book.title }}
-                        </div>
-                        <div class="order-book-author">{{ order.book.author }}</div>
-                        <div class="order-type">
-                          {{ order.type === 'purchase' ? '购买' : '租借' }} - ¥{{ order.amount.toFixed(2) }}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="order-payment-info">
-                      <div class="payment-label">支付时间</div>
-                      <div class="payment-value">{{ formatDate(order.paidAt) }}</div>
-                    </div>
-                  </div>
-
-                  <div class="order-footer">
-                    <button
-                      @click="viewOrderDetail(order.id)"
-                      class="detail-btn"
-                    >
-                      查看详情
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 已取消订单 -->
-            <div v-else-if="currentOrderTab === 'cancelled'" class="orders-list">
-              <div v-if="cancelledOrders.length === 0" class="empty-state">
-                <p>您没有已取消的订单</p>
-              </div>
-
-              <div v-else>
-                <div
-                  v-for="order in cancelledOrders"
-                  :key="order.id"
-                  class="order-item cancelled"
-                >
-                  <div class="order-header">
-                    <div class="order-info">
-                      <span class="order-number">订单号: {{ order.orderNumber }}</span>
-                      <span class="order-date">{{ formatDate(order.createdAt) }}</span>
-                    </div>
-                    <span class="order-status status-cancelled">
-                      已取消
-                    </span>
-                  </div>
-
-                  <div class="order-content">
-                    <div class="order-book">
-                      <div class="order-book-cover">
-                        <img
-                          v-if="order.book && order.book.cover"
-                          :src="order.book.cover"
-                          :alt="order.book.title"
-                        />
-                      </div>
-                      <div class="order-book-info">
-                        <div
-                          class="order-book-title"
-                          @click="viewBookDetails(order.book.id)"
-                        >
-                          {{ order.book.title }}
-                        </div>
-                        <div class="order-book-author">{{ order.book.author }}</div>
-                        <div class="order-type">
-                          {{ order.type === 'purchase' ? '购买' : '租借' }} - ¥{{ order.amount.toFixed(2) }}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="order-payment-info">
-                      <div class="payment-label">取消时间</div>
-                      <div class="payment-value">{{ formatDate(order.cancelledAt) }}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 支付对话框 -->
-          <div v-if="showPaymentModal" class="payment-modal-overlay" @click.self="closePaymentModal">
-            <div class="payment-modal">
-              <div class="payment-modal-header">
-                <h3 class="payment-modal-title">确认支付</h3>
-              </div>
-              <div class="payment-modal-body">
-                <div class="payment-info-row">
-                  <div class="payment-info-label">订单号</div>
-                  <div class="payment-info-value">{{ currentOrder.orderNumber }}</div>
+                  <span class="order-status status-completed">
+                    已完成
+                  </span>
                 </div>
 
-                <div class="payment-info-row">
-                  <div class="payment-info-label">图书</div>
-                  <div class="payment-info-value">{{ currentOrder.book?.title }}</div>
-                </div>
+                <div class="order-content">
+                  <div class="order-payment-info">
+                    <div class="payment-label">充值金额</div>
+                    <div class="payment-value">£{{ order.amount.toFixed(2) }}</div>
+                  </div>
 
-                <div class="payment-info-row">
-                  <div class="payment-info-label">支付金额</div>
-                  <div class="payment-info-value payment-amount">¥{{ currentOrder.amount?.toFixed(2) }}</div>
-                </div>
-
-                <div class="payment-info-row">
-                  <div class="payment-info-label">选择支付方式</div>
-                  <div class="payment-methods">
-                    <label class="payment-method-option">
-                      <input type="radio" v-model="paymentMethod" value="alipay" />
-                      <span class="payment-method-name">支付宝</span>
-                    </label>
-                    <label class="payment-method-option">
-                      <input type="radio" v-model="paymentMethod" value="wechat" />
-                      <span class="payment-method-name">微信支付</span>
-                    </label>
-                    <label class="payment-method-option">
-                      <input type="radio" v-model="paymentMethod" value="creditcard" />
-                      <span class="payment-method-name">银行卡</span>
-                    </label>
+                  <div class="order-payment-info">
+                    <div class="payment-label">支付时间</div>
+                    <div class="payment-value">{{ formatDate(order.paidAt) }}</div>
                   </div>
                 </div>
-              </div>
-              <div class="payment-modal-footer">
-                <button
-                  @click="closePaymentModal"
-                  class="cancel-payment-btn"
-                >
-                  取消
-                </button>
-                <button
-                  @click="confirmPayment"
-                  :disabled="!paymentMethod"
-                  class="confirm-payment-btn"
-                  :class="{ 'disabled': !paymentMethod }"
-                >
-                  确认支付
-                </button>
               </div>
             </div>
           </div>
@@ -728,6 +503,7 @@ import { useRouter, useRoute } from 'vue-router';
 import Header from '../components/Header.vue';
 import { useUserStore } from '../stores/userStore';
 import { useToast } from '../composables/useToast';
+import { getPaymentHistory } from '../api/payments';
 
 const router = useRouter();
 const route = useRoute();
@@ -1122,121 +898,46 @@ const fetchReviews = async () => {
 const fetchOrders = async () => {
   loadingOrders.value = true;
   try {
-    // 这里应该是API调用，现在用模拟数据
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // 模拟订单数据
-    orders.value = [
-      {
-        id: 1,
-        orderNumber: 'ORD202404150001',
-        book: {
-          id: 101,
-          title: '三体',
-          author: '刘慈欣',
-          cover: '/images/books/threebody.jpg'
-        },
-        type: 'purchase',
-        amount: 49.90,
-        status: 'pending',
-        createdAt: '2024-04-15T10:30:00Z',
-        paidAt: null,
-        cancelledAt: null
-      },
-      {
-        id: 2,
-        orderNumber: 'ORD202404120002',
-        book: {
-          id: 102,
-          title: '百年孤独',
-          author: '加西亚·马尔克斯',
-          cover: '/images/books/solitude.jpg'
-        },
-        type: 'rental',
-        amount: 15.00,
-        status: 'overdue',
-        createdAt: '2024-04-12T14:15:00Z',
-        paidAt: null,
-        cancelledAt: null
-      },
-      {
-        id: 3,
-        orderNumber: 'ORD202404100003',
-        book: {
-          id: 103,
-          title: '活着',
-          author: '余华',
-          cover: '/images/books/tolive.jpg'
-        },
-        type: 'purchase',
-        amount: 38.50,
+    const result = await getPaymentHistory();
+    if (result.state === 'success') {
+      // 将 API 返回的数据转换为页面需要的格式
+      orders.value = result.data.map(payment => ({
+        id: payment.paymentId,
+        orderNumber: payment.paymentId,
+        amount: payment.amount,
         status: 'completed',
-        createdAt: '2024-04-10T09:45:00Z',
-        paidAt: '2024-04-10T09:50:00Z',
-        cancelledAt: null
-      },
-      {
-        id: 4,
-        orderNumber: 'ORD202404050004',
-        book: {
-          id: 104,
-          title: '月亮与六便士',
-          author: '毛姆',
-          cover: '/images/books/moon.jpg'
-        },
-        type: 'purchase',
-        amount: 42.00,
-        status: 'cancelled',
-        createdAt: '2024-04-05T16:20:00Z',
-        paidAt: null,
-        cancelledAt: '2024-04-05T18:10:00Z'
-      },
-      {
-        id: 5,
-        orderNumber: 'ORD202404010005',
-        book: {
-          id: 105,
-          title: '追风筝的人',
-          author: '卡勒德·胡赛尼',
-          cover: '/images/books/kiterunner.jpg'
-        },
-        type: 'rental',
-        amount: 12.00,
-        status: 'completed',
-        createdAt: '2024-04-01T11:30:00Z',
-        paidAt: '2024-04-01T11:35:00Z',
-        cancelledAt: null
-      }
-    ];
+        createdAt: payment.date,
+        paidAt: payment.date,
+        type: 'top-up'
+      }));
+    } else {
+      throw new Error('获取支付历史失败');
+    }
   } catch (error) {
-    console.error('获取订单数据失败:', error);
+    console.error('获取支付历史失败:', error);
+    showToast('获取支付历史失败，请稍后重试', 'error');
+    orders.value = [];
   } finally {
     loadingOrders.value = false;
   }
 };
 
 // 根据状态筛选订单
-const unpaidOrders = computed(() => {
-  return orders.value.filter(order => order.status === 'pending' || order.status === 'overdue');
+const completedOrders = computed(() => {
+  return orders.value;
 });
 
-const completedOrders = computed(() => {
-  return orders.value.filter(order => order.status === 'completed');
+const unpaidOrders = computed(() => {
+  return [];
 });
 
 const cancelledOrders = computed(() => {
-  return orders.value.filter(order => order.status === 'cancelled');
+  return [];
 });
 
 // 获取订单状态文本
 const getOrderStatusText = (status) => {
-  switch (status) {
-    case 'pending': return '待支付';
-    case 'completed': return '已完成';
-    case 'cancelled': return '已取消';
-    case 'overdue': return '已逾期';
-    default: return status;
-  }
+  return '已完成';
 };
 
 // 查看订单详情
