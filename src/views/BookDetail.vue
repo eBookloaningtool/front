@@ -1,7 +1,7 @@
 <template>
   <div class="book-detail-container">
     <div v-if="isLoading" class="loading">
-      <p>加载中...</p>
+      <p>Loading...</p>
     </div>
 
     <div v-else-if="error" class="error">
@@ -16,11 +16,20 @@
           </div>
           <div class="book-basic-info">
             <h1 class="book-title">{{ book.title }}</h1>
-            <p class="book-author">作者: <a @click="viewAuthorBooks(book.author)">{{ book.author }}</a></p>
-            <p class="book-category">分类: <RouterLink :to="`/category/${book.category}`">{{ book.category }}</RouterLink></p>
-            <p class="book-price">价格: £{{ book.price }}</p>
+            <p class="book-author">Author: <a @click="viewAuthorBooks(book.author)">{{ book.author }}</a></p>
+            <p class="book-category">Category: <RouterLink :to="`/category/${book.category}`">{{ book.category }}</RouterLink></p>
+            <p class="book-price">Price: £{{ book.price }}</p>
+            <div class="book-rating">
+              <div class="stars">
+                <i v-for="n in 5"
+                   :key="n"
+                   :class="['ri-star-' + (n <= (book.rating || 0) ? 'fill' : 'line')]">
+                </i>
+              </div>
+              <span class="rating-value">{{ Number.isInteger(book.rating) ? (book.rating || 0) + '.0' : (book.rating || 0) }}</span>
+            </div>
             <p class="book-available">
-              可借副本:
+              Available copies:
               <span :class="{'out-of-stock': book.availableCopies <= 0, 'in-stock': book.availableCopies > 0}">
                 {{ book.availableCopies }}/{{ book.totalCopies }}
               </span>
@@ -30,36 +39,17 @@
 
         <div class="book-right">
           <div class="book-description">
-            <h3>简介</h3>
-            <p>{{ book.description || '暂无简介' }}</p>
-          </div>
-
-          <!-- 当用户已借阅时显示的信息 -->
-          <div v-if="book.userBorrowed" class="borrowed-info">
-            <i class="ri-book-mark-line"></i>
-            您已借阅此书
-            <span v-if="book.dueDate">- 归还日期: {{ formatDate(book.dueDate) }}</span>
-            <div class="borrow-tip">您可以直接点击下方"阅读"按钮开始阅读</div>
-          </div>
-
-          <div v-if="borrowSuccess" class="borrow-success-message">
-            <i class="ri-checkbox-circle-line"></i> 借阅成功！请点击下方阅读按钮开始阅读
+            <h3>Description</h3>
+            <p>{{ book.description || 'No description available' }}</p>
           </div>
 
           <div class="book-actions">
             <AddToCartButton :book-id="bookId" buttonText="Add to cart" class="action-button" />
             <BorrowButton :book="book" @borrow="handleBorrow" :is-borrowing="isBorrowing" class="action-button" />
-            <button @click="goToReadBook" class="action-button read-button" :class="{'highlight-button': borrowSuccess}">
-              阅读
+            <button @click="readBook" class="action-button" style="background-color: #3498db; color: white; border: none;">
+              Read
             </button>
           </div>
-
-          <button
-             class="mt-6 px-6 py-2 rounded text-white bg-amber-500 hover:bg-amber-600"
-              @click="readBook"
-              >
-              阅读
-             </button>
 
           <div class="book-comments">
             <CommentSection :book-id="bookId" />
@@ -70,11 +60,11 @@
       <!-- 余额不足提示框 -->
       <div v-if="showBalanceDialog" class="dialog-overlay">
         <div class="dialog">
-          <h3>余额不足</h3>
-          <p>您的账户余额不足，需要充值{{ formatPrice(requiredAmount) }}才能借阅此书</p>
+          <h3>Insufficient Balance</h3>
+          <p>Your account balance is insufficient. You need to top up {{ formatPrice(requiredAmount) }} to borrow this book</p>
           <div class="dialog-actions">
-            <button @click="goToTopUp">去充值</button>
-            <button @click="showBalanceDialog = false">取消</button>
+            <button @click="goToTopUp">Top up</button>
+            <button @click="showBalanceDialog = false">Cancel</button>
           </div>
         </div>
       </div>
@@ -87,12 +77,11 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AddToCartButton from '../components/AddToCartButton.vue';
 import BorrowButton from '../components/BorrowButton.vue';
+import axios from 'axios';
 import CommentSection from '../components/CommentSection.vue';
 import { borrowBook } from '@/api/borrowApi';
-import axios from 'axios';
 import { formatPrice } from '@/utils/format';
 import { sendEmailNotification } from '@/utils/emailService';
-import { get } from '@/utils/request';
 
 const route = useRoute();
 const router = useRouter();
@@ -104,7 +93,6 @@ const isBorrowing = ref(false);
 const showBalanceDialog = ref(false);
 const requiredAmount = ref(0);
 const borrowCountCache = ref(0); // 缓存借阅数量
-const borrowSuccess = ref(false);
 
 const bookId = computed(() => {
   return route.params.id;
@@ -112,7 +100,6 @@ const bookId = computed(() => {
 
 onMounted(() => {
   fetchBookDetail();
-  checkIfAlreadyBorrowed();
 });
 
 async function fetchBookDetail() {
@@ -125,7 +112,7 @@ async function fetchBookDetail() {
       url: `/api/books/get?bookId=${bookId.value}`
     });
     console.log('获取书籍详情响应:', response);
-    
+
     if (response) {
       book.value = response;
       console.log('书籍详情数据:', book.value);
@@ -140,20 +127,20 @@ async function fetchBookDetail() {
       });
 
       if (!response.ok) {
-        throw new Error(`获取书籍详情失败: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to get book details: ${response.status} ${response.statusText}`);
       }
 
       // 检查响应类型
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('服务器返回了非JSON响应');
+        throw new Error('Server returned a non-JSON response');
       }
 
       const bookData = await response.json();
 
       // 验证返回的数据结构
       if (!bookData || typeof bookData !== 'object') {
-        throw new Error('返回的数据格式不正确');
+        throw new Error('Returned data format is incorrect');
       }
 
       book.value = bookData;
@@ -161,9 +148,8 @@ async function fetchBookDetail() {
       isLoading.value = false;
     }
   } catch (err) {
-    console.error('获取书籍详情错误:', err);
-    error.value = `无法加载书籍详情: ${err.message}`;
-  } finally {
+    console.error('Error fetching book details:', err);
+    error.value = `Unable to load book details: ${err.message}`;
     isLoading.value = false;
   }
 }
@@ -172,7 +158,7 @@ async function fetchBookDetail() {
 function cacheBookData(bookData) {
   try {
     if (!bookData) {
-      console.error('缓存书籍数据失败: 书籍数据为空');
+      console.error('Failed to cache book data: Book data is empty');
       return;
     }
 
@@ -180,7 +166,7 @@ function cacheBookData(bookData) {
     const bookId = bookData.bookId || bookData.id || route.params.id;
 
     if (!bookId) {
-      console.error('缓存书籍数据失败: 无法确定书籍ID', bookData);
+      console.error('Failed to cache book data: Unable to determine book ID', bookData);
       return;
     }
 
@@ -188,8 +174,8 @@ function cacheBookData(bookData) {
     const bookCache = {
       bookId: bookId, // 确保这里一定有bookId
       id: bookId,     // 同时存储id，以适应不同组件的需求
-      title: bookData.title || '未知书籍',
-      author: bookData.author || '未知作者',
+      title: bookData.title || 'Unknown book',
+      author: bookData.author || 'Unknown author',
       price: bookData.price || 0,
       coverUrl: bookData.coverUrl || bookData.cover || defaultCover
     };
@@ -197,7 +183,7 @@ function cacheBookData(bookData) {
     // 存储到localStorage
     const cacheKey = `book_${bookId}`;
     localStorage.setItem(cacheKey, JSON.stringify(bookCache));
-    console.log('已缓存书籍数据:', bookId, bookCache);
+    console.log('Book data cached:', bookId, bookCache);
 
     // 同步更新本地购物车中可能存在的相同书籍数据
     try {
@@ -215,18 +201,18 @@ function cacheBookData(bookData) {
       // 如果有更新，保存回localStorage
       if (updated) {
         localStorage.setItem('cartItems', JSON.stringify(cartItems));
-        console.log('已更新购物车中的书籍信息:', bookId);
+        console.log('Updated book information in cart:', bookId);
       }
     } catch (cartError) {
-      console.error('更新购物车中的书籍信息失败:', cartError);
+      console.error('Failed to update book information in cart:', cartError);
     }
   } catch (error) {
-    console.error('缓存书籍数据到localStorage失败:', error);
+    console.error('Failed to cache book data to localStorage:', error);
   }
 }
 
 function handleWishlistUpdate(data) {
-  console.log('愿望清单状态更新:', data);
+  console.log('Wishlist status updated:', data);
 }
 
 function handleImageError(event) {
@@ -277,53 +263,48 @@ const handleBorrow = async () => {
         dueDate: result.dueDate
       }).catch(err => console.error('发送借阅邮件失败:', err));
 
-      // 显示成功提示，不自动跳转，让用户自己点击阅读按钮
-      alert('借阅成功，请点击阅读器开始阅读');
-      // 设置借阅成功状态
-      borrowSuccess.value = true;
+      // 显示成功提示
+      alert('Successfully borrowed. Please click Read button to start reading');
     } else if (result.state === 'insufficient balance') {
       // 余额不足，直接跳转到充值页面
       requiredAmount.value = result.newPayment;
-      alert(`您的账户余额不足，需要充值${formatPrice(result.newPayment)}才能借阅此书。正在跳转到充值页面...`);
+      alert(`Insufficient balance. You need to top up ${formatPrice(result.newPayment)} to borrow this book. Redirecting to top-up page...`);
       router.push({
         name: 'TopUp'
       });
     } else if (result.state === 'exceed_limit') {
       // 书籍借阅次数已达上限（全局限制）
-      alert('该书籍已达到最大借阅次数限制（10次），暂不可借阅。');
+      alert('This book has reached the maximum borrow limit (10 times). Not available for borrowing.');
     } else if (result.state === 'Reach borrow limit') {
       // 用户借阅书籍数量已达上限（用户限制）
-      alert('您已达到最大借阅数量限制（10本），请归还部分书籍后再试。');
+      alert('You have reached the maximum borrow limit (10 books). Please return some books before trying again.');
     } else if (result.state === 'Borrow failed.') {
       // 处理借阅失败情况，可能是无效书籍ID、库存不足或已借阅
       if (result.InvalidBookIds?.length) {
-        alert('借阅失败：无效的书籍');
+        alert('Borrow failed: Invalid book');
       } else if (result.LowStockBookIds?.length) {
-        alert('借阅失败：库存不足');
+        alert('Borrow failed: Out of stock');
       } else if (result.BorrowedBookIds?.length) {
-        // 当用户已经借阅过此书时，提供更友好的提示并引导用户点击阅读按钮
-        alert('您已借阅此书，无需重复借阅。您可以直接点击"阅读"按钮开始阅读。');
-        // 突出显示阅读按钮以引导用户
-        borrowSuccess.value = true;
+        alert('Borrow failed: You have already borrowed this book');
       } else {
-        alert('您已借阅此书，无需重复借阅。您可以直接点击"阅读"按钮开始阅读。');
+        alert('Borrow failed: You have already borrowed this book');
       }
     } else {
       // 其他错误状态
-      alert(`借阅失败: ${result.message || '未知错误'}`);
+      alert(`Borrow failed: ${result.message || 'Unknown error'}`);
     }
   } catch (error) {
-    console.error('借阅书籍出错:', error);
+    console.error('Error borrowing book:', error);
     // 检查是否是网络错误或服务器错误
     if (error.response) {
       // 服务器返回了错误状态码
-      alert(`借阅请求失败: 服务器返回 ${error.response.status} 错误`);
+      alert(`Borrow request failed: Server returned a ${error.response.status} error`);
     } else if (error.request) {
       // 请求发出但没有收到响应
-      alert('借阅请求失败: 无法连接到服务器，请检查网络连接');
+      alert('Borrow request failed: Unable to connect to server. Please check your network connection');
     } else {
       // 其他错误
-      alert('借阅请求出错，请稍后重试');
+      alert('Error processing borrow request. Please try again later');
     }
   } finally {
     isBorrowing.value = false;
@@ -333,13 +314,6 @@ const handleBorrow = async () => {
 const goToTopUp = () => {
   router.push({ name: 'TopUpPage' });
   showBalanceDialog.value = false;
-};
-
-const goToReadBook = () => {
-  router.push({
-    name: 'Reader',
-    params: { id: bookId.value }
-  });
 };
 
 // 获取当前书籍已借阅数量
@@ -365,37 +339,23 @@ const getBorrowCount = () => {
   return 0; // 默认值
 };
 
-// 检查用户是否已借阅当前书籍
-const checkIfAlreadyBorrowed = () => {
+async function readBook() {
   try {
-    const borrowedBooks = JSON.parse(localStorage.getItem('borrowedBooks') || '[]');
-    const currentBookId = route.params.id;
-
-    // 检查不同的ID格式
-    const foundBook = borrowedBooks.find(item =>
-      item.bookId === currentBookId ||
-      (item.id && item.id === currentBookId)
-    );
-
-    if (foundBook) {
-      // 如果已借阅，立即突出显示阅读按钮
-      borrowSuccess.value = true;
-      // 设置已借阅的信息和到期日期
-      book.value && (book.value.userBorrowed = true);
-      book.value && (book.value.dueDate = foundBook.dueDate);
-    }
-  } catch (error) {
-    console.error('检查借阅状态失败:', error);
+    const { data } = await axios.post('/api/books/content', {
+      bookId: route.params.id,     // 当前详情页的书籍 ID
+    })
+    router.push({
+      name: 'Reader',              // 需在路由表中注册 Reader 页面
+      query: { url: encodeURIComponent(data.contentURL) },
+    })
+  } catch (e) {
+    console.error(e)
+    alert('Unable to load e-book. Please try again later')
   }
-};
-
-// 格式化日期显示
-const formatDate = (dateStr) => {
-  if (!dateStr) return '';
-  const date = new Date(dateStr);
-  return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
-};
+}
 </script>
+
+
 
 <style scoped>
 .book-detail-container {
@@ -510,26 +470,6 @@ const formatDate = (dateStr) => {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-.read-button {
-  background-color: #3498db;
-  color: white;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.read-button:hover {
-  background-color: #2980b9;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
-}
-
-.read-button:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
-}
-
 .book-comments {
   margin-top: 20px;
   width: 100%;
@@ -564,60 +504,25 @@ const formatDate = (dateStr) => {
   font-weight: bold;
 }
 
-.borrowed-info {
-  margin: 15px 0;
-  padding: 15px;
-  background-color: #e3f2fd;
-  color: #0d47a1;
-  border-radius: 6px;
-  font-size: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  border-left: 4px solid #1976d2;
-  animation: fadeIn 0.5s ease;
-}
-
-.borrow-tip {
-  font-size: 14px;
-  margin-top: 5px;
-  color: #455a64;
-}
-
-.borrow-success-message {
-  margin: 15px 0;
-  padding: 12px 15px;
-  background-color: #e8f5e9;
-  color: #2e7d32;
-  border-radius: 6px;
-  font-size: 15px;
+.book-rating {
   display: flex;
   align-items: center;
-  gap: 8px;
-  border-left: 4px solid #2e7d32;
-  animation: fadeIn 0.5s ease;
+  gap: 10px;
+  margin: 10px 0;
 }
 
-.highlight-button {
-  animation: pulse 1.5s infinite;
-  box-shadow: 0 0 0 rgba(52, 152, 219, 0.7);
-  background-color: #2980b9 !important;
+.book-rating .stars {
+  display: flex;
+  gap: 2px;
 }
 
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.7);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(52, 152, 219, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(52, 152, 219, 0);
-  }
+.book-rating .stars i {
+  color: #ffd700;
+  font-size: 18px;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+.book-rating .rating-value {
+  color: #666;
+  font-size: 14px;
 }
 </style>

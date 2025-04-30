@@ -13,37 +13,37 @@ const comments = ref([]);
 const loading = ref(false);
 const error = ref(null);
 
-// 加载评论
+// Load comments
 const loadComments = async () => {
   if (!props.bookId) return;
-  
+
   loading.value = true;
   error.value = null;
-  
+
   try {
     const response = await getBookReviews(props.bookId);
     comments.value = response.comments || [];
   } catch (err) {
-    console.error('获取评论失败:', err);
-    error.value = '加载评论时出错，请稍后重试';
+    console.error('Failed to get comments:', err);
+    error.value = 'Error loading comments. Please try again later.';
   } finally {
     loading.value = false;
   }
 };
 
-// 监听bookId变化，重新加载评论
+// Watch for bookId changes to reload comments
 watch(() => props.bookId, (newVal) => {
   if (newVal) {
     loadComments();
   }
 });
 
-// 组件挂载时加载评论
+// Load comments when component is mounted
 onMounted(() => {
   loadComments();
 });
 
-// 格式化评分展示
+// Format rating display
 const formatRating = (rating) => {
   return '★'.repeat(rating) + '☆'.repeat(5 - rating);
 };
@@ -51,27 +51,27 @@ const formatRating = (rating) => {
 
 <template>
   <div class="review-list-container space-y-4">
-    <h2 class="text-xl font-semibold text-gray-800 mb-4">读者评论</h2>
-    
-    <!-- 加载状态 -->
+    <h2 class="text-xl font-semibold text-gray-800 mb-4">Reader Reviews</h2>
+
+    <!-- Loading state -->
     <div v-if="loading" class="flex justify-center py-8">
       <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
     </div>
-    
-    <!-- 错误提示 -->
+
+    <!-- Error message -->
     <div v-else-if="error" class="bg-red-50 text-red-600 p-4 rounded-lg text-center">
       {{ error }}
     </div>
-    
-    <!-- 无评论提示 -->
+
+    <!-- No comments message -->
     <div v-else-if="comments.length === 0" class="text-center py-8 text-gray-500">
-      暂无评论，成为第一个评论的读者吧！
+      No reviews yet. Be the first to review!
     </div>
-    
-    <!-- 评论列表 -->
+
+    <!-- Comments list -->
     <div v-else class="space-y-4">
-      <div v-for="(comment, index) in comments" 
-           :key="index" 
+      <div v-for="(comment, index) in comments"
+           :key="index"
            class="bg-white p-4 rounded-lg shadow-sm transition-shadow hover:shadow-md">
         <div class="flex items-start justify-between">
           <div>
@@ -81,11 +81,11 @@ const formatRating = (rating) => {
             <div class="text-gray-900">{{ comment.comment }}</div>
           </div>
           <div class="text-xs text-gray-500">
-            {{ comment.date || '未知日期' }}
+            {{ comment.date || 'Unknown date' }}
           </div>
         </div>
         <div class="mt-2 text-sm text-gray-500">
-          评论者: {{ comment.userName || '匿名用户' }}
+          Reviewer: {{ comment.userName || 'Anonymous User' }}
         </div>
       </div>
     </div>
@@ -95,10 +95,13 @@ const formatRating = (rating) => {
 <style scoped>
 .review-list-container {
   animation: fadeIn 0.5s ease-out;
+  background-color: #fffbf0;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
 }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
-</style> 
+</style>
