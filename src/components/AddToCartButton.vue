@@ -24,7 +24,7 @@ const props = defineProps({
   },
   buttonText: {
     type: String,
-    default: '加入购物车'
+    default: 'Add to cart'
   }
 });
 
@@ -35,13 +35,13 @@ const SUCCESS_RESET_DELAY = 3000;
 
 onMounted(() => {
   if (import.meta.env.MODE === 'development' && !props.bookId) {
-    console.warn('AddToCartButton: 书籍ID为空');
+    console.warn('AddToCartButton: Book ID is empty');
   }
 });
 
 const computedButtonText = computed(() => {
-  if (showSuccess.value) return '已加入购物车';
-  if (isLoading.value) return '添加中...';
+  if (showSuccess.value) return 'Added to cart';
+  if (isLoading.value) return 'Adding...';
   return props.buttonText;
 });
 
@@ -51,7 +51,7 @@ const handleAddToCart = async (event) => {
   if (isLoading.value || showSuccess.value) return;
 
   if (!props.bookId) {
-    showToast('无法添加到购物车：无效的书籍ID', 'error');
+    showToast('Failed to add to cart: Invalid book ID', 'error');
     return;
   }
 
@@ -62,21 +62,19 @@ const handleAddToCart = async (event) => {
 
     if (result?.state === 'success') {
       showSuccess.value = true;
-      showToast('已添加到购物车', 'success');
+      showToast('success', 'success');
 
       updateLocalCart(props.bookId);
 
       setTimeout(() => {
         showSuccess.value = false;
       }, SUCCESS_RESET_DELAY);
-    } else if (result?.state === 'Stock is too low.') {
-      showToast('库存不足，无法添加到购物车', 'warning');
     } else {
-      throw new Error(result?.message || '添加失败');
+      showToast(result?.state || 'Failed to add to cart', 'warning');
     }
   } catch (error) {
-    console.error('添加到购物车失败:', error);
-    showToast(error.message || '添加到购物车失败', 'error');
+    console.error('Failed to add to cart:', error);
+    showToast(error.message || 'Failed to add to cart', 'error');
   } finally {
     isLoading.value = false;
   }
@@ -97,7 +95,7 @@ function updateLocalCart(bookId) {
       localStorage.setItem('cartItems', JSON.stringify(localCart));
     }
   } catch (error) {
-    console.error('更新本地购物车失败:', error);
+    console.error('Failed to update local cart:', error);
   }
 }
 </script>
