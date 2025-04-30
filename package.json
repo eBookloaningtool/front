@@ -18,7 +18,8 @@
     "pinia": "^3.0.2",
     "remixicon": "^4.6.0",
     "vue": "^3.4.21",
-    "vue-router": "^4.3.0"
+    "vue-router": "^4.3.0",
+    "vue3-pdf-app": "^1.0.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.4",

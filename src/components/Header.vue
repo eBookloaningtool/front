@@ -12,7 +12,7 @@
         <ul>
           <li><router-link to="/">Home</router-link></li>
           <li><router-link to="/categories">Categories</router-link></li>
-          <li><router-link to="/user/books">My Books</router-link></li>
+          <li v-if="isLoggedIn"><router-link to="/user/books">My Books</router-link></li>
         </ul>
       </nav>
 
@@ -47,7 +47,7 @@
               <ul>
                 <li><router-link to="/user/profile">Profile</router-link></li>
                 <li><router-link to="/user/books">My Books</router-link></li>
-                <li><router-link to="/user/favorites">Favorites</router-link></li>
+                <li><router-link to="/user/favorites">Wish List</router-link></li>
                 <li><a href="#" @click.prevent="logout">Logout</a></li>
               </ul>
             </div>
