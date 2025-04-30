@@ -34,9 +34,24 @@
             <p>{{ book.description || '暂无简介' }}</p>
           </div>
 
+          <!-- 当用户已借阅时显示的信息 -->
+          <div v-if="book.userBorrowed" class="borrowed-info">
+            <i class="ri-book-mark-line"></i>
+            您已借阅此书
+            <span v-if="book.dueDate">- 归还日期: {{ formatDate(book.dueDate) }}</span>
+            <div class="borrow-tip">您可以直接点击下方"阅读"按钮开始阅读</div>
+          </div>
+
+          <div v-if="borrowSuccess" class="borrow-success-message">
+            <i class="ri-checkbox-circle-line"></i> 借阅成功！请点击下方阅读按钮开始阅读
+          </div>
+
           <div class="book-actions">
-            <AddToCartButton :book-id="bookId" />
-            <BorrowButton :book="book" @borrow="handleBorrow" :is-borrowing="isBorrowing" />
+            <AddToCartButton :book-id="bookId" buttonText="Add to cart" class="action-button" />
+            <BorrowButton :book="book" @borrow="handleBorrow" :is-borrowing="isBorrowing" class="action-button" />
+            <button @click="goToReadBook" class="action-button read-button" :class="{'highlight-button': borrowSuccess}">
+              阅读
+            </button>
           </div>
 
           <button
@@ -89,6 +104,7 @@ const isBorrowing = ref(false);
 const showBalanceDialog = ref(false);
 const requiredAmount = ref(0);
 const borrowCountCache = ref(0); // 缓存借阅数量
+const borrowSuccess = ref(false);
 
 const bookId = computed(() => {
   return route.params.id;
@@ -96,6 +112,7 @@ const bookId = computed(() => {
 
 onMounted(() => {
   fetchBookDetail();
+  checkIfAlreadyBorrowed();
 });
 
 async function fetchBookDetail() {
@@ -114,8 +131,34 @@ async function fetchBookDetail() {
       console.log('书籍详情数据:', book.value);
       cacheBookData(response);
     } else {
-      error.value = '未找到书籍';
-      console.error('未找到书籍详情数据');
+      // 实际API调用
+      const response = await fetch(`https://api.borrowbee.wcy.one:61700/api/books/get?bookId=${bookId.value}`, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`获取书籍详情失败: ${response.status} ${response.statusText}`);
+      }
+
+      // 检查响应类型
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('服务器返回了非JSON响应');
+      }
+
+      const bookData = await response.json();
+
+      // 验证返回的数据结构
+      if (!bookData || typeof bookData !== 'object') {
+        throw new Error('返回的数据格式不正确');
+      }
+
+      book.value = bookData;
+      cacheBookData(bookData);
+      isLoading.value = false;
     }
   } catch (err) {
     console.error('获取书籍详情错误:', err);
@@ -234,12 +277,10 @@ const handleBorrow = async () => {
         dueDate: result.dueDate
       }).catch(err => console.error('发送借阅邮件失败:', err));
 
-      // 显示成功提示并跳转到阅读器页面
-      alert('借阅成功！正在打开阅读器...');
-      router.push({
-        name: 'Reader',
-        params: { id: bookId.value }
-      });
+      // 显示成功提示，不自动跳转，让用户自己点击阅读按钮
+      alert('借阅成功，请点击阅读器开始阅读');
+      // 设置借阅成功状态
+      borrowSuccess.value = true;
     } else if (result.state === 'insufficient balance') {
       // 余额不足，直接跳转到充值页面
       requiredAmount.value = result.newPayment;
@@ -260,9 +301,12 @@ const handleBorrow = async () => {
       } else if (result.LowStockBookIds?.length) {
         alert('借阅失败：库存不足');
       } else if (result.BorrowedBookIds?.length) {
-        alert('借阅失败：您已借阅过该书籍');
+        // 当用户已经借阅过此书时，提供更友好的提示并引导用户点击阅读按钮
+        alert('您已借阅此书，无需重复借阅。您可以直接点击"阅读"按钮开始阅读。');
+        // 突出显示阅读按钮以引导用户
+        borrowSuccess.value = true;
       } else {
-        alert('借阅失败，请稍后重试');
+        alert('您已借阅此书，无需重复借阅。您可以直接点击"阅读"按钮开始阅读。');
       }
     } else {
       // 其他错误状态
@@ -291,6 +335,13 @@ const goToTopUp = () => {
   showBalanceDialog.value = false;
 };
 
+const goToReadBook = () => {
+  router.push({
+    name: 'Reader',
+    params: { id: bookId.value }
+  });
+};
+
 // 获取当前书籍已借阅数量
 const getBorrowCount = () => {
   // 优先使用缓存的值
@@ -314,20 +365,36 @@ const getBorrowCount = () => {
   return 0; // 默认值
 };
 
-async function readBook() {
+// 检查用户是否已借阅当前书籍
+const checkIfAlreadyBorrowed = () => {
   try {
-    const { data } = await axios.post('/api/books/content', {
-      bookId: route.params.id,     // 当前详情页的书籍 ID
-    })
-    router.push({
-      name: 'Reader',              // 需在路由表中注册 Reader 页面
-      query: { url: encodeURIComponent(data.contentURL) },
-    })
-  } catch (e) {
-    console.error(e)
-    alert('无法加载电子书，请稍后再试')
+    const borrowedBooks = JSON.parse(localStorage.getItem('borrowedBooks') || '[]');
+    const currentBookId = route.params.id;
+
+    // 检查不同的ID格式
+    const foundBook = borrowedBooks.find(item =>
+      item.bookId === currentBookId ||
+      (item.id && item.id === currentBookId)
+    );
+
+    if (foundBook) {
+      // 如果已借阅，立即突出显示阅读按钮
+      borrowSuccess.value = true;
+      // 设置已借阅的信息和到期日期
+      book.value && (book.value.userBorrowed = true);
+      book.value && (book.value.dueDate = foundBook.dueDate);
+    }
+  } catch (error) {
+    console.error('检查借阅状态失败:', error);
   }
-}
+};
+
+// 格式化日期显示
+const formatDate = (dateStr) => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+};
 </script>
 
 <style scoped>
@@ -423,8 +490,44 @@ async function readBook() {
 
 .book-actions {
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 15px;
+  margin: 25px 0;
+  justify-content: space-between;
+  align-items: stretch;
+  width: 100%;
+}
+
+.action-button {
+  flex: 1;
+  height: 44px;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 0;
+  padding: 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.read-button {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.read-button:hover {
+  background-color: #2980b9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+}
+
+.read-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
 }
 
 .book-comments {
@@ -445,6 +548,10 @@ async function readBook() {
     flex-direction: column;
     gap: 10px;
   }
+
+  .action-button {
+    width: 100%;
+  }
 }
 
 .in-stock {
@@ -455,5 +562,62 @@ async function readBook() {
 .out-of-stock {
   color: #e74c3c;
   font-weight: bold;
+}
+
+.borrowed-info {
+  margin: 15px 0;
+  padding: 15px;
+  background-color: #e3f2fd;
+  color: #0d47a1;
+  border-radius: 6px;
+  font-size: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border-left: 4px solid #1976d2;
+  animation: fadeIn 0.5s ease;
+}
+
+.borrow-tip {
+  font-size: 14px;
+  margin-top: 5px;
+  color: #455a64;
+}
+
+.borrow-success-message {
+  margin: 15px 0;
+  padding: 12px 15px;
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 6px;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-left: 4px solid #2e7d32;
+  animation: fadeIn 0.5s ease;
+}
+
+.highlight-button {
+  animation: pulse 1.5s infinite;
+  box-shadow: 0 0 0 rgba(52, 152, 219, 0.7);
+  background-color: #2980b9 !important;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(52, 152, 219, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(52, 152, 219, 0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>

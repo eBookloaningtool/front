@@ -32,9 +32,6 @@
 
       <div class="user-actions">
         <template v-if="isLoggedIn">
-          <router-link to="/user/topup" class="top-up-btn">
-            <i class="ri-wallet-3-line"></i>
-          </router-link>
           <router-link to="/cart" class="cart-btn">
             <i class="ri-shopping-cart-line"></i>
           </router-link>
@@ -228,27 +225,6 @@ const handleSearch = () => {
 
 .register-btn:hover {
   background: #d89638;
-}
-
-.top-up-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  color: #333;
-  transition: all 0.3s;
-  text-decoration: none;
-}
-
-.top-up-btn:hover {
-  background: #f5f5f5;
-  color: #e9a84c;
-}
-
-.top-up-btn i {
-  font-size: 20px;
 }
 
 .cart-btn {
