@@ -503,7 +503,7 @@ import { useRouter, useRoute } from 'vue-router';
 import Header from '../components/Header.vue';
 import { useUserStore } from '../stores/userStore';
 import { useToast } from '../composables/useToast';
-import { getPaymentHistory } from '../api/payments';
+import { getPaymentHistory, topUpBalance } from '../api/payments';
 
 const router = useRouter();
 const route = useRoute();
@@ -591,18 +591,16 @@ const handleTopUp = async () => {
   processingTopUp.value = true;
 
   try {
-    // mock支付处理
-    await new Promise(resolve => setTimeout(resolve, 1000)); // 模拟网络延迟
-    const result = {
-      success: true,
-      amount: finalTopUpAmount.value
-    };
-
-    if (result.success) {
-      accountBalance.value += finalTopUpAmount.value;
-      localStorage.setItem('accountBalance', accountBalance.value); // 持久化
-
-      alert(`Top up successful! £${finalTopUpAmount.value} has been added to your account.`);
+    const result = await topUpBalance(finalTopUpAmount.value);
+    
+    if (result.state === 'success') {
+      // 更新账户余额
+      accountBalance.value = result.balance;
+      // 更新 UserStore 中的余额
+      const userStore = useUserStore();
+      userStore.balance = result.balance;
+      
+      showToast(`充值成功！已添加 £${finalTopUpAmount.value} 到您的账户`, 'success');
 
       // 重置表单
       selectedTopUpAmount.value = null;
@@ -611,11 +609,11 @@ const handleTopUp = async () => {
       // 显示支付记录
       switchView('PaymentOrders');
     } else {
-      throw new Error('Payment failed');
+      throw new Error('充值失败');
     }
   } catch (error) {
-    console.error('Top up failed:', error);
-    alert('Top up failed. Please try again.');
+    console.error('充值失败:', error);
+    showToast('充值失败，请稍后重试', 'error');
   } finally {
     processingTopUp.value = false;
   }
@@ -989,10 +987,6 @@ const confirmPayment = () => {
 onMounted(() => {
   // 获取用户信息
   fetchUserProfile();
-
-  // 获取账户余额
-  const savedBalance = localStorage.getItem('accountBalance');
-  accountBalance.value = savedBalance ? Number(savedBalance) : 0;
 
   // 根据路由路径设置初始视图
   const path = route.path;
