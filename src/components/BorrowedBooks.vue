@@ -89,7 +89,7 @@ const fetchBooks = async () => {
     }
 
     const bookPromises = bookList.map(item =>
-      fetch(`/api/books/${item.bookId}`)
+      fetch(`/api/books/get?bookId=${item.bookId}`)
         .then(response => {
           if (!response.ok) throw new Error(`获取书籍 ${item.bookId} 失败`);
           return response.json();

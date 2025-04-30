@@ -18,11 +18,11 @@
             <h1 class="book-title">{{ book.title }}</h1>
             <p class="book-author">作者: <a @click="viewAuthorBooks(book.author)">{{ book.author }}</a></p>
             <p class="book-category">分类: <RouterLink :to="`/category/${book.category}`">{{ book.category }}</RouterLink></p>
-            <p class="book-price">价格: £5</p>
+            <p class="book-price">价格: £{{ book.price }}</p>
             <p class="book-available">
               可借副本:
-              <span :class="{'out-of-stock': getBorrowCount() >= 10, 'in-stock': getBorrowCount() < 10}">
-                {{ 10 - getBorrowCount() }}/10
+              <span :class="{'out-of-stock': book.availableCopies <= 0, 'in-stock': book.availableCopies > 0}">
+                {{ book.availableCopies }}/{{ book.totalCopies }}
               </span>
             </p>
           </div>
@@ -102,8 +102,6 @@ async function fetchBookDetail() {
           const bookData = mockApi.getMockBook(bookId.value);
           if (bookData) {
             book.value = bookData;
-
-            // 缓存书籍信息到localStorage，便于购物车使用
             cacheBookData(bookData);
           } else {
             error.value = '未找到书籍';
@@ -113,23 +111,37 @@ async function fetchBookDetail() {
       }, 500);
     } else {
       // 实际API调用
-      const response = await fetch(`/api/books/get?bookId=${bookId.value}`);
+      const response = await fetch(`https://api.borrowbee.wcy.one:61700/api/books/get?bookId=${bookId.value}`, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
 
       if (!response.ok) {
-        throw new Error('获取书籍详情失败');
+        throw new Error(`获取书籍详情失败: ${response.status} ${response.statusText}`);
+      }
+
+      // 检查响应类型
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('服务器返回了非JSON响应');
       }
 
       const bookData = await response.json();
+      
+      // 验证返回的数据结构
+      if (!bookData || typeof bookData !== 'object') {
+        throw new Error('返回的数据格式不正确');
+      }
+
       book.value = bookData;
-
-      // 缓存书籍信息到localStorage，便于购物车使用
       cacheBookData(bookData);
-
       isLoading.value = false;
     }
   } catch (err) {
     console.error('获取书籍详情错误:', err);
-    error.value = '无法加载书籍详情，请稍后重试';
+    error.value = `无法加载书籍详情: ${err.message}`;
     isLoading.value = false;
   }
 }

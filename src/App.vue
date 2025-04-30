@@ -11,7 +11,6 @@
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Header from './components/Header.vue'
-import { getMockBooksByCategory } from '@/mock-api'
 import { checkAndSendDueSoonNotifications } from '@/utils/emailService'
 import ToastContainer from './components/ToastContainer.vue'
 import { useUserStore } from './stores/userStore'
@@ -27,8 +26,9 @@ onMounted(() => {
   const publicPages = ['/login', '/register'] // 白名单路由
   const currentPath = router.currentRoute.value.path
 
-  if (!userStore.isAuthenticated && !publicPages.includes(currentPath)) {
-    router.push('/login')
+  // 如果用户已登录且尝试访问登录或注册页面，重定向到首页
+  if (userStore.isAuthenticated && publicPages.includes(currentPath)) {
+    router.push('/')
   }
 
   // 检查即将到期的书籍并发送提醒
@@ -57,8 +57,6 @@ onMounted(() => {
     }, timeUntilMidnight)
   }
 })
-
-const books = getMockBooksByCategory('生活休闲') // 使用正确的分类ID
 
 const goToBookDetail = (id) => {
   router.push({ name: 'BookDetail', params: { id } })

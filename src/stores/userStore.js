@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { userAPI } from '../services/api'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -7,6 +8,8 @@ export const useUserStore = defineStore('user', {
     uuid: null,
     userName: null,
     userEmail: null,
+    balance: 0,
+    createdAt: null
   }),
 
   getters: {
@@ -19,62 +22,123 @@ export const useUserStore = defineStore('user', {
       return {
         uuid: state.uuid,
         name: state.userName,
-        email: state.userEmail
+        email: state.userEmail,
+        balance: state.balance,
+        createdAt: state.createdAt
       }
     }
   },
 
   actions: {
     // 初始化用户状态（从localStorage恢复）
-    initUserState() {
+    async initUserState() {
       const token = localStorage.getItem('token')
-      const uuid = localStorage.getItem('uuid')
-      const userName = localStorage.getItem('userName')
-      const userEmail = localStorage.getItem('registeredEmail') // 使用注册时保存的email
-
       if (token) {
-        this.isAuthenticated = true
-        this.token = token
-        this.uuid = uuid
-        this.userName = userName
-        this.userEmail = userEmail
+        try {
+          // 验证token并获取用户信息
+          const response = await userAPI.getUserInfo()
+          if (response.data) {
+            this.isAuthenticated = true
+            this.token = token
+            this.uuid = response.data.UUID
+            this.userName = response.data.name
+            this.userEmail = response.data.email
+            this.balance = response.data.balance
+            this.createdAt = response.data.createdat
+          } else {
+            // token无效，清除本地存储
+            this.logout()
+          }
+        } catch (error) {
+          console.error('获取用户信息失败:', error)
+          this.logout()
+        }
       }
     },
 
     // 设置用户登录状态
-    login(userData) {
-      this.isAuthenticated = true
-      this.token = userData.token
-      this.uuid = userData.UUID
+    async login(userData) {
+      try {
+        const response = await userAPI.login(userData)
+        if (response.data.state === 'success') {
+          this.isAuthenticated = true
+          this.token = response.data.token
+          this.uuid = response.data.UUID
 
-      // 保存到 localStorage 以便刷新页面后恢复状态
-      localStorage.setItem('token', userData.token)
-      localStorage.setItem('uuid', userData.UUID)
+          // 保存到 localStorage
+          localStorage.setItem('token', response.data.token)
+          localStorage.setItem('uuid', response.data.UUID)
 
-      // 如果有其他用户信息也保存
-      if (userData.name) {
-        this.userName = userData.name
-        localStorage.setItem('userName', userData.name)
-      }
-
-      if (userData.email) {
-        this.userEmail = userData.email
-        localStorage.setItem('registeredEmail', userData.email)
+          // 获取并保存用户详细信息
+          const userInfo = await userAPI.getUserInfo()
+          if (userInfo.data) {
+            this.userName = userInfo.data.name
+            this.userEmail = userInfo.data.email
+            this.balance = userInfo.data.balance
+            this.createdAt = userInfo.data.createdat
+            localStorage.setItem('userName', userInfo.data.name)
+            localStorage.setItem('registeredEmail', userInfo.data.email)
+          }
+        }
+        return response.data
+      } catch (error) {
+        console.error('登录失败:', error)
+        throw error
       }
     },
 
     // 用户登出
-    logout() {
-      this.isAuthenticated = false
-      this.token = null
-      this.uuid = null
-      this.userName = null
-      this.userEmail = null
+    async logout() {
+      try {
+        await userAPI.logout()
+      } catch (error) {
+        console.error('登出失败:', error)
+      } finally {
+        this.isAuthenticated = false
+        this.token = null
+        this.uuid = null
+        this.userName = null
+        this.userEmail = null
+        this.balance = 0
+        this.createdAt = null
 
-      // 清除 localStorage 中的登录信息
-      localStorage.removeItem('token')
-      localStorage.removeItem('uuid')
-      // 不删除用户名和邮箱以便下次登录时自动填充
+        // 清除 localStorage 中的登录信息
+        localStorage.removeItem('token')
+        localStorage.removeItem('uuid')
+        localStorage.removeItem('userName')
+        localStorage.removeItem('registeredEmail')
+      }
+    },
+
+    // 更新用户信息
+    async updateUserInfo(userData) {
+      try {
+        const response = await userAPI.updateUserInfo(userData)
+        if (response.data.state === 'success') {
+          this.userName = response.data.name
+          this.userEmail = response.data.email
+          localStorage.setItem('userName', response.data.name)
+          localStorage.setItem('registeredEmail', response.data.email)
+        }
+        return response.data
+      } catch (error) {
+        console.error('更新用户信息失败:', error)
+        throw error
+      }
+    },
+
+    // 删除账号
+    async deleteAccount() {
+      try {
+        const response = await userAPI.deleteAccount()
+        if (response.data.state === 'success') {
+          this.logout()
+        }
+        return response.data
+      } catch (error) {
+        console.error('删除账号失败:', error)
+        throw error
+      }
     }
   }
 })

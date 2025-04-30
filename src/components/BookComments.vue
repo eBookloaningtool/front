@@ -66,7 +66,7 @@ export default {
       this.error = null;
       
       try {
-        const response = await fetch(`/api/books/${this.bookId}/reviews`);
+        const response = await fetch(`/api/reviews/book?bookId=${this.bookId}`);
         
         if (!response.ok) {
           throw new Error('获取评论失败');

@@ -20,7 +20,7 @@
               <p class="text-amber-100">{{ email }}</p>
               <div class="mt-3 flex flex-col sm:flex-row sm:space-x-4 text-sm">
                 <p class="text-amber-100">注册时间：{{ registrationDate }}</p>
-                <p class="text-amber-100 mt-1 sm:mt-0">账户余额：¥{{ balance }}</p>
+                <p class="text-amber-100 mt-1 sm:mt-0">账户余额：￡{{ balance }}</p>
               </div>
             </div>
           </div>
@@ -86,7 +86,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
+import { userAPI } from '../services/api';
 
 const router = useRouter();
 
@@ -118,11 +118,7 @@ const fetchUserProfile = async () => {
       return;
     }
 
-    const response = await axios.get('/api/user/profile', {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    const response = await userAPI.getUserInfo();
 
     const data = response.data;
 

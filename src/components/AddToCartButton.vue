@@ -69,6 +69,8 @@ const handleAddToCart = async (event) => {
       setTimeout(() => {
         showSuccess.value = false;
       }, SUCCESS_RESET_DELAY);
+    } else if (result?.state === 'Stock is too low.') {
+      showToast('库存不足，无法添加到购物车', 'warning');
     } else {
       throw new Error(result?.message || '添加失败');
     }

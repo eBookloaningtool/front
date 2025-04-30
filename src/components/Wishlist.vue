@@ -96,8 +96,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { getWishlist, removeFromWishlist as removeWishlistItem } from '../api/wishlist';
-import { mockWishlistAPI } from '../mock-api.js';
+import { wishlistAPI, bookAPI } from '../services/api';
 
 const books = ref([]);
 const loading = ref(false);
@@ -115,19 +114,10 @@ const fetchWishlist = async () => {
   error.value = null;
 
   try {
-    let response;
-
-    // 开发环境使用mock数据
-    if (process.env.NODE_ENV === 'development' && window.mockMode) {
-      console.log('使用mock数据获取愿望清单');
-      response = mockWishlistAPI.getWishlist();
-    } else {
-      response = await getWishlist();
-    }
-
-    if (response.bookId && Array.isArray(response.bookId)) {
+    const response = await wishlistAPI.getWishlist();
+    if (response.data && response.data.bookId && Array.isArray(response.data.bookId)) {
       // 获取书籍详情
-      await fetchBookDetails(response.bookId);
+      await fetchBookDetails(response.data.bookId);
     } else {
       books.value = [];
     }
@@ -147,46 +137,11 @@ const fetchBookDetails = async (bookIds) => {
   }
 
   try {
-    // 开发环境使用mock数据
-    if (process.env.NODE_ENV === 'development' && window.mockMode) {
-      console.log('使用mock数据获取书籍详情');
-      // 生成模拟书籍数据
-      books.value = bookIds.map(id => ({
-        id,
-        title: `书籍 ${id}`,
-        author: '作者 ' + Math.floor(Math.random() * 100),
-        price: Math.floor(Math.random() * 100) + 20,
-        coverUrl: `https://picsum.photos/seed/${id}/200/300`,
-        isAvailable: Math.random() > 0.3
-      }));
-      return;
-    }
-
-    // 真实API调用
-    const response = await fetch('/api/books/detail', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      },
-      body: JSON.stringify({ bookIds })
-    });
-
-    if (!response.ok) {
-      throw new Error('获取书籍详情失败');
-    }
-
-    const data = await response.json();
-    books.value = data;
+    const response = await bookAPI.getBookDetails(bookIds);
+    books.value = response.data;
   } catch (err) {
     console.error('获取书籍详情失败:', err);
-    // 如果获取详情失败，至少显示ID列表
-    books.value = bookIds.map(id => ({
-      id,
-      title: `书籍 ${id}`,
-      author: '未知作者',
-      isAvailable: false
-    }));
+    error.value = '获取书籍详情失败，请稍后重试';
   }
 };
 
@@ -198,13 +153,7 @@ const removeFromWishlist = async (bookId) => {
   removeLoading.value = { ...removeLoading.value, [bookId]: true };
 
   try {
-    // 开发环境使用mock数据
-    if (process.env.NODE_ENV === 'development' && window.mockMode) {
-      console.log('使用mock数据删除愿望清单项');
-      mockWishlistAPI.removeFromWishlist([bookId]);
-    } else {
-      await removeWishlistItem(bookId);
-    }
+    await wishlistAPI.removeFromWishlist(bookId);
 
     // 从列表中移除
     books.value = books.value.filter(book => book.id !== bookId);

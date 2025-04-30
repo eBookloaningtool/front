@@ -4,6 +4,7 @@ import { fileURLToPath, URL } from 'node:url'
 import path from 'path'
 
 export default defineConfig({
+  base: '/',
   plugins: [vue()],
   resolve: {
     alias: {

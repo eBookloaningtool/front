@@ -20,9 +20,10 @@
     <template v-else>
       <div class="cart-items">
         <ShoppingCartItem
-          v-for="book in cartItems"
-          :key="book.bookId"
-          :book="book"
+          v-for="item in cartItems"
+          :key="item.bookId"
+          :item="item"
+          @update:quantity="updateQuantity"
           @remove="handleRemoveItem"
         />
       </div>
@@ -30,7 +31,7 @@
       <div class="cart-summary">
         <div class="summary-row">
           <span>总计: {{ cartItems.length }} 本书</span>
-          <span class="total-price">£{{ totalPrice.toFixed(2) }}</span>
+          <span class="total-price">￡{{ totalPrice.toFixed(2) }}</span>
         </div>
         <slot name="cart-actions"></slot>
       </div>
@@ -40,7 +41,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import { getCartItems, removeFromCart } from '../api/cart.ts';
+import { cartAPI, bookAPI } from '../services/api';
 import { useToast } from '../composables/useToast';
 import ShoppingCartItem from './ShoppingCartItem.vue';
 
@@ -58,118 +59,85 @@ const isLoading = ref(false);
 const error = ref(null);
 const removingItems = ref(new Set());
 const { showToast } = useToast();
+const total = ref(0);
 
 // 计算总价
 const totalPrice = computed(() => {
-  return cartItems.value.length * 5;
+  return total.value;
 });
 
-// 获取购物车数据并关联书籍详情
 const fetchCartItems = async () => {
   isLoading.value = true;
   error.value = null;
 
   try {
-    // 获取购物车书籍ID列表
-    const result = await getCartItems();
+    // 首先从API获取购物车数据
+    const response = await cartAPI.getCart();
+    console.log('API购物车数据:', response);
 
-    // 确保result.bookId是数组
-    const bookIds = Array.isArray(result.bookId) ? result.bookId : [];
-
-    console.log('获取到购物车ID列表:', bookIds);
-
-    // 如果购物车为空
-    if (bookIds.length === 0) {
-      cartItems.value = [];
-      emit('update:cartItems', []);
-      emit('cart-updated', []);
-      isLoading.value = false;
-      return;
-    }
-
-    // 获取所有书籍详情
-    try {
-      const bookDetailsPromises = bookIds.map(bookId => {
-        if (!bookId) {
-          console.error('发现无效的bookId:', bookId);
-          return null;
-        }
-
-        // 首先尝试从本地缓存获取
-        const cachedBook = localStorage.getItem(`book_${bookId}`);
-        if (cachedBook) {
+    if (response.data && response.data.bookId && response.data.bookId.length > 0) {
+      // 获取每个书籍的详细信息
+      const bookDetails = await Promise.all(
+        response.data.bookId.map(async (bookId) => {
           try {
-            const bookData = JSON.parse(cachedBook);
-            console.log('从缓存加载书籍:', bookId, bookData);
-            return Promise.resolve(bookData);
-          } catch (parseError) {
-            console.error('解析缓存的书籍数据失败:', parseError);
-          }
-        }
-
-        // 如果缓存不存在或解析失败，则从API获取
-        return fetch(`/api/books/get?bookId=${bookId}`)
-          .then(response => {
-            if (!response.ok) {
-              throw new Error(`获取书籍 ${bookId} 详情失败: ${response.status}`);
-            }
-            return response.json();
-          })
-          .then(bookData => {
-            // 缓存获取到的书籍数据
-            localStorage.setItem(`book_${bookId}`, JSON.stringify(bookData));
-            return bookData;
-          })
-          .catch(err => {
-            console.error(`获取书籍 ${bookId} 详情失败:`, err);
-            // 返回带有基本信息的占位对象
+            const bookResponse = await bookAPI.getBookDetail(bookId);
             return {
               bookId: bookId,
-              title: `加载中...`,
-              author: '加载中...',
-              price: 0,
-              coverUrl: '/images/default-book-cover.jpg'
+              title: bookResponse.data.title,
+              author: bookResponse.data.author,
+              price: bookResponse.data.price,
+              coverUrl: bookResponse.data.coverUrl,
+              quantity: 1
             };
-          });
-      });
-
-      // 过滤掉无效的请求
-      const validPromises = bookDetailsPromises.filter(p => p !== null);
-      const booksDetails = await Promise.all(validPromises);
-
-      // 过滤并处理书籍数据
-      const processedBooks = booksDetails
-        .filter(book => book && (book.bookId || book.id)) // 确保书籍有ID
-        .map(book => {
-          // 确保bookId字段存在
-          if (!book.bookId && book.id) {
-            book.bookId = book.id;
+          } catch (err) {
+            console.error(`获取书籍 ${bookId} 详情失败:`, err);
+            return null;
           }
-
-          // 确保关键字段有合理的默认值
-          return {
-            ...book,
-            title: book.title || '未知书籍',
-            author: book.author || '未知作者',
-            price: book.price || 0,
-            coverUrl: book.coverUrl || '/images/default-book-cover.jpg'
-          };
-        });
-
-      cartItems.value = processedBooks;
-
-      // 触发更新事件
-      emit('update:cartItems', cartItems.value);
-      emit('cart-updated', cartItems.value);
-    } catch (detailsError) {
-      console.error('获取书籍详情失败:', detailsError);
-      error.value = '加载书籍详情失败，请重试';
+        })
+      );
+      
+      // 过滤掉获取失败的书籍
+      cartItems.value = bookDetails.filter(Boolean);
+      // 更新本地存储
+      localStorage.setItem('cartItems', JSON.stringify(response.data.bookId.map(id => ({ bookId: id }))));
+    } else {
+      cartItems.value = [];
+      // 清空本地存储
+      localStorage.removeItem('cartItems');
     }
+    calculateTotal();
   } catch (err) {
-    console.error('获取购物车数据错误:', err);
-    error.value = '加载购物车失败，请重试';
+    console.error('获取购物车失败:', err);
+    error.value = '获取购物车失败，请稍后重试';
   } finally {
     isLoading.value = false;
+  }
+};
+
+const calculateTotal = () => {
+  total.value = cartItems.value.reduce((sum, item) => {
+    return sum + (item.price * item.quantity);
+  }, 0);
+};
+
+const updateQuantity = async (itemId, newQuantity) => {
+  try {
+    await cartAPI.updateCartItem(itemId, newQuantity);
+    await fetchCartItems();
+  } catch (err) {
+    console.error('更新购物车失败:', err);
+    error.value = '更新购物车失败，请稍后重试';
+  }
+};
+
+const removeItem = async (itemId) => {
+  try {
+    await cartAPI.removeFromCart(itemId);
+    await fetchCartItems();
+  } catch (err) {
+    console.error('删除购物车项失败:', err);
+    error.value = '删除购物车项失败，请稍后重试';
+    throw err; // 抛出错误以便上层处理
   }
 };
 
@@ -180,18 +148,9 @@ const handleRemoveItem = async (bookId) => {
   removingItems.value.add(bookId);
 
   try {
-    const result = await removeFromCart(bookId);
-
-    if (result.state === 'success') {
-      // 更新本地购物车数据
-      cartItems.value = cartItems.value.filter(item => item.bookId !== bookId);
-      emit('update:cartItems', cartItems.value);
-      emit('cart-updated', cartItems.value);
-
-      showToast('商品已从购物车中移除', 'success');
-    } else {
-      throw new Error('移除购物车商品失败');
-    }
+    await removeItem(bookId);
+    await fetchCartItems();
+    showToast('商品已从购物车中移除', 'success');
   } catch (err) {
     console.error('移除购物车商品错误:', err);
     showToast('移除商品失败，请重试', 'error');

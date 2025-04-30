@@ -22,7 +22,7 @@ export const addNewBook = async (bookData) => {
  */
 export const deleteBook = async (bookId) => {
   try {
-    const response = await axios.delete(`/api/books/${bookId}`);
+    const response = await axios.delete(`/api/books/get?bookId=${bookId}`);
     return response.data;
   } catch (error) {
     console.error('删除书籍失败:', error);

@@ -1,133 +1,97 @@
 <!-- ShoppingCartItem.vue -->
 <template>
   <div class="cart-item">
-    <div class="item-cover">
-      <img
-        :src="book.coverUrl"
-        :alt="book.title"
-        @error="handleImageError"
-      />
-    </div>
+    <img :src="item.coverUrl" :alt="item.title" class="book-cover" />
     <div class="item-details">
-      <h3 class="item-title">{{ book.title }}</h3>
-      <p class="item-author">作者: {{ book.author }}</p>
-      <p class="item-price">£5</p>
+      <h3>{{ item.title }}</h3>
+      <p class="author">{{ item.author }}</p>
+      <p class="price">￡{{ item.price }}</p>
     </div>
-    <div class="item-actions">
-      <button @click="removeFromCart" class="remove-btn">
-        <i class="ri-delete-bin-line"></i>
-        移除
-      </button>
-    </div>
+    <button class="remove-btn" @click="$emit('remove', item.bookId)">删除</button>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-
 const props = defineProps({
-  book: {
+  item: {
     type: Object,
     required: true
   }
 });
 
-const emit = defineEmits(['remove']);
+const emit = defineEmits(['update:quantity', 'remove']);
 
-const handleImageError = (event) => {
-  event.target.src = '/images/default-book-cover.jpg';
-};
-
-const removeFromCart = () => {
-  emit('remove', props.book.bookId);
+const updateQuantity = (newQuantity) => {
+  if (newQuantity >= 1) {
+    emit('update:quantity', props.item.bookId, newQuantity);
+  }
 };
 </script>
 
 <style scoped>
 .cart-item {
   display: flex;
-  background: white;
-  border-radius: 10px;
-  padding: 15px;
-  margin-bottom: 15px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+  gap: 1rem;
 }
 
-.cart-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-}
-
-.item-cover {
-  width: 90px;
+.book-cover {
+  width: 80px;
   height: 120px;
-  overflow: hidden;
-  border-radius: 5px;
-  background-color: #f0f0f0;
-  margin-right: 15px;
-  flex-shrink: 0;
-}
-
-.item-cover img {
-  width: 100%;
-  height: 100%;
   object-fit: cover;
+  border-radius: 4px;
 }
 
 .item-details {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  flex: 1;
 }
 
-.item-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 5px;
+.item-details h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
 }
 
-.item-author {
-  font-size: 14px;
+.author {
   color: #666;
-  margin: 0 0 5px;
+  margin: 0 0 0.5rem 0;
 }
 
-.item-price {
-  font-size: 18px;
-  font-weight: 600;
-  color: #e9a84c;
-  margin: 8px 0 0;
+.price {
+  font-weight: bold;
+  color: #e53935;
+  margin: 0 0 0.5rem 0;
 }
 
-.item-actions {
+.quantity-controls {
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin-left: 15px;
+  gap: 0.5rem;
+}
+
+.quantity-controls button {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+}
+
+.quantity-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .remove-btn {
-  background: transparent;
-  color: #ff5252;
-  border: 1px solid #ff5252;
-  border-radius: 5px;
-  padding: 6px 12px;
+  padding: 0.5rem 1rem;
+  background: #ffebee;
+  color: #e53935;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.remove-btn i {
-  font-size: 16px;
 }
 
 .remove-btn:hover {
-  background: #ff5252;
-  color: white;
+  background: #ffcdd2;
 }
 </style>

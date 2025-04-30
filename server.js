@@ -111,6 +111,11 @@ app.get('/api/cover-proxy', async (req, res) => {
   }
 });
 
+// 处理前端路由
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // 借阅相关API
 app.post('/api/borrow/borrow', (req, res) => {
   const { bookId, userId } = req.body;

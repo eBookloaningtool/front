@@ -2,8 +2,13 @@
 <template>
   <div class="categories-page">
     <Header />
-    <main class="container mx-auto px-4 py-8">
-      <h1 class="text-3xl font-bold text-center mb-8">图书分类</h1>
+    <main class="container mx-auto px-6 py-10">
+      <div class="page-header">
+        <h1 class="text-4xl font-bold text-center mb-4">图书分类</h1>
+        <p class="text-gray-600 text-center max-w-2xl mx-auto">
+          探索我们的图书分类，发现您感兴趣的书籍。每个分类都包含精心挑选的图书，满足您的阅读需求。
+        </p>
+      </div>
       
       <!-- 加载状态 -->
       <div v-if="loading" class="flex justify-center items-center py-12">
@@ -15,57 +20,71 @@
         <p class="text-red-500">{{ error }}</p>
         <button 
           @click="fetchCategories" 
-          class="mt-4 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded"
+          class="mt-4 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg transition-colors"
         >
           重试
         </button>
       </div>
       
       <!-- 分类和图书列表 -->
-      <div v-else class="flex flex-col md:flex-row gap-8">
-        <!-- 左侧分类列表 -->
-        <div class="md:w-1/4 bg-white rounded-lg shadow-md p-4">
-          <h2 class="text-xl font-semibold mb-4 pb-2 border-b border-gray-200">图书分类</h2>
-          <ul class="space-y-2">
-            <li 
-              v-for="category in categories" 
-              :key="category.id" 
-              @click="selectCategory(category.id)"
-              class="py-2 px-3 rounded cursor-pointer transition-colors hover:bg-amber-50"
-              :class="{ 'bg-amber-100 font-medium': selectedCategoryId === category.id }"
-            >
-              {{ category.name }}
-            </li>
-          </ul>
+      <div v-else class="flex flex-col md:flex-row gap-8 mt-12">
+        <!-- 左侧分类卡片列表 -->
+        <div class="md:w-1/4">
+          <div class="bg-white rounded-xl shadow-lg p-6 sticky top-24">
+            <h2 class="text-xl font-semibold mb-6 pb-3 border-b border-gray-100">图书分类</h2>
+            <div class="grid grid-cols-1 gap-6">
+              <div 
+                v-for="category in categories" 
+                :key="category.id" 
+                @click="selectCategory(category.name)"
+                class="category-card p-4 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md"
+                :class="{ 'bg-amber-50 ring-2 ring-amber-500': selectedCategory === category.name }"
+              >
+                <div class="flex items-center space-x-3">
+                  <div class="category-icon p-2 rounded-lg bg-amber-50 text-amber-600">
+                    <i class="ri-book-2-line text-xl"></i>
+                  </div>
+                  <span class="text-gray-800 font-medium">{{ category.name }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         
         <!-- 右侧图书列表 -->
-        <div class="md:w-3/4 bg-white rounded-lg shadow-md p-4">
-          <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-200">
-            <h2 class="text-xl font-semibold">{{ selectedCategory?.name || '所有分类' }}</h2>
-            <p class="text-sm text-gray-600">{{ selectedCategory?.description }}</p>
-          </div>
+        <div class="md:w-3/4">
+          <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+              <div>
+                <h2 class="text-2xl font-bold text-gray-800">{{ selectedCategory || '所有分类' }}</h2>
+                <p class="text-sm text-gray-600 mt-1">{{ selectedCategoryDescription }}</p>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span class="text-sm text-gray-500">共 {{ categorizedBooks[selectedCategory]?.length || 0 }} 本图书</span>
+              </div>
+            </div>
+            
+            <!-- 使用BookList组件 -->
+            <BookList 
+              v-if="categorizedBooks[selectedCategory] && categorizedBooks[selectedCategory].length > 0"
+              :books="categorizedBooks[selectedCategory]" 
+              :showHeader="false"
+            />
+            
+            <!-- 无书籍提示 -->
+            <div v-else class="text-center py-12">
+              <div class="inline-block p-6 rounded-full bg-gray-50 mb-4">
+                <i class="ri-book-line text-4xl text-gray-400"></i>
+              </div>
+              <p class="text-gray-500">该分类暂无图书</p>
+              <router-link 
+                to="/" 
+                class="inline-block mt-4 text-amber-600 hover:text-amber-700 transition-colors"
+              >
+                浏览其他分类 <i class="ri-arrow-right-line ml-1"></i>
+              </router-link>
+            </div>
           
-          <!-- 使用BookList组件 -->
-          <BookList 
-            v-if="selectedCategoryBooks && selectedCategoryBooks.length > 0"
-            :books="selectedCategoryBooks" 
-            :showHeader="false"
-          />
-          
-          <!-- 无书籍提示 -->
-          <p v-else class="text-gray-500 py-4 text-center">
-            该分类暂无图书
-          </p>
-          
-          <!-- 查看全部按钮 -->
-          <div v-if="selectedCategoryBooks && selectedCategoryBooks.length > 16" class="mt-8 text-center">
-            <router-link 
-              :to="`/category/${selectedCategoryId}`" 
-              class="inline-block px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition"
-            >
-              查看全部 <i class="ri-arrow-right-line ml-1"></i>
-            </router-link>
           </div>
         </div>
       </div>
@@ -80,103 +99,97 @@ import { useRoute, useRouter } from 'vue-router';
 import Header from '../components/Header.vue';
 import Footer from '../components/Footer.vue';
 import BookList from '../components/BookList.vue';
-import { getMockCategories, getMockBooksByCategory, getMockCategoriesWithBooks } from '../mock-api.js';
+import axios from 'axios';
+import BookCard from '../components/BookCard.vue';
+import { searchBooks, getBookDetail } from '../api/books';
 
 const route = useRoute();
 const router = useRouter();
 const categories = ref([]);
-const categorizedBooks = ref([]); // 所有分类及其对应的书籍
+const categorizedBooks = ref({});
 const loading = ref(true);
-const error = ref(null);
-const selectedCategoryId = ref('');
-const selectedCategoryBooks = ref([]);
-
-// 根据ID找到选中的分类对象
-const selectedCategory = computed(() => {
-  return categories.value.find(cat => cat.id === selectedCategoryId.value);
-});
+const error = ref('');
+const selectedCategory = ref('');
 
 // 选择分类的方法
-const selectCategory = (categoryId) => {
-  selectedCategoryId.value = categoryId;
-  
-  // 从已加载的分类书籍中查找
-  const categoryData = categorizedBooks.value.find(cat => cat.category_id === categoryId);
-  if (categoryData && categoryData.books) {
-    selectedCategoryBooks.value = categoryData.books;
-  } else {
-    // 如果在已加载数据中没找到，则重新获取
-    fetchBooksByCategory(categoryId);
-  }
-  
-  // 添加导航功能 - 更新URL，但不重新加载页面
+const selectCategory = (categoryName) => {
+  selectedCategory.value = categoryName;
+  // 更新 URL 参数
   router.push({
     path: '/categories',
-    query: { category: categoryId }
+    query: { category: categoryName }
   });
 };
 
-// 获取所有分类的图书
-const fetchCategorizedBooks = async () => {
-  try {
-    // 直接获取带书籍的分类数据
-    categorizedBooks.value = getMockCategoriesWithBooks();
-    console.log('获取到的分类书籍数据:', categorizedBooks.value);
-    return categorizedBooks.value;
-  } catch (err) {
-    console.error('获取分类图书失败:', err);
-    return [];
-  }
-};
-
-// 获取所有分类
+// 获取分类列表
 const fetchCategories = async () => {
-  loading.value = true;
-  error.value = null;
-  
   try {
-    // 获取分类数据
-    categories.value = getMockCategories();
-    
-    // 获取并处理所有分类的图书
-    await fetchCategorizedBooks();
-    
-    // 默认选中第一个分类
-    if (categories.value.length > 0) {
-      // 如果URL中有分类ID参数，则选中该分类
-      const categoryParam = route.query.category;
-      if (categoryParam && categories.value.some(cat => cat.id === categoryParam)) {
-        selectCategory(categoryParam);
-      } else {
-        selectCategory(categories.value[0].id);
+    const response = await axios.get('/api/categories/getAll');
+    if (response.data.state === 'Success') {
+      categories.value = response.data.categoriesList;
+      // 如果有 URL 参数，设置选中的分类
+      if (route.query.category) {
+        selectedCategory.value = route.query.category;
+      } else if (categories.value.length > 0) {
+        // 否则默认选中第一个分类
+        selectedCategory.value = categories.value[0].name;
       }
+    } else {
+      error.value = '获取分类列表失败';
     }
-    
-    loading.value = false;
   } catch (err) {
-    console.error('获取分类数据失败:', err);
-    error.value = '获取分类数据失败，请稍后再试';
-    loading.value = false;
+    console.error('获取分类列表失败:', err);
+    error.value = '获取分类列表失败，请稍后重试';
   }
 };
 
-// 获取指定分类下的图书
-const fetchBooksByCategory = (categoryId) => {
+// 获取特定类别的图书
+const fetchBooksByCategory = async (categoryName) => {
   try {
-    selectedCategoryBooks.value = getMockBooksByCategory(categoryId);
+    loading.value = true;
+    error.value = '';
+    
+    // 使用搜索 API 获取特定类别的图书
+    const result = await searchBooks({ category: categoryName });
+    
+    if (result.state === 'success' && result.bookId && result.bookId.length > 0) {
+      // 获取每本书的详细信息
+      const bookDetails = await Promise.all(
+        result.bookId.map(async (bookId) => {
+          const bookDetail = await getBookDetail(bookId);
+          return bookDetail;
+        })
+      );
+      
+      // 过滤掉获取失败的书籍（返回 null 的情况）
+      categorizedBooks.value[categoryName] = bookDetails.filter(book => book !== null);
+    } else {
+      categorizedBooks.value[categoryName] = [];
+    }
   } catch (err) {
     console.error('获取分类图书失败:', err);
-    selectedCategoryBooks.value = [];
+    error.value = '获取分类图书失败，请稍后重试';
+    categorizedBooks.value[categoryName] = [];
+  } finally {
+    loading.value = false;
   }
 };
 
-// 监听URL参数变化
-watch(() => route.query.category, (newCategoryId) => {
-  if (newCategoryId && categories.value.some(cat => cat.id === newCategoryId)) {
-    selectCategory(newCategoryId);
+// 监听选中的分类变化
+watch(selectedCategory, (newCategory) => {
+  if (newCategory) {
+    fetchBooksByCategory(newCategory);
   }
 });
 
+// 监听 URL 参数变化
+watch(() => route.query.category, (newCategory) => {
+  if (newCategory) {
+    selectedCategory.value = newCategory;
+  }
+});
+
+// 组件挂载时获取分类列表
 onMounted(() => {
   fetchCategories();
 });
@@ -187,17 +200,68 @@ onMounted(() => {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background-color: #f8f9fa;
+  padding: 0 10rem;
 }
 
 main {
   flex: 1;
   margin-top: 60px;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.page-header {
+  margin-bottom: 2rem;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.category-card {
+  transition: all 0.3s ease;
+}
+
+.category-card:hover {
+  transform: translateX(4px);
+  background-color: #fef3c7;
+}
+
+.category-icon {
+  transition: all 0.3s ease;
+}
+
+.category-card:hover .category-icon {
+  transform: scale(1.1);
+  background-color: #fef3c7;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .page-header h1 {
+    font-size: 2rem;
+  }
+  
+  .page-header p {
+    font-size: 0.9rem;
+  }
+  
+  .category-card {
+    padding: 0.75rem;
+  }
+  
+  .categories-page {
+    padding: 0 0.5rem;
+  }
 }
 </style> 

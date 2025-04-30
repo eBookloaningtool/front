@@ -2,125 +2,160 @@
   <div class="search-results container mx-auto py-8 px-4">
     <h1 class="text-2xl font-bold mb-6">{{ title }}</h1>
     
-    <div v-if="loading" class="flex justify-center py-8">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-    </div>
-    
-    <div v-else-if="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-      <p>{{ error }}</p>
-      <button @click="search" class="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
-        重试
-      </button>
-    </div>
-    
-    <div v-else-if="books.length === 0" class="text-center py-8">
-      <p class="text-lg text-gray-600">未找到与"{{ searchQuery }}"相关的书籍</p>
-      <p class="mt-2 text-gray-500">请尝试使用其他关键词搜索</p>
-    </div>
-    
-    <div v-else>
-      <p class="mb-4 text-gray-600">找到 {{ books.length }} 本与"{{ searchQuery }}"相关的书籍</p>
-      
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <div v-for="book in books" :key="book.bookId" class="book-card" @click="navigateToBookDetail(book.bookId)">
-          <BookCard :book="book" />
-        </div>
-      </div>
-    </div>
+    <BookList 
+      :title="title"
+      :books="books"
+      :loading="loading"
+      :error="error"
+      :loadingMore="loadingMore"
+      :hasMore="hasMore"
+      :showHeader="false"
+      @retry="search"
+    />
   </div>
 </template>
 
-<script>
-import { ref, computed, onMounted, watch } from 'vue';
+<script setup>
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { searchBooks } from '../api/books';
-import BookCard from '../components/BookCard.vue';
+import { searchBooks, getBookDetail } from '../api/books';
+import BookList from '../components/BookList.vue';
 
-export default {
-  name: 'SearchResults',
-  components: {
-    BookCard
-  },
-  setup() {
-    const route = useRoute();
-    const router = useRouter();
-    const books = ref([]);
-    const loading = ref(true);
-    const error = ref('');
+const route = useRoute();
+const router = useRouter();
+const books = ref([]);
+const loading = ref(true);
+const error = ref('');
+const loadingMore = ref(false);
+const hasMore = ref(true);
+const currentPage = ref(1);
+const pageSize = 10;
+
+const searchParams = computed(() => ({
+  title: route.query.title || '',
+  author: route.query.author || '',
+  category: route.query.category || ''
+}));
+
+const title = computed(() => {
+  const params = searchParams.value;
+  if (params.title) return `搜索结果: ${params.title}`;
+  if (params.author) return `作者: ${params.author}`;
+  if (params.category) return `分类: ${params.category}`;
+  return '搜索结果';
+});
+
+const search = async () => {
+  // 检查是否有搜索参数
+  if (!searchParams.value.title && !searchParams.value.author && !searchParams.value.category) {
+    books.value = [];
+    loading.value = false;
+    return;
+  }
+  
+  loading.value = true;
+  error.value = '';
+  currentPage.value = 1;
+  
+  try {
+    const result = await searchBooks({
+      ...searchParams.value,
+      page: currentPage.value,
+      pageSize: pageSize
+    });
     
-    const searchQuery = computed(() => route.query.q || '');
-    const title = computed(() => searchQuery.value ? `搜索结果: ${searchQuery.value}` : '搜索结果');
-    
-    const search = async () => {
-      if (!searchQuery.value) {
-        books.value = [];
-        loading.value = false;
-        return;
-      }
-      
-      loading.value = true;
-      error.value = '';
-      
-      try {
-        console.log("搜索关键词:", searchQuery.value);
-        const result = await searchBooks(searchQuery.value);
-        console.log("搜索结果:", result);
+    if (result.state === 'success') {
+      if (result.bookId && result.bookId.length > 0) {
+        const bookDetails = await Promise.all(
+          result.bookId.map(async (bookId) => {
+            const bookDetail = await getBookDetail(bookId);
+            return bookDetail;
+          })
+        );
         
-        if (result && result.code === 200) {
-          books.value = result.data || [];
-          if (books.value.length === 0) {
-            console.log("未找到匹配的书籍");
-          }
-        } else {
-          books.value = [];
-          error.value = '搜索失败，请稍后再试';
-          console.error('API请求失败:', result);
-        }
-      } catch (err) {
-        console.error('搜索出错', err);
-        error.value = '搜索失败，请稍后再试';
+        books.value = bookDetails.filter(book => book !== null);
+        hasMore.value = result.bookId.length === pageSize;
+      } else {
         books.value = [];
-      } finally {
-        loading.value = false;
+        hasMore.value = false;
       }
-    };
-    
-    // 导航到图书详情页
-    const navigateToBookDetail = (bookId) => {
-      router.push(`/books/${bookId}`);
-    };
-    
-    // 监听搜索查询变化
-    watch(() => route.query.q, () => {
-      search();
-    });
-    
-    // 组件挂载时执行搜索
-    onMounted(() => {
-      search();
-    });
-    
-    return {
-      books,
-      loading,
-      error,
-      searchQuery,
-      title,
-      search,
-      navigateToBookDetail
-    };
+    } else {
+      books.value = [];
+      error.value = result.message || '搜索失败，请稍后再试';
+    }
+  } catch (err) {
+    console.error('搜索出错', err);
+    error.value = '搜索失败，请稍后再试';
+    books.value = [];
+  } finally {
+    loading.value = false;
   }
 };
+
+// 加载更多搜索结果
+const loadMore = async () => {
+  if (!hasMore.value || loadingMore.value) return;
+  
+  loadingMore.value = true;
+  currentPage.value++;
+  
+  try {
+    const result = await searchBooks({
+      ...searchParams.value,
+      page: currentPage.value,
+      pageSize: pageSize
+    });
+    
+    if (result.state === 'success' && result.bookId && result.bookId.length > 0) {
+      const bookDetails = await Promise.all(
+        result.bookId.map(async (bookId) => {
+          const bookDetail = await getBookDetail(bookId);
+          return bookDetail;
+        })
+      );
+      
+      const newBooks = bookDetails.filter(book => book !== null);
+      books.value = [...books.value, ...newBooks];
+      hasMore.value = newBooks.length === pageSize;
+    } else {
+      hasMore.value = false;
+    }
+  } catch (err) {
+    console.error('加载更多搜索结果失败:', err);
+    error.value = '加载更多结果失败，请稍后再试';
+  } finally {
+    loadingMore.value = false;
+  }
+};
+
+// 监听滚动事件
+const handleScroll = () => {
+  const scrollHeight = document.documentElement.scrollHeight;
+  const scrollTop = document.documentElement.scrollTop;
+  const clientHeight = document.documentElement.clientHeight;
+  
+  if (scrollHeight - scrollTop - clientHeight < 100) {
+    loadMore();
+  }
+};
+
+// 监听搜索参数变化
+watch(() => route.query, () => {
+  search();
+}, { deep: true });
+
+onMounted(() => {
+  search();
+  window.addEventListener('scroll', handleScroll);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll);
+});
 </script>
 
 <style scoped>
-.book-card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  cursor: pointer;
-}
-
-.book-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+.search-results {
+  min-height: 100vh;
 }
 </style> 

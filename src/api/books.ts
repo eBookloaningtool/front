@@ -77,7 +77,7 @@ export const getBookDetail = async (bookId: string): Promise<BookDetail | null> 
     return null;
   }
   try {
-    const response = await axios.get<BookDetail>(`/api/books/${bookId}`);
+    const response = await axios.get<BookDetail>(`/api/books/get?bookId=${bookId}`);
     return response.data;
   } catch (error) {
     console.error(`获取书籍详情失败 (ID: ${bookId}):`, error instanceof AxiosError ? error.message : error);
@@ -105,12 +105,23 @@ export async function getBookContent(bookId: string) {
  * @param {SearchBooksParams} params - 搜索参数 (title, author, category)
  * @returns {Promise<SearchBooksResponse>} - 搜索结果
  */
-export const searchBooks = async (searchType, query) => {
+export const searchBooks = async (params: SearchBooksParams): Promise<SearchBooksResponse> => {
   try {
-    const response = await axios.get(`/api/books/search?${searchType}=${query}`);
+    // 构建查询参数
+    const queryParams = new URLSearchParams();
+    if (params.title) queryParams.append('title', params.title);
+    if (params.author) queryParams.append('author', params.author);
+    if (params.category) queryParams.append('category', params.category);
+    
+    // 确保至少有一个搜索参数
+    if (queryParams.toString() === '') {
+      return { state: 'error', bookId: [], message: '至少需要一个搜索参数' };
+    }
+    
+    const response = await axios.get<SearchBooksResponse>(`/api/books/search?${queryParams.toString()}`);
     return response.data;
   } catch (error) {
     console.error('搜索书籍失败:', error);
-    throw error;
+    return { state: 'error', bookId: [], message: '搜索失败，请稍后再试' };
   }
 };

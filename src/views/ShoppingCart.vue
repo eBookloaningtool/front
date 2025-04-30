@@ -3,7 +3,7 @@
   <div class="shopping-cart-container">
     <h1 class="cart-title">我的购物车</h1>
 
-    <CartList v-model:cartItems="cartItems" @cart-updated="handleCartUpdated" @remove-item="removeFromCart">
+    <CartList ref="cartListRef" v-model:cartItems="cartItems" @cart-updated="handleCartUpdated" @remove-item="removeFromCart">
       <!-- 空购物车时的操作按钮 -->
       <template #empty-action>
         <router-link to="/" class="browse-books-btn">
@@ -34,9 +34,11 @@ import { useToast } from '@/composables/useToast';
 import { getWishlist, removeFromWishlist as removeWishlistItem } from '../api/wishlist';
 import { clearCart, removeFromCart as apiRemoveFromCart } from '@/api/cart';
 import { borrowBook } from '@/api/borrowApi';
+import { cartAPI } from '@/services/api';
 
 const router = useRouter();
 const cartItems = ref([]);
+const cartListRef = ref(null);
 const { showToast } = useToast();
 const isProcessing = ref(false);
 
@@ -225,18 +227,20 @@ const handleClearCart = async () => {
   isProcessing.value = true;
 
   try {
-    // 调用API清空购物车
-    const result = await clearCart();
+    // 使用新的clearCart方法
+    const result = await cartAPI.clearCart();
+    console.log('清空购物车响应:', result);
 
-    if (result.state === 'success') {
-      // 更新本地购物车数据
-      cartItems.value = [];
-      saveCartItems();
-      // 显示成功消息
-      showToast('购物车已清空', 'success');
-    } else {
-      // 清空失败
-      showToast('清空购物车失败，请稍后重试', 'error');
+    // 清空本地购物车数据
+    cartItems.value = [];
+    localStorage.removeItem('cartItems');
+    
+    // 显示成功消息
+    showToast('购物车已清空', 'success');
+    
+    // 重新获取购物车数据
+    if (cartListRef.value && typeof cartListRef.value.fetchCartItems === 'function') {
+      await cartListRef.value.fetchCartItems();
     }
   } catch (error) {
     console.error('清空购物车失败:', error);

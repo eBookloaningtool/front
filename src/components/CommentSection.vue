@@ -59,7 +59,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -75,6 +75,8 @@ const comments = ref([])
 const commentText = ref('')
 const currentRating = ref(0)
 const isValid = ref(false)
+const error = ref(null)
+const isLoading = ref(false)
 
 const updateStars = (rating, isHover = false) => {
   if (isHover) {
@@ -112,89 +114,110 @@ const submitComment = async () => {
   if (!isValid.value) return
 
   try {
-    // 模拟添加评论，实际项目中应调用API
-    const newComment = {
-      id: Date.now(),
-      username: '当前用户',
-      rating: currentRating.value,
-      content: commentText.value.trim(),
-      createdAt: new Date().toISOString()
+    const token = localStorage.getItem('token')
+    if (!token) {
+      error.value = '请先登录后再发表评论'
+      return
     }
-    
-    comments.value.unshift(newComment)
-    commentText.value = ''
-    currentRating.value = 0
-    isValid.value = false
-    
-    // 实际API请求
-    /*
-    const response = await fetch(`/api/books/${props.bookId}/reviews`, {
+
+    const response = await fetch('https://api.borrowbee.wcy.one:61700/api/reviews/add', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
+        bookId: props.bookId,
         rating: currentRating.value,
-        content: commentText.value.trim()
+        comment: commentText.value.trim()
       })
     })
 
-    if (response.ok) {
-      const newComment = await response.json()
-      comments.value.unshift(newComment)
+    if (!response.ok) {
+      throw new Error('提交评论失败')
+    }
+
+    const result = await response.json()
+    if (result.state === 'success') {
+      // 提交成功后重新加载评论
+      await loadComments()
       commentText.value = ''
       currentRating.value = 0
       isValid.value = false
+    } else {
+      throw new Error(result.message || '提交评论失败')
     }
-    */
   } catch (error) {
     console.error('提交评论失败:', error)
+    error.value = error.message
   }
 }
 
 const loadComments = async () => {
+  console.log('开始加载评论，bookId:', props.bookId)
+  isLoading.value = true
   try {
-    // 模拟加载评论，实际项目中应调用API
-    comments.value = [
-      {
-        id: 1,
-        username: 'user123',
-        rating: 5,
-        content: '这本书很精彩！情节吸引人，人物刻画得很好。',
-        createdAt: '2023-10-15T12:34:56Z'
-      },
-      {
-        id: 2,
-        username: 'user456',
-        rating: 4,
-        content: '我非常喜欢这本书中的见解，强烈推荐。',
-        createdAt: '2023-09-20T15:30:00Z'
-      },
-      {
-        id: 3,
-        username: 'user789',
-        rating: 4,
-        content: '一个真正鼓舞人心的故事，信息量很大。',
-        createdAt: '2023-08-05T09:15:30Z'
-      }
-    ]
+    // 获取评论ID列表
+    const response = await fetch(`https://api.borrowbee.wcy.one:61700/api/reviews/book?bookId=${props.bookId}`)
+    console.log('获取评论ID列表响应:', response)
     
-    // 实际API请求
-    /*
-    const response = await fetch(`/api/books/${props.bookId}/reviews`)
-    if (response.ok) {
-      comments.value = await response.json()
+    if (!response.ok) {
+      throw new Error('获取评论失败')
     }
-    */
+
+    const data = await response.json()
+    console.log('评论ID列表数据:', data)
+    const commentIds = data.commentIds || []
+
+    // 获取每个评论的详细内容
+    const commentPromises = commentIds.map(async (commentId) => {
+      try {
+        console.log('获取评论内容，commentId:', commentId)
+        const commentResponse = await fetch(`https://api.borrowbee.wcy.one:61700/api/reviews/content?commentId=${commentId}`)
+        if (!commentResponse.ok) {
+          console.error(`获取评论 ${commentId} 失败`)
+          return null
+        }
+        const commentData = await commentResponse.json()
+        console.log('评论数据:', commentData)
+        return {
+          id: commentData.uuid,
+          rating: commentData.rating,
+          content: commentData.comment,
+          username: '匿名用户',
+          createdAt: new Date().toISOString()
+        }
+      } catch (err) {
+        console.error(`处理评论 ${commentId} 时出错:`, err)
+        return null
+      }
+    })
+
+    const commentResults = await Promise.all(commentPromises)
+    comments.value = commentResults.filter(comment => comment !== null)
+    console.log('最终评论列表:', comments.value)
   } catch (error) {
     console.error('加载评论失败:', error)
+    error.value = error.message
+  } finally {
+    isLoading.value = false
   }
 }
 
+// 监听 bookId 变化
+watch(() => props.bookId, (newVal) => {
+  console.log('bookId 变化:', newVal)
+  if (newVal) {
+    loadComments()
+  }
+})
+
 onMounted(() => {
+  console.log('组件挂载，当前bookId:', props.bookId)
   isLoggedIn.value = !!localStorage.getItem('token')
-  loadComments()
+  if (props.bookId) {
+    loadComments()
+  }
 })
 </script>
 

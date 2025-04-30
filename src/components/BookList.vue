@@ -49,6 +49,17 @@
           :showWishlist="showWishlist"
         />
       </template>
+      
+      <!-- 加载更多提示 -->
+      <div v-if="loadingMore" class="loading-more">
+        <div class="simple-spinner"></div>
+        <p>正在加载更多...</p>
+      </div>
+      
+      <!-- 没有更多数据提示 -->
+      <div v-else-if="!hasMore" class="no-more">
+        <p>没有更多书籍了</p>
+      </div>
     </div>
 
     <!-- 没有数据 -->
@@ -76,7 +87,9 @@ const props = defineProps({
   },
   showRating: { type: Boolean, default: true },
   showWishlist: { type: Boolean, default: true },
-  showHeader: { type: Boolean, default: true }
+  showHeader: { type: Boolean, default: true },
+  loadingMore: { type: Boolean, default: false },
+  hasMore: { type: Boolean, default: true }
 });
 
 const emit = defineEmits(['retry']);
@@ -117,6 +130,8 @@ onMounted(async () => {
 <style scoped>
 .book-list-section {
   margin-bottom: 40px;
+  position: relative;
+  min-height: 200px;
 }
 
 /* Header 样式 */
@@ -146,12 +161,20 @@ onMounted(async () => {
 }
 
 /* Loading 样式 */
-.loading {
+.loading,
+.loading-more {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 40px 0;
-  color: #666;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
 }
 
 .simple-spinner {
@@ -216,6 +239,34 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+/* 加载更多提示 */
+.loading-more {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.loading-more .simple-spinner {
+  margin: 0 auto 10px;
+}
+
+/* 没有更多数据提示 */
+.no-more {
+  text-align: center;
+  padding: 20px 0;
+  color: #999;
+  font-size: 14px;
 }
 
 @media (max-width: 768px) {

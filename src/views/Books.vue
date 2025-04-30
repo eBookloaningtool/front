@@ -19,10 +19,10 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
 import Header from '../components/Header.vue'
 import Footer from '../components/Footer.vue'
 import BookList from '../components/BookList.vue'
+import { bookAPI } from '../services/api'
 
 const books = ref([])
 const loading = ref(true)
@@ -33,24 +33,13 @@ const fetchBooks = async () => {
   error.value = null
   
   try {
-    if (window.mockMode) {
-      // 使用mock数据
-      console.log('使用mock数据获取书籍列表');
-      setTimeout(async () => {
-        const mockApi = await import('../mock-api.js');
-        books.value = mockApi.getMockBooks();
-        loading.value = false;
-      }, 500);
-    } else {
-      // 实际API调用
-      console.log('从API获取书籍列表');
-      const response = await axios.get('/api/books');
-      books.value = response.data;
-      loading.value = false;
-    }
+    const response = await bookAPI.getAllBooks()
+    books.value = response.data.books || []
   } catch (err) {
-    console.error('获取书籍数据失败:', err)
-    error.value = '获取书籍数据失败，请稍后再试'
+    console.error('获取书籍列表失败:', err)
+    error.value = '获取书籍列表失败，请稍后再试'
+    books.value = []
+  } finally {
     loading.value = false
   }
 }
