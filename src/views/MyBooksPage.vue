@@ -2,22 +2,22 @@
   <div class="my-books-page">
     <div class="container">
       <h1 class="page-title">我的书籍</h1>
-      
+
       <div class="tabs">
-        <button 
-          :class="['tab-btn', { active: activeTab === 'borrowed' }]" 
+        <button
+          :class="['tab-btn', { active: activeTab === 'borrowed' }]"
           @click="activeTab = 'borrowed'"
         >
           已借阅
         </button>
-        <button 
-          :class="['tab-btn', { active: activeTab === 'history' }]" 
+        <button
+          :class="['tab-btn', { active: activeTab === 'history' }]"
           @click="activeTab = 'history'"
         >
           借阅历史
         </button>
       </div>
-      
+
       <div class="books-container" v-if="activeTab === 'borrowed' && borrowedBooks.length > 0">
         <div class="book-item" v-for="book in borrowedBooks" :key="book.bookId">
           <div class="book-cover" @click="viewBookDetail(book.bookId)">
@@ -34,7 +34,7 @@
           </div>
         </div>
       </div>
-      
+
       <div class="books-container" v-else-if="activeTab === 'history' && historyBooks.length > 0">
         <div class="book-item" v-for="book in historyBooks" :key="book.bookId">
           <div class="book-cover" @click="viewBookDetail(book.bookId)">
@@ -48,19 +48,19 @@
           </div>
         </div>
       </div>
-      
+
       <div class="empty-state" v-else>
         <img src="../assets/empty-books.svg" alt="没有书籍" />
         <p>您当前没有{{ activeTab === 'borrowed' ? '借阅' : '借阅历史' }}记录</p>
         <router-link to="/" class="browse-btn">浏览书籍</router-link>
       </div>
     </div>
-    
+
     <!-- 续借确认模态框 -->
     <div class="modal-overlay" v-if="showRenewModal" @click.self="closeRenewModal">
       <div class="modal-content">
         <button class="close-btn" @click="closeRenewModal">&times;</button>
-        
+
         <div v-if="renewSuccess" class="success-message">
           <div class="success-icon">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -71,17 +71,17 @@
           <p>借阅时间已延长30天</p>
           <p class="balance">当前余额: ￡{{ userBalance.toFixed(2) }}</p>
         </div>
-        
+
         <div v-else>
           <h3>确认续借</h3>
           <p>续借将延长借阅时间30天</p>
           <p class="fee">续借费用: ￡{{ renewFee.toFixed(2) }}</p>
           <p class="balance">当前余额: ￡{{ userBalance.toFixed(2) }}</p>
-          
+
           <div v-if="renewError" class="error-message">
             {{ renewError }}
           </div>
-          
+
           <div class="modal-actions">
             <button class="cancel-btn" @click="closeRenewModal">取消</button>
             <button v-if="userBalance >= renewFee" class="confirm-btn" @click="handleRenewBook">确认续借</button>
@@ -90,12 +90,12 @@
         </div>
       </div>
     </div>
-    
+
     <!-- 归还确认模态框 -->
     <div class="modal-overlay" v-if="showReturnModal" @click.self="closeReturnModal">
       <div class="modal-content">
         <button class="close-btn" @click="closeReturnModal">&times;</button>
-        
+
         <div v-if="returnSuccess" class="success-message">
           <div class="success-icon">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -105,15 +105,15 @@
           <h3>归还成功!</h3>
           <p>书籍已成功归还</p>
         </div>
-        
+
         <div v-else>
           <h3>确认归还</h3>
           <p>您确定要归还这本书吗？</p>
-          
+
           <div v-if="returnError" class="error-message">
             {{ returnError }}
           </div>
-          
+
           <div class="modal-actions">
             <button class="cancel-btn" @click="closeReturnModal">取消</button>
             <button class="confirm-btn" @click="handleReturnBook">确认归还</button>
@@ -125,11 +125,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { renewBook, getBorrowList, returnBook, getBorrowHistory } from '../api/borrowApi';
 import { getBookDetail } from '../api/books';
-import { sendEmailNotification } from '../utils/emailService';
 import { getUserInfo } from '../api/user';
 
 const router = useRouter();
@@ -138,7 +137,7 @@ const userBalance = ref(0);
 const showRenewModal = ref(false);
 const showReturnModal = ref(false);
 const currentBookId = ref(null);
-const renewFee = 5; // 续借费用
+const renewFee = ref(5); // 续借费用
 const renewError = ref('');
 const renewSuccess = ref(false);
 const returnError = ref('');
@@ -148,17 +147,12 @@ const returnSuccess = ref(false);
 const borrowedBooks = ref([]);
 const historyBooks = ref([]);
 
-// 获取用户余额
-const fetchUserBalance = async () => {
-  try {
-    const response = await getUserInfo();
-    if (response.data) {
-      userBalance.value = response.data.balance || 0;
-    }
-  } catch (error) {
-    console.error('获取用户余额失败:', error);
+// 监听标签切换
+watch(activeTab, (newTab) => {
+  if (newTab === 'history') {
+    fetchBorrowHistory();
   }
-};
+});
 
 // 获取借阅列表
 const fetchBorrowedBooks = async () => {
@@ -187,7 +181,7 @@ const fetchBorrowedBooks = async () => {
           }
         })
       );
-      
+
       // 过滤掉获取失败的书籍
       borrowedBooks.value = bookDetails.filter(book => book !== null);
     } else {
@@ -203,7 +197,7 @@ const fetchBorrowedBooks = async () => {
 const fetchBorrowHistory = async () => {
   try {
     console.log('开始获取借阅历史数据...');
-    
+
     // 调用API获取借阅历史
     const response = await getBorrowHistory();
     console.log('getBorrowHistory API 响应:', {
@@ -211,10 +205,10 @@ const fetchBorrowHistory = async () => {
       dataLength: response.data?.length,
       data: response.data
     });
-    
+
     if (response.state === 'success' && response.data) {
       console.log('开始处理借阅历史数据，共', response.data.length, '条记录');
-      
+
       // 获取每本书的详细信息
       const bookDetails = await Promise.all(
         response.data.map(async (borrow, index) => {
@@ -227,7 +221,7 @@ const fetchBorrowHistory = async () => {
               author: bookDetail?.author,
               cover: bookDetail?.coverUrl || bookDetail?.cover
             });
-            
+
             if (bookDetail) {
               return {
                 bookId: borrow.bookId,
@@ -247,7 +241,7 @@ const fetchBorrowHistory = async () => {
           }
         })
       );
-      
+
       // 过滤掉获取失败的书籍
       const validBooks = bookDetails.filter(book => book !== null);
       console.log('数据处理完成:', {
@@ -256,7 +250,7 @@ const fetchBorrowHistory = async () => {
         无效数据条数: response.data.length - validBooks.length,
         最终数据: validBooks
       });
-      
+
       historyBooks.value = validBooks;
     } else {
       console.warn('API返回状态不是success或数据为空:', {
@@ -272,10 +266,12 @@ const fetchBorrowHistory = async () => {
 };
 
 // 组件挂载时获取数据
-onMounted(() => {
-  fetchUserBalance();
+onMounted(async () => {
   fetchBorrowedBooks();
-  fetchBorrowHistory();
+  // 如果初始标签是history，则获取历史记录
+  if (activeTab.value === 'history') {
+    fetchBorrowHistory();
+  }
 });
 
 // 跳转到书籍详情页
@@ -289,11 +285,68 @@ const viewAuthorBooks = (author) => {
 };
 
 // 打开续借确认窗口
-const openRenewModal = (bookId) => {
-  currentBookId.value = bookId;
-  renewError.value = '';
-  renewSuccess.value = false;
-  showRenewModal.value = true;
+const openRenewModal = async (bookId) => {
+  console.log('打开续借确认窗口，bookId:', bookId);
+  try {
+    currentBookId.value = bookId;
+    renewError.value = '';
+    renewSuccess.value = false;
+
+    console.log('开始获取用户余额...');
+  try {
+    const response = await getUserInfo();
+    console.log('getUserInfo API响应:', response);
+    if (response.balance) {
+      userBalance.value = response.balance || 0;
+      console.log('更新用户余额:', userBalance.value);
+    }
+  } catch (error) {
+    console.error('获取用户余额失败:', error);
+  }
+
+    // 获取书籍详情以获取价格
+    console.log('获取书籍详情...');
+    const bookDetail = await getBookDetail(bookId);
+    console.log('书籍详情:', bookDetail);
+
+    if (bookDetail) {
+      renewFee.value = bookDetail.price;
+      console.log('设置续借费用:', renewFee.value);
+    } else {
+      console.error('获取书籍信息失败');
+      renewError.value = '获取书籍信息失败，请稍后重试';
+      showRenewModal.value = true;
+      return;
+    }
+
+    // 调用续借API检查状态
+    console.log('调用续借API检查状态...');
+    const result = await renewBook(bookId);
+    console.log('续借API响应:', result);
+
+    if (result.state === 'success') {
+      console.log('续借检查成功');
+      renewSuccess.value = true;
+      // 更新借阅列表中的到期日期
+      const book = borrowedBooks.value.find(b => b.bookId === bookId);
+      if (book) {
+        book.dueDate = result.newDueDate;
+        console.log('更新到期日期:', result.newDueDate);
+      }
+    } else if (result.state === 'insufficient balance') {
+      console.log('余额不足:', result.newPayment);
+      renewError.value = `余额不足，需要 ￡${result.newPayment} `;
+    } else {
+      console.error('续借失败:', result.message);
+      renewError.value = result.message || '续借失败，请稍后重试';
+    }
+
+    showRenewModal.value = true;
+  } catch (error) {
+    console.error('检查续借状态失败:', error);
+    renewError.value = '检查续借状态失败，请稍后重试';
+    showRenewModal.value = true;
+  }
 };
 
 // 关闭续借确认窗口
@@ -307,53 +360,20 @@ const closeRenewModal = () => {
 
 // 续借书籍
 const handleRenewBook = async () => {
+  console.log('开始处理续借，当前余额:', userBalance.value, '续借费用:', renewFee.value);
   try {
-    // 检查用户余额是否足够
-    if (userBalance.value < renewFee) {
-      renewError.value = '余额不足，请充值';
-      return;
-    }
-    
-    // 调用续借API
-    const result = await renewBook(currentBookId.value);
-    
-    if (result.state === 'success') {
-      // 更新借阅列表中的到期日期
-      const book = borrowedBooks.value.find(b => b.bookId === currentBookId.value);
-      if (book) {
-        book.dueDate = result.newDueDate;
-        
-        // 发送续借成功邮件
-        const user = await getUserInfo();
-        if (user.data) {
-          sendEmailNotification('borrow', {
-            user: user.data,
-            book: book,
-            borrowDate: book.borrowDate,
-            dueDate: result.newDueDate
-          }).catch(err => console.error('发送续借邮件失败:', err));
-        }
-      }
-      
-      // 扣除余额
-      userBalance.value -= renewFee;
-      
-      // 显示成功信息
-      renewSuccess.value = true;
-      renewError.value = '';
-      
-      // 3秒后自动关闭窗口
-      setTimeout(() => {
-        closeRenewModal();
-      }, 3000);
-    } else if (result.state === 'insufficient balance') {
-      renewError.value = `余额不足，需要 ${result.newPayment} 元`;
-    } else {
-      renewError.value = result.message || '续借失败，请稍后重试';
-    }
+    // 扣除余额
+    userBalance.value -= renewFee.value;
+    console.log('扣除余额后:', userBalance.value);
+
+    // 3秒后自动关闭窗口
+    setTimeout(() => {
+      console.log('自动关闭续借窗口');
+      closeRenewModal();
+    }, 3000);
   } catch (error) {
-    console.error('续借失败:', error);
-    renewError.value = '续借失败，请稍后重试';
+    console.error('处理续借后续操作失败:', error);
+    renewError.value = '处理续借后续操作失败，请稍后重试';
   }
 };
 
@@ -385,33 +405,20 @@ const handleReturnBook = async () => {
   try {
     // 调用归还API
     const result = await returnBook(currentBookId.value);
-    
+
     if (result.state === 'success') {
       // 找到当前借阅的书籍
       const bookIndex = borrowedBooks.value.findIndex(b => b.bookId === currentBookId.value);
-      
+
       if (bookIndex !== -1) {
-        const book = borrowedBooks.value[bookIndex];
-        
         // 从借阅列表中移除
         borrowedBooks.value.splice(bookIndex, 1);
-        
-        // 发送归还确认邮件
-        const user = await getUserInfo();
-        if (user.data) {
-          sendEmailNotification('return', {
-            user: user.data,
-            book: book,
-            borrowDate: book.borrowDate,
-            returnDate: new Date().toISOString().split('T')[0]
-          }).catch(err => console.error('发送归还邮件失败:', err));
-        }
       }
-      
+
       // 显示成功信息
       returnSuccess.value = true;
       returnError.value = '';
-      
+
       // 3秒后自动关闭窗口
       setTimeout(() => {
         closeReturnModal();
@@ -689,4 +696,4 @@ const handleReturnBook = async () => {
     grid-template-columns: 1fr;
   }
 }
-</style> 
+</style>
