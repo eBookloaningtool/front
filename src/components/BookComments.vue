@@ -1,35 +1,35 @@
 <template>
   <div class="book-comments-container">
-    <h2 class="comments-title">用户评论</h2>
-    
+    <h2 class="comments-title">User Reviews</h2>
+
     <div v-if="isLoading" class="loading-comments">
       <div class="loading-spinner"></div>
-      <p>加载评论中...</p>
+      <p>Loading reviews...</p>
     </div>
-    
+
     <div v-else-if="error" class="error-message">
       <p>{{ error }}</p>
-      <button @click="fetchComments" class="retry-button">重试</button>
+      <button @click="fetchComments" class="retry-button">Retry</button>
     </div>
-    
+
     <div v-else-if="comments.length === 0" class="no-comments">
-      <p>这本书还没有评论，成为第一个评论的人吧！</p>
+      <p>This book has no reviews yet. Be the first to review!</p>
     </div>
-    
+
     <div v-else class="comments-list">
-      <div v-for="(commentId, index) in comments" :key="commentId" 
+      <div v-for="(commentId, index) in comments" :key="commentId"
            class="comment-item" :class="{'comment-item-alt': index % 2 === 1}">
         <div class="comment-header">
           <div class="comment-avatar">
             <span>{{ getAvatarText(commentId) }}</span>
           </div>
           <div class="comment-meta">
-            <p class="comment-id">评论 ID: {{ commentId }}</p>
+            <p class="comment-id">Review ID: {{ commentId }}</p>
             <p class="comment-date">{{ generateRandomDate() }}</p>
           </div>
         </div>
         <div class="comment-content">
-          <p>这里将来会显示评论内容。目前仅显示评论ID：{{ commentId }}</p>
+          <p>This will display the review content. Currently showing review ID: {{ commentId }}</p>
         </div>
         <div class="comment-rating">
           <span v-for="n in 5" :key="n" class="star" :class="{ 'filled': n <= getRandomRating(commentId) }">★</span>
@@ -53,7 +53,7 @@ export default {
       comments: [],
       isLoading: true,
       error: null,
-      // 用于模拟随机评分的缓存
+      // Cache for simulating consistent random ratings
       ratingCache: {}
     }
   },
@@ -64,50 +64,50 @@ export default {
     async fetchComments() {
       this.isLoading = true;
       this.error = null;
-      
+
       try {
         const response = await fetch(`/api/reviews/book?bookId=${this.bookId}`);
-        
+
         if (!response.ok) {
-          throw new Error('获取评论失败');
+          throw new Error('Failed to get reviews');
         }
-        
+
         const data = await response.json();
         this.comments = data.comments || [];
       } catch (error) {
-        console.error('获取评论出错:', error);
-        this.error = '无法加载评论，请稍后重试';
+        console.error('Error fetching reviews:', error);
+        this.error = 'Unable to load reviews. Please try again later.';
       } finally {
         this.isLoading = false;
       }
     },
-    
-    // 从评论ID生成头像文本
+
+    // Generate avatar text from comment ID
     getAvatarText(commentId) {
-      // 使用评论ID的前两个字符作为头像文本
+      // Use the first two characters of the comment ID as avatar text
       return commentId.substring(0, 2).toUpperCase();
     },
-    
-    // 根据评论ID生成一致的随机评分（1-5）
+
+    // Generate consistent random rating (1-5) based on comment ID
     getRandomRating(commentId) {
       if (!this.ratingCache[commentId]) {
-        // 基于commentId生成一个一致的随机数
+        // Generate consistent random number based on comment ID
         const hash = commentId.split('').reduce((acc, char) => {
           return char.charCodeAt(0) + acc;
         }, 0);
-        this.ratingCache[commentId] = (hash % 5) + 1; // 1到5之间的数字
+        this.ratingCache[commentId] = (hash % 5) + 1; // Number between 1 and 5
       }
       return this.ratingCache[commentId];
     },
-    
-    // 生成随机日期（过去30天内）
+
+    // Generate random date (within the past 30 days)
     generateRandomDate() {
       const today = new Date();
       const daysAgo = Math.floor(Math.random() * 30);
       const randomDate = new Date(today);
       randomDate.setDate(today.getDate() - daysAgo);
-      
-      return randomDate.toLocaleDateString('zh-CN');
+
+      return randomDate.toLocaleDateString('en-US');
     }
   }
 }
@@ -117,7 +117,7 @@ export default {
 .book-comments-container {
   margin: 30px 0;
   padding: 20px;
-  background-color: #f9f9f9;
+  background-color: #fffbf0;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
@@ -178,8 +178,9 @@ export default {
   padding: 30px;
   color: #777;
   font-style: italic;
-  background-color: #f5f5f5;
+  background-color: white;
   border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
 .comments-list {
@@ -202,7 +203,7 @@ export default {
 }
 
 .comment-item-alt {
-  background-color: #f5f7fa;
+  background-color: #f9f9f9;
 }
 
 .comment-header {
@@ -264,9 +265,9 @@ export default {
   .book-comments-container {
     padding: 15px;
   }
-  
+
   .comment-item {
     padding: 15px;
   }
 }
-</style> 
+</style>

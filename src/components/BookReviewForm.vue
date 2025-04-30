@@ -1,11 +1,11 @@
 <!-- BookReviewForm.vue -->
 <template>
   <div class="review-form-container">
-    <h2 class="form-title">添加评论</h2>
+    <h2 class="form-title">Add Review</h2>
 
     <div v-if="isLoggedIn" class="review-form">
       <div class="rating-section">
-        <p class="rating-label">评分：</p>
+        <p class="rating-label">Rating:</p>
         <div class="star-rating">
           <i
             v-for="n in 5"
@@ -20,14 +20,14 @@
       </div>
 
       <div class="comment-section">
-        <label for="comment" class="comment-label">评论内容：</label>
+        <label for="comment" class="comment-label">Your Review:</label>
         <textarea
           id="comment"
           v-model="comment"
           :class="{ 'error': showError && !comment.trim() }"
-          placeholder="请分享您对这本书的看法..."
+          placeholder="Share your thoughts about this book..."
         ></textarea>
-        <p v-if="showError && !comment.trim()" class="error-message">请输入评论内容</p>
+        <p v-if="showError && !comment.trim()" class="error-message">Please enter your review</p>
       </div>
 
       <div class="submit-section">
@@ -36,7 +36,7 @@
           :disabled="submitting"
           @click="submitReview"
         >
-          {{ submitting ? '提交中...' : '提交评论' }}
+          {{ submitting ? 'Submitting...' : 'Post Review' }}
         </button>
       </div>
 
@@ -46,8 +46,8 @@
     </div>
 
     <div v-else class="login-prompt">
-      <p>请先登录后再发表评论</p>
-      <button class="login-button" @click="redirectToLogin">登录</button>
+      <p>Please login to post a review</p>
+      <button class="login-button" @click="redirectToLogin">Login</button>
     </div>
   </div>
 </template>
@@ -75,18 +75,18 @@ const submitStatus = ref('')
 const showError = ref(false)
 const isLoggedIn = ref(false)
 
-// 判断登录状态
+// Check login status
 const checkLogin = () => {
   isLoggedIn.value = !!localStorage.getItem('token')
 }
 
-// 提交评论
+// Submit review
 const submitReview = async () => {
   showError.value = true
   submitMessage.value = ''
 
   if (!rating.value) {
-    submitMessage.value = '请选择评分'
+    submitMessage.value = 'Please select a rating'
     submitStatus.value = 'error'
     return
   }
@@ -113,26 +113,26 @@ const submitReview = async () => {
     const data = await response.json()
 
     if (response.ok && data.state === 'success') {
-      submitMessage.value = '评论已提交'
+      submitMessage.value = 'Review submitted successfully'
       submitStatus.value = 'success'
       rating.value = 0
       comment.value = ''
       showError.value = false
       emit('review-added')
     } else {
-      submitMessage.value = data.message || '评论提交失败'
+      submitMessage.value = data.message || 'Failed to submit review'
       submitStatus.value = 'error'
     }
   } catch (error) {
-    console.error('提交评论失败:', error)
-    submitMessage.value = '提交失败，请稍后重试'
+    console.error('Failed to submit review:', error)
+    submitMessage.value = 'Submission failed, please try again later'
     submitStatus.value = 'error'
   } finally {
     submitting.value = false
   }
 }
 
-// 登录跳转
+// Redirect to login
 const redirectToLogin = () => {
   router.push('/login')
 }
@@ -144,7 +144,7 @@ onMounted(() => {
 
 <style scoped>
 .review-form-container {
-  background-color: white;
+  background-color: #fffbf0;
   border-radius: 12px;
   box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
   padding: 25px;
@@ -165,7 +165,7 @@ onMounted(() => {
   gap: 20px;
 }
 
-/* 评分部分 */
+/* Rating section */
 .rating-section {
   display: flex;
   align-items: center;
@@ -200,7 +200,7 @@ onMounted(() => {
   margin-left: 5px;
 }
 
-/* 评论部分 */
+/* Comment section */
 .comment-section {
   display: flex;
   flex-direction: column;
@@ -222,12 +222,13 @@ textarea {
   font-family: inherit;
   font-size: 14px;
   transition: all 0.3s ease;
+  background-color: white;
 }
 
 textarea:focus {
   outline: none;
-  border-color: #4a90e2;
-  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+  border-color: #f0ad4e;
+  box-shadow: 0 0 0 2px rgba(240, 173, 78, 0.2);
 }
 
 textarea.error {
@@ -241,13 +242,13 @@ textarea.error {
   margin: 5px 0 0 0;
 }
 
-/* 提交按钮 */
+/* Submit button */
 .submit-section {
   margin-top: 5px;
 }
 
 .submit-button {
-  background-color: #4a90e2;
+  background-color: #3498db;
   color: white;
   border: none;
   border-radius: 8px;
@@ -259,7 +260,7 @@ textarea.error {
 }
 
 .submit-button:hover:not(:disabled) {
-  background-color: #357abd;
+  background-color: #2980b9;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
@@ -269,7 +270,7 @@ textarea.error {
   cursor: not-allowed;
 }
 
-/* 提交结果消息 */
+/* Submit message */
 .submit-message {
   padding: 12px;
   border-radius: 6px;
@@ -291,9 +292,9 @@ textarea.error {
   border: 1px solid #f9c9c7;
 }
 
-/* 登录提示 */
+/* Login prompt */
 .login-prompt {
-  background-color: #f9f9f9;
+  background-color: white;
   border-radius: 8px;
   padding: 25px;
   text-align: center;
@@ -301,6 +302,7 @@ textarea.error {
   flex-direction: column;
   align-items: center;
   gap: 15px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
 .login-prompt p {
@@ -309,7 +311,7 @@ textarea.error {
 }
 
 .login-button {
-  background-color: #4a90e2;
+  background-color: #3498db;
   color: white;
   border: none;
   border-radius: 6px;
@@ -320,11 +322,11 @@ textarea.error {
 }
 
 .login-button:hover {
-  background-color: #357abd;
+  background-color: #2980b9;
   transform: translateY(-2px);
 }
 
-/* 响应式设计 */
+/* Responsive design */
 @media (max-width: 768px) {
   .review-form-container {
     padding: 20px;

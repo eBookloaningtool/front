@@ -10,9 +10,9 @@
         <i class="fas fa-spinner fa-spin"></i>
       </span>
       <span v-else-if="isBorrowed">
-        已借阅 (归还日期: {{ formattedDueDate }})
+        Borrowed (Return date: {{ formattedDueDate }})
       </span>
-      <span v-else>借阅此书</span>
+      <span v-else>Borrow</span>
     </button>
 
     <div v-if="message" :class="['message', messageType]">
@@ -55,12 +55,7 @@ const formattedDueDate = computed(() => {
 onMounted(() => {
   // 从localStorage或其他存储中检查是否已借阅
   const borrowedBooks = JSON.parse(localStorage.getItem('borrowedBooks') || '[]');
-  const bookId = props.book.id || props.book.bookId; // 兼容两种可能的ID字段
-  const found = borrowedBooks.find(item =>
-    item.bookId === bookId ||
-    (item.bookId === String(bookId)) ||
-    (item.id && (item.id === bookId || item.id === String(bookId)))
-  );
+  const found = borrowedBooks.find(item => item.bookId === props.book.id);
 
   if (found) {
     isBorrowed.value = true;

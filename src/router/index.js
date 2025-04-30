@@ -126,7 +126,7 @@ const routes = [
     component: () => import('../views/user/SettingsPage.vue'),
     meta: { requiresAuth: true }
   },
- 
+
   {
     path: '/help',
     name: 'Help',
