@@ -3,8 +3,8 @@
     <button
       @click="handleBorrow"
       class="borrow-button"
-      :disabled="isLoading || isBorrowed || isBorrowing"
       :class="{ 'borrowed': isBorrowed }"
+      :disabled="isLoading || isBorrowed || isBorrowing"
     >
       <span v-if="isLoading || isBorrowing" class="loading-icon">
         <i class="fas fa-spinner fa-spin"></i>
@@ -55,7 +55,12 @@ const formattedDueDate = computed(() => {
 onMounted(() => {
   // 从localStorage或其他存储中检查是否已借阅
   const borrowedBooks = JSON.parse(localStorage.getItem('borrowedBooks') || '[]');
-  const found = borrowedBooks.find(item => item.bookId === props.book.id);
+  const bookId = props.book.id || props.book.bookId; // 兼容两种可能的ID字段
+  const found = borrowedBooks.find(item =>
+    item.bookId === bookId ||
+    (item.bookId === String(bookId)) ||
+    (item.id && (item.id === bookId || item.id === String(bookId)))
+  );
 
   if (found) {
     isBorrowed.value = true;
@@ -73,7 +78,7 @@ async function handleBorrow() {
 
 <style scoped>
 .borrow-button-container {
-  margin-top: 20px;
+  width: 100%;
 }
 
 .borrow-button {
@@ -90,7 +95,7 @@ async function handleBorrow() {
   transition: all 0.3s ease;
   position: relative;
   font-weight: 500;
-  min-width: 180px;
+  width: 100%;
   box-shadow: 0 4px 6px rgba(46, 204, 113, 0.2);
 }
 

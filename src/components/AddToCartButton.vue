@@ -115,7 +115,8 @@ function updateLocalCart(bookId) {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: 130px;
+  width: 100%;
+  height: 100%;
 }
 
 .add-to-cart-btn:hover:not(:disabled) {
