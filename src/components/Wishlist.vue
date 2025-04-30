@@ -25,7 +25,6 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
       </svg>
       <p class="mt-4 text-lg text-gray-600">您的愿望清单是空的</p>
-      <p class="mt-2 text-gray-500">浏览书籍并将您喜欢的添加到愿望清单中</p>
     </div>
 
     <!-- 书籍列表 -->
@@ -96,7 +95,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { wishlistAPI, bookAPI } from '../services/api';
+import { getWishlist, removeFromWishlist as removeBookFromWishlist, getBookDetail } from '../api/booksApi';
 
 const books = ref([]);
 const loading = ref(false);
@@ -114,10 +113,10 @@ const fetchWishlist = async () => {
   error.value = null;
 
   try {
-    const response = await wishlistAPI.getWishlist();
-    if (response.data && response.data.bookId && Array.isArray(response.data.bookId)) {
+    const response = await getWishlist();
+    if (response.bookId && Array.isArray(response.bookId)) {
       // 获取书籍详情
-      await fetchBookDetails(response.data.bookId);
+      await fetchBookDetails(response.bookId);
     } else {
       books.value = [];
     }
@@ -137,8 +136,17 @@ const fetchBookDetails = async (bookIds) => {
   }
 
   try {
-    const response = await bookAPI.getBookDetails(bookIds);
-    books.value = response.data;
+    // 使用Promise.all并行获取所有书籍详情
+    const bookPromises = bookIds.map(id => getBookDetail(id));
+    const bookResults = await Promise.all(bookPromises);
+    books.value = bookResults.map(book => ({
+      id: book.bookId,
+      title: book.title,
+      author: book.author,
+      coverUrl: book.coverUrl,
+      price: book.price,
+      isAvailable: true // 这里可以根据书籍数据设置
+    }));
   } catch (err) {
     console.error('获取书籍详情失败:', err);
     error.value = '获取书籍详情失败，请稍后重试';
@@ -153,13 +161,17 @@ const removeFromWishlist = async (bookId) => {
   removeLoading.value = { ...removeLoading.value, [bookId]: true };
 
   try {
-    await wishlistAPI.removeFromWishlist(bookId);
+    const result = await removeBookFromWishlist(bookId);
 
-    // 从列表中移除
-    books.value = books.value.filter(book => book.id !== bookId);
+    if (result.state === 'success') {
+      // 从列表中移除
+      books.value = books.value.filter(book => book.id !== bookId);
 
-    // 显示成功提示
-    showNotification('从愿望清单移除成功', 'success');
+      // 显示成功提示
+      showNotification('从愿望清单移除成功', 'success');
+    } else {
+      throw new Error('移除失败');
+    }
   } catch (err) {
     console.error('从愿望清单移除失败:', err);
     showNotification('从愿望清单移除失败，请重试', 'error');

@@ -53,7 +53,7 @@
 // 引入Vue相关API
 import { ref, onMounted } from 'vue';
 // 引入API接口
-import { getWishlist, addToWishlist, removeFromWishlist } from '../api/wishlist';
+import { getWishlist, addToWishlist, removeFromWishlist } from '../api/booksApi';
 // 引入开发环境mock
 import { mockWishlistAPI } from '../mock-api.js';
 

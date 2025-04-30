@@ -300,12 +300,6 @@
 
           <div v-else-if="wishlistItems.length === 0" class="empty-state">
             <p>Your wish list is empty</p>
-            <router-link
-              to="/books"
-              class="browse-btn"
-            >
-              Browse Library
-            </router-link>
           </div>
 
           <div v-else class="wishlist-grid">
@@ -668,14 +662,14 @@ const handleTopUp = async () => {
 
   try {
     const result = await topUpBalance(finalTopUpAmount.value);
-    
+
     if (result.state === 'success') {
       // 更新账户余额
       accountBalance.value = result.balance;
       // 更新 UserStore 中的余额
       const userStore = useUserStore();
       userStore.balance = result.balance;
-      
+
       showToast(`充值成功！已添加 £${finalTopUpAmount.value} 到您的账户`, 'success');
 
       // 重置表单
@@ -928,11 +922,11 @@ const fetchWishlist = async () => {
   try {
     // 获取愿望清单中的书籍ID列表
     const wishlistData = await getWishlist();
-    
+
     // 获取每本书的详情
     const bookPromises = wishlistData.bookId.map(bookId => getBookDetail(bookId));
     const bookDetails = await Promise.all(bookPromises);
-    
+
     // 转换数据格式
     wishlistItems.value = bookDetails.map(book => ({
       id: book.bookId,

@@ -17,9 +17,6 @@
           <i class="ri-heart-line"></i>
         </div>
         <p class="text-gray-500">您的心愿单中还没有书籍</p>
-        <router-link to="/" class="browse-btn">
-          浏览图书馆
-        </router-link>
       </div>
 
       <div v-else class="favorites-grid">

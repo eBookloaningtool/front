@@ -52,8 +52,8 @@ import { useRouter } from 'vue-router';
 import AddToCartButton from './AddToCartButton.vue';
 import BookCover from './BookCover.vue';
 import { borrowBook } from '../api/borrowApi.ts';
+import { getWishlist, addToWishlist, removeFromWishlist } from '../api/booksApi.ts';
 import { useToast } from '../composables/useToast';
-import { getWishlist, addToWishlist, removeFromWishlist } from '../api/wishlist';
 
 const props = defineProps({
   book: { type: Object, required: true },

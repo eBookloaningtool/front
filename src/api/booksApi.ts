@@ -22,6 +22,17 @@ export const getBookDetail = async (bookId: string) => {
   }
 };
 
+// 添加书籍到愿望清单
+export const addToWishlist = async (bookId: string) => {
+  try {
+    const response = await axios.post('/api/wishlist/add', { bookId });
+    return response.data;
+  } catch (error) {
+    console.error('添加到愿望清单失败:', error);
+    throw error;
+  }
+};
+
 // 从愿望清单中删除书籍
 export const removeFromWishlist = async (bookId: string) => {
   try {
@@ -31,4 +42,4 @@ export const removeFromWishlist = async (bookId: string) => {
     console.error('从愿望清单删除书籍失败:', error);
     throw error;
   }
-}; 
+};

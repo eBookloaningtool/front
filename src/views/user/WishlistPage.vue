@@ -12,12 +12,6 @@
           </div>
           <div v-else-if="wishlistItems.length === 0" class="text-center py-8">
             <p class="text-gray-500">您的愿望清单是空的</p>
-            <RouterLink
-              to="/books"
-              class="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              浏览图书馆
-            </RouterLink>
           </div>
           <div v-else>
             <WishlistComponent
@@ -36,46 +30,61 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import WishlistComponent from '../../components/Wishlist.vue';
+import { getWishlist, getBookDetail } from '../../api/booksApi';
+import { useToast } from '../../composables/useToast';
 
 // 获取路由实例
 const router = useRouter();
+const { showToast } = useToast();
 
 // 响应式状态
 const wishlistItems = ref([]);
 const loading = ref(true);
 
-// 模拟获取愿望清单数据
+// 获取愿望清单数据
 onMounted(async () => {
+  loading.value = true;
   try {
-    // 这里应该是API调用，现在用模拟数据
-    await new Promise(resolve => setTimeout(resolve, 500));
-    wishlistItems.value = [
-      {
-        id: 1,
-        title: '三体',
-        author: '刘慈欣',
-        cover: '/images/books/threebody.jpg',
-        price: '49.00'
-      },
-      {
-        id: 2,
-        title: '百年孤独',
-        author: '加西亚·马尔克斯',
-        cover: '/images/books/solitude.jpg',
-        price: '42.50'
-      }
-    ];
+    // 获取愿望清单中的书籍ID列表
+    const wishlistData = await getWishlist();
+
+    if (wishlistData.bookId && wishlistData.bookId.length > 0) {
+      // 获取每本书的详情
+      const bookPromises = wishlistData.bookId.map(bookId => getBookDetail(bookId));
+      const bookDetails = await Promise.all(bookPromises);
+
+      // 转换数据格式
+      wishlistItems.value = bookDetails.map(book => ({
+        id: book.bookId,
+        title: book.title,
+        author: book.author,
+        cover: book.coverUrl,
+        price: book.price.toFixed(2)
+      }));
+    }
   } catch (error) {
     console.error('获取愿望清单失败:', error);
+    showToast('获取愿望清单失败，请稍后重试', 'error');
   } finally {
     loading.value = false;
   }
 });
 
 // 从愿望清单移除图书
-const removeFromWishlist = (bookId) => {
-  wishlistItems.value = wishlistItems.value.filter(item => item.id !== bookId);
-  // 这里应该有API调用来同步服务器数据
+const removeFromWishlist = async (bookId) => {
+  try {
+    const response = await import('../../api/booksApi').then(module => module.removeFromWishlist(bookId));
+
+    if (response.state === 'success') {
+      wishlistItems.value = wishlistItems.value.filter(item => item.id !== bookId);
+      showToast('已从愿望清单中移除', 'success');
+    } else {
+      throw new Error('移除失败');
+    }
+  } catch (error) {
+    console.error('移除书籍失败:', error);
+    showToast('移除书籍失败，请稍后重试', 'error');
+  }
 };
 
 // 查看图书详情 - 页面跳转
