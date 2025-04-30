@@ -123,15 +123,18 @@
               <div class="book-info">
                 <div class="book-header">
                   <h3 class="book-title">{{ book.title }}</h3>
-                  <span class="book-progress">阅读进度: {{ book.progress }}%</span>
+                  <div class="book-dates">
+                    <div class="borrow-date">借阅日期: {{ formatDate(book.borrowDate) }}</div>
+                    <div class="due-date">应归还日期: {{ formatDate(book.dueDate) }}</div>
+                  </div>
                 </div>
                 <p class="book-author">{{ book.author }}</p>
                 <div class="book-actions">
                   <button
-                    @click="continueReading(book.id)"
+                    @click="viewBookDetails(book.id)"
                     class="read-btn"
                   >
-                    继续阅读
+                    查看详情
                   </button>
                 </div>
               </div>
@@ -189,13 +192,13 @@
                     <td>
                       <div class="book-info-cell">
                         <div class="loan-book-cover">
-                          <img v-if="loan.book.cover" :src="loan.book.cover" :alt="loan.book.title" />
+                          <img v-if="loan.cover" :src="loan.cover" :alt="loan.title" />
                         </div>
                         <div class="loan-book-meta">
-                          <div class="loan-book-title" @click="viewBookDetails(loan.book.id)">
-                            {{ loan.book.title }}
+                          <div class="loan-book-title" @click="viewBookDetails(loan.bookId)">
+                            {{ loan.title }}
                           </div>
-                          <div class="loan-book-author">{{ loan.book.author }}</div>
+                          <div class="loan-book-author">{{ loan.author }}</div>
                         </div>
                       </div>
                     </td>
@@ -206,7 +209,7 @@
                         class="status-badge"
                         :class="{
                           'status-returned': loan.status === 'returned',
-                          'status-active': loan.status === 'active',
+                          'status-borrowed': loan.status === 'borrowed',
                           'status-overdue': loan.status === 'overdue'
                         }"
                       >
@@ -220,12 +223,6 @@
                         class="extend-btn"
                       >
                         Extend
-                      </button>
-                      <button
-                        @click="viewLoanDetail(loan.id)"
-                        class="detail-btn"
-                      >
-                        Details
                       </button>
                     </td>
                   </tr>
@@ -361,12 +358,6 @@
                   {{ review.bookTitle }}
                 </h3>
                 <div class="review-actions">
-                  <button
-                    @click="editReview(review.id)"
-                    class="edit-btn"
-                  >
-                    Edit
-                  </button>
                   <button
                     @click="deleteReview(review.id)"
                     class="delete-btn"
@@ -571,6 +562,11 @@ import { useUserStore } from '../stores/userStore';
 import { useToast } from '../composables/useToast';
 import { getPaymentHistory, topUpBalance } from '../api/payments';
 import { getWishlist, getBookDetail, removeFromWishlist } from '../api/booksApi';
+import { getBorrowHistory, getBorrowList } from '../api/borrowApi';
+import { get, post } from '../utils/request';
+
+// 默认封面图片
+const defaultCover = '/images/books/default-cover.jpg';
 
 const router = useRouter();
 const route = useRoute();
@@ -711,9 +707,8 @@ const switchView = (view) => {
   } else if (view === 'PaymentOrders') {
     fetchOrders();
   } else if (view === 'TopUp') {
-    // Load current balance when accessing top up page
-    const savedBalance = localStorage.getItem('accountBalance');
-    accountBalance.value = savedBalance ? Number(savedBalance) : 0;
+    // 加载充值页面时获取当前余额
+    fetchUserInfo();
   } else if (view === 'Settings') {
     // Reset form fields
     updateForm.value = {
@@ -745,7 +740,7 @@ const formatDate = (dateStr) => {
 // 获取状态文本
 const getStatusText = (status) => {
   switch (status) {
-    case 'active': return 'Active';
+    case 'borrowed': return 'Borrowed';
     case 'returned': return 'Returned';
     case 'overdue': return 'Overdue';
     default: return status;
@@ -764,37 +759,30 @@ const logout = async () => {
   }
 };
 
-// 拉取用户信息
-const fetchUserProfile = async () => {
+// 获取用户信息
+const fetchUserInfo = async () => {
   try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/login');
-      return;
+    const response = await post({
+      url: '/api/users/info'
+    });
+    
+    if (response) {
+      // 更新用户信息
+      username.value = response.name;
+      email.value = response.email;
+      registrationDate.value = formatDate(response.createdat);
+      accountBalance.value = response.balance;
+      
+      // 更新 UserStore 中的信息
+      const userStore = useUserStore();
+      userStore.userName = response.name;
+      userStore.userEmail = response.email;
+      userStore.createdAt = response.createdat;
+      userStore.balance = response.balance;
     }
-
-    // 调用API获取用户信息
-    const userStore = useUserStore();
-
-    // 如果UserStore中已有数据，先使用已有数据
-    if (userStore.isAuthenticated) {
-      username.value = userStore.userName;
-      email.value = userStore.userEmail;
-      registrationDate.value = formatDate(userStore.createdAt);
-      accountBalance.value = userStore.balance;
-    }
-
-    // 刷新用户信息
-    await userStore.initUserState();
-
-    // 更新页面显示的用户信息
-    username.value = userStore.userName;
-    email.value = userStore.userEmail;
-    registrationDate.value = formatDate(userStore.createdAt);
-    accountBalance.value = userStore.balance;
   } catch (error) {
-    console.error('获取用户资料失败:', error);
-    showToast('加载用户信息失败，请稍后再试', 'error');
+    console.error('获取用户信息失败:', error);
+    showToast('获取用户信息失败，请稍后重试', 'error');
   }
 };
 
@@ -802,26 +790,45 @@ const fetchUserProfile = async () => {
 const fetchRecentBooks = async () => {
   loadingBooks.value = true;
   try {
-    // 这里应该是API调用，现在用模拟数据
-    await new Promise(resolve => setTimeout(resolve, 500));
-    recentBooks.value = [
-      {
-        id: 1,
-        title: '三体',
-        author: '刘慈欣',
-        cover: '/images/books/threebody.jpg',
-        progress: 45
-      },
-      {
-        id: 2,
-        title: '百年孤独',
-        author: '加西亚·马尔克斯',
-        cover: '/images/books/solitude.jpg',
-        progress: 62
-      }
-    ];
+    // 获取当前借阅列表
+    const borrowListResponse = await getBorrowList();
+    
+    if (borrowListResponse.state === 'success') {
+      // 获取每本书的详细信息
+      const bookDetailsPromises = borrowListResponse.data.map(async (borrow) => {
+        try {
+          const bookDetail = await get({
+            url: `/api/books/get?bookId=${borrow.bookId}`
+          });
+          
+          return {
+            id: borrow.bookId,
+            title: bookDetail.title,
+            author: bookDetail.author,
+            cover: bookDetail.coverUrl || '/images/books/default-cover.jpg',
+            borrowDate: borrow.borrowDate,
+            dueDate: borrow.dueDate
+          };
+        } catch (error) {
+          console.error(`获取书籍 ${borrow.bookId} 详情失败:`, error);
+          return {
+            id: borrow.bookId,
+            title: '未知书籍',
+            author: '未知作者',
+            cover: '/images/books/default-cover.jpg',
+            borrowDate: borrow.borrowDate,
+            dueDate: borrow.dueDate
+          };
+        }
+      });
+
+      recentBooks.value = await Promise.all(bookDetailsPromises);
+    } else {
+      throw new Error('获取借阅列表失败');
+    }
   } catch (error) {
     console.error('获取最近阅读图书失败:', error);
+    showToast('获取最近阅读图书失败，请稍后重试', 'error');
   } finally {
     loadingBooks.value = false;
   }
@@ -829,94 +836,16 @@ const fetchRecentBooks = async () => {
 
 // 获取借阅历史
 const fetchLoanHistory = async () => {
-  loadingLoans.value = true;
   try {
-    // 这里应该是API调用，现在用模拟数据
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // 模拟借阅数据
-    loans.value = [
-      {
-        id: 1,
-        book: {
-          id: 101,
-          title: '三体',
-          author: '刘慈欣',
-          cover: '/images/books/threebody.jpg'
-        },
-        borrowDate: '2023-10-15',
-        dueDate: '2023-11-15',
-        returnDate: null,
-        status: 'active'
-      },
-      {
-        id: 2,
-        book: {
-          id: 102,
-          title: '百年孤独',
-          author: '加西亚·马尔克斯',
-          cover: '/images/books/solitude.jpg'
-        },
-        borrowDate: '2023-09-01',
-        dueDate: '2023-10-01',
-        returnDate: '2023-09-28',
-        status: 'returned'
-      },
-      {
-        id: 3,
-        book: {
-          id: 103,
-          title: '追风筝的人',
-          author: '卡勒德·胡赛尼',
-          cover: '/images/books/kiterunner.jpg'
-        },
-        borrowDate: '2023-08-10',
-        dueDate: '2023-09-10',
-        returnDate: null,
-        status: 'overdue'
-      },
-      {
-        id: 4,
-        book: {
-          id: 104,
-          title: '活着',
-          author: '余华',
-          cover: '/images/books/tolive.jpg'
-        },
-        borrowDate: '2023-07-22',
-        dueDate: '2023-08-22',
-        returnDate: '2023-08-20',
-        status: 'returned'
-      },
-      {
-        id: 5,
-        book: {
-          id: 105,
-          title: '月亮与六便士',
-          author: '毛姆',
-          cover: '/images/books/moon.jpg'
-        },
-        borrowDate: '2023-06-15',
-        dueDate: '2023-07-15',
-        returnDate: '2023-07-10',
-        status: 'returned'
-      },
-      {
-        id: 6,
-        book: {
-          id: 106,
-          title: '解忧杂货店',
-          author: '东野圭吾',
-          cover: '/images/books/grocery.jpg'
-        },
-        borrowDate: '2023-05-05',
-        dueDate: '2023-06-05',
-        returnDate: '2023-06-01',
-        status: 'returned'
-      }
-    ];
+    loadingLoans.value = true;
+    const response = await getBorrowHistory();
+    loans.value = response.data.map(loan => ({
+      ...loan,
+      cover: loan.cover || loan.bookCover || '/images/books/default-cover.jpg'
+    }));
   } catch (error) {
     console.error('获取借阅历史失败:', error);
+    showToast('获取借阅历史失败，请稍后重试', 'error');
   } finally {
     loadingLoans.value = false;
   }
@@ -969,28 +898,53 @@ const handleRemoveFromWishlist = async (bookId) => {
 const fetchReviews = async () => {
   loadingReviews.value = true;
   try {
-    // 这里应该是API调用，现在用模拟数据
-    await new Promise(resolve => setTimeout(resolve, 500));
-    reviews.value = [
-      {
-        id: 1,
-        bookId: 101,
-        bookTitle: '三体',
-        rating: 5,
-        content: '这本书改变了我对科幻小说的看法，刘慈欣的想象力令人惊叹！',
-        createdAt: '2023-09-15T14:30:00Z'
-      },
-      {
-        id: 2,
-        bookId: 102,
-        bookTitle: '百年孤独',
-        rating: 4,
-        content: '马尔克斯的魔幻现实主义风格非常迷人，但有些段落需要反复阅读才能理解。',
-        createdAt: '2023-08-22T10:15:00Z'
-      }
-    ];
+    // 获取用户的评论ID列表
+    const userCommentsResponse = await post({
+      url: '/api/reviews/user'
+    });
+    
+    if (userCommentsResponse && userCommentsResponse.state === 'success' && userCommentsResponse.commentIds) {
+      // 获取每个评论的详细内容
+      const reviewPromises = userCommentsResponse.commentIds.map(async (commentId) => {
+        try {
+          const response = await get({
+            url: `/api/reviews/content?commentId=${commentId}`
+          });
+          
+          if (response.state === 'success') {
+            // 获取书籍详情
+            const bookResponse = await get({
+              url: `/api/books/get?bookId=${response.bookId}`
+            });
+            
+            return {
+              id: commentId,
+              bookId: response.bookId,
+              bookTitle: bookResponse.title || 'Unknown Book',
+              rating: response.rating,
+              content: response.comment,
+              createdAt: response.createdAt || new Date().toISOString(),
+              username: response.username
+            };
+          }
+          return null;
+        } catch (error) {
+          console.error(`获取评论 ${commentId} 详情失败:`, error);
+          return null;
+        }
+      });
+
+      // 等待所有评论详情获取完成
+      const reviewResults = await Promise.all(reviewPromises);
+      // 过滤掉获取失败的评论
+      reviews.value = reviewResults.filter(review => review !== null);
+    } else {
+      reviews.value = [];
+    }
   } catch (error) {
     console.error('获取评论失败:', error);
+    showToast('获取评论失败，请稍后重试', 'error');
+    reviews.value = [];
   } finally {
     loadingReviews.value = false;
   }
@@ -1090,7 +1044,7 @@ const confirmPayment = () => {
 // 根据当前路由设置初始视图
 onMounted(() => {
   // 获取用户信息
-  fetchUserProfile();
+  fetchUserInfo();
 
   // 根据路由路径设置初始视图
   const path = route.path;
@@ -1126,8 +1080,8 @@ const filteredLoans = computed(() => {
     // 搜索过滤
     if (searchQuery.value) {
       const query = searchQuery.value.toLowerCase();
-      return loan.book.title.toLowerCase().includes(query) ||
-              loan.book.author.toLowerCase().includes(query);
+      return loan.title.toLowerCase().includes(query) ||
+              loan.author.toLowerCase().includes(query);
     }
 
     return true;
@@ -1194,7 +1148,7 @@ const goToPage = (page) => {
 
 // 查看借阅详情
 const viewLoanDetail = (loanId) => {
-  router.push(`/loans/${loanId}`);
+  router.push(`/book/${loanId}`);
 };
 
 // 延长借阅
@@ -1213,10 +1167,26 @@ const viewBookDetails = (bookId) => {
   router.push(`/book/${bookId}`);
 };
 
-const deleteReview = (reviewId) => {
+// 删除评论
+const deleteReview = async (reviewId) => {
   if (confirm('Are you sure you want to delete this comment?')) {
-    reviews.value = reviews.value.filter(review => review.id !== reviewId);
-    // 这里应该有API调用来同步服务器数据
+    try {
+      const response = await post({
+        url: '/api/reviews/delete',
+        data: { commentId: reviewId }
+      });
+      
+      if (response.state === 'success') {
+        // 从列表中移除已删除的评论
+        reviews.value = reviews.value.filter(review => review.id !== reviewId);
+        showToast('评论已删除', 'success');
+      } else {
+        throw new Error('删除评论失败');
+      }
+    } catch (error) {
+      console.error('删除评论失败:', error);
+      showToast('删除评论失败，请稍后重试', 'error');
+    }
   }
 };
 
@@ -1449,9 +1419,18 @@ const updateUserInfo = async () => {
   margin: 0;
 }
 
-.book-progress {
-  font-size: 14px;
+.book-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
   color: #666;
+}
+
+.borrow-date, .due-date {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .book-author {
@@ -1586,24 +1565,24 @@ const updateUserInfo = async () => {
 .status-badge {
   display: inline-block;
   padding: 4px 8px;
-  border-radius: 50px;
+  border-radius: 4px;
   font-size: 12px;
   font-weight: 500;
 }
 
-.status-active {
-  background-color: #e6f0ff;
-  color: #3182ce;
+.status-returned {
+  background-color: #ecfdf5;
+  color: #059669;
 }
 
-.status-returned {
-  background-color: #e6ffed;
-  color: #2f855a;
+.status-borrowed {
+  background-color: #fff7ed;
+  color: #d97706;
 }
 
 .status-overdue {
-  background-color: #ffebee;
-  color: #e53e3e;
+  background-color: #fef2f2;
+  color: #dc2626;
 }
 
 .extend-btn, .detail-btn {
@@ -1863,27 +1842,16 @@ const updateUserInfo = async () => {
   gap: 8px;
 }
 
-.edit-btn, .delete-btn {
+.delete-btn {
   padding: 5px 10px;
   border: none;
   border-radius: 4px;
   font-size: 12px;
   cursor: pointer;
   transition: background-color 0.3s;
-}
-
-.edit-btn {
-  background-color: #f0f0f0;
-  color: #333;
-}
-
-.delete-btn {
   background-color: #fee2e2;
   color: #b91c1c;
-}
-
-.edit-btn:hover {
-  background-color: #e0e0e0;
+  outline: none;
 }
 
 .delete-btn:hover {
