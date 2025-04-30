@@ -89,12 +89,6 @@ const routes = [
     component: FavoritesPage,
     meta: { requiresAuth: true }
   },
-  {
-    path: '/user/topup',
-    name: 'TopUp',
-    component: () => import('../views/TopUpPage.vue'),
-    meta: { requiresAuth: true }
-  },
   // 用户资料页新增路由
   {
     path: '/user/recent-borrows',
