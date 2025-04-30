@@ -18,7 +18,6 @@
           重试
         </button>
       </div>
-
       <!-- 分类列表 - 三列布局 -->
       <div v-else class="mt-4">
         <!-- 三列式分类列表 -->
@@ -36,7 +35,6 @@
             <div class="category-name">{{ category.name }}</div>
           </div>
         </div>
-
         <!-- 选中分类的图书列表 -->
         <div v-if="selectedCategory" class="book-section mt-12">
           <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
