@@ -25,66 +25,54 @@
           重试
         </button>
       </div>
-      
-      <!-- 分类和图书列表 -->
-      <div v-else class="flex flex-col md:flex-row gap-8 mt-12">
-        <!-- 左侧分类卡片列表 -->
-        <div class="md:w-1/4">
-          <div class="bg-white rounded-xl shadow-lg p-6 sticky top-24">
-            <h2 class="text-xl font-semibold mb-6 pb-3 border-b border-gray-100">图书分类</h2>
-            <div class="grid grid-cols-1 gap-6">
-              <div 
-                v-for="category in categories" 
-                :key="category.id" 
-                @click="selectCategory(category.name)"
-                class="category-card p-4 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md"
-                :class="{ 'bg-amber-50 ring-2 ring-amber-500': selectedCategory === category.name }"
-              >
-                <div class="flex items-center space-x-3">
-                  <div class="category-icon p-2 rounded-lg bg-amber-50 text-amber-600">
-                    <i class="ri-book-2-line text-xl"></i>
-                  </div>
-                  <span class="text-gray-800 font-medium">{{ category.name }}</span>
-                </div>
-              </div>
+      <!-- 分类列表 - 三列布局 -->
+      <div v-else class="mt-12">
+        <!-- 三列式分类列表 -->
+        <div class="category-grid">
+          <div
+            v-for="category in categories"
+            :key="category.id"
+            @click="selectCategory(category.name)"
+            class="category-card"
+            :class="{ 'active': selectedCategory === category.name }"
+          >
+            <div class="category-icon">
+              <i class="ri-book-2-line"></i>
             </div>
+            <div class="category-name">{{ category.name }}</div>
           </div>
         </div>
-        
-        <!-- 右侧图书列表 -->
-        <div class="md:w-3/4">
-          <div class="bg-white rounded-xl shadow-lg p-6">
-            <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
-              <div>
-                <h2 class="text-2xl font-bold text-gray-800">{{ selectedCategory || '所有分类' }}</h2>
-                <p class="text-sm text-gray-600 mt-1">{{ selectedCategoryDescription }}</p>
-              </div>
-              <div class="flex items-center space-x-2">
-                <span class="text-sm text-gray-500">共 {{ categorizedBooks[selectedCategory]?.length || 0 }} 本图书</span>
-              </div>
+        <!-- 选中分类的图书列表 -->
+        <div v-if="selectedCategory" class="book-section mt-12">
+          <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+            <div>
+              <h2 class="text-2xl font-bold text-gray-800">{{ selectedCategory }}</h2>
+              <p class="text-sm text-gray-600 mt-1">{{ selectedCategoryDescription }}</p>
             </div>
-            
-            <!-- 使用BookList组件 -->
-            <BookList 
-              v-if="categorizedBooks[selectedCategory] && categorizedBooks[selectedCategory].length > 0"
-              :books="categorizedBooks[selectedCategory]" 
-              :showHeader="false"
-            />
-            
-            <!-- 无书籍提示 -->
-            <div v-else class="text-center py-12">
-              <div class="inline-block p-6 rounded-full bg-gray-50 mb-4">
-                <i class="ri-book-line text-4xl text-gray-400"></i>
-              </div>
-              <p class="text-gray-500">该分类暂无图书</p>
-              <router-link 
-                to="/" 
-                class="inline-block mt-4 text-amber-600 hover:text-amber-700 transition-colors"
-              >
-                浏览其他分类 <i class="ri-arrow-right-line ml-1"></i>
-              </router-link>
+            <div class="flex items-center space-x-2">
+              <span class="text-sm text-gray-500">共 {{ categorizedBooks[selectedCategory]?.length || 0 }} 本图书</span>
             </div>
-          
+          </div>
+
+          <!-- 使用BookList组件 -->
+          <BookList
+            v-if="categorizedBooks[selectedCategory] && categorizedBooks[selectedCategory].length > 0"
+            :books="categorizedBooks[selectedCategory]"
+            :showHeader="false"
+          />
+
+          <!-- 无书籍提示 -->
+          <div v-else class="text-center py-12">
+            <div class="inline-block p-6 rounded-full bg-gray-50 mb-4">
+              <i class="ri-book-line text-4xl text-gray-400"></i>
+            </div>
+            <p class="text-gray-500">该分类暂无图书</p>
+            <router-link
+              to="/"
+              class="inline-block mt-4 text-amber-600 hover:text-amber-700 transition-colors"
+            >
+              浏览其他分类 <i class="ri-arrow-right-line ml-1"></i>
+            </router-link>
           </div>
         </div>
       </div>
@@ -175,6 +163,11 @@ const fetchBooksByCategory = async (categoryName) => {
   }
 };
 
+// 分类描述
+const selectedCategoryDescription = computed(() => {
+  return `探索${selectedCategory.value}类别的精选图书`;
+});
+
 // 监听选中的分类变化
 watch(selectedCategory, (newCategory) => {
   if (newCategory) {
@@ -201,7 +194,6 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   background-color: #f8f9fa;
-  padding: 0 10rem;
 }
 
 main {
@@ -217,22 +209,72 @@ main {
   animation: fadeIn 0.5s ease-out;
 }
 
+/* 三列分类网格布局 */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  background-color: #f9f7f4;
+  padding: 30px;
+  border-radius: 10px;
+}
+
 .category-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .category-card:hover {
-  transform: translateX(4px);
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
   background-color: #fef3c7;
+}
+
+.category-card.active {
+  background-color: #fef3c7;
+  border: 2px solid #e9a84c;
 }
 
 .category-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: #f8f0e3;
+  margin-bottom: 10px;
+  color: #e9a84c;
+  font-size: 24px;
   transition: all 0.3s ease;
 }
 
-.category-card:hover .category-icon {
-  transform: scale(1.1);
-  background-color: #fef3c7;
+.category-card:hover .category-icon,
+.category-card.active .category-icon {
+  background-color: #e9a84c;
+  color: white;
+}
+
+.category-name {
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center;
+  color: #4a5568;
+}
+
+.book-section {
+  background-color: white;
+  border-radius: 10px;
+  padding: 30px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 @keyframes fadeIn {
@@ -247,21 +289,27 @@ main {
 }
 
 /* 响应式调整 */
+@media (max-width: 1024px) {
+  .category-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
+  .category-grid {
+    grid-template-columns: 1fr;
+  }
+
   .page-header h1 {
     font-size: 2rem;
   }
-  
+
   .page-header p {
     font-size: 0.9rem;
   }
-  
-  .category-card {
-    padding: 0.75rem;
-  }
-  
+
   .categories-page {
     padding: 0 0.5rem;
   }
 }
-</style> 
+</style>
