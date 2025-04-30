@@ -3,13 +3,6 @@
   <div class="categories-page">
     <Header />
     <main class="container mx-auto px-6 py-10">
-      <div class="page-header">
-        <h1 class="text-4xl font-bold text-center mb-4">图书分类</h1>
-        <p class="text-gray-600 text-center max-w-2xl mx-auto">
-          探索我们的图书分类，发现您感兴趣的书籍。每个分类都包含精心挑选的图书，满足您的阅读需求。
-        </p>
-      </div>
-
       <!-- 加载状态 -->
       <div v-if="loading" class="flex justify-center items-center py-12">
         <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
@@ -27,7 +20,7 @@
       </div>
 
       <!-- 分类列表 - 三列布局 -->
-      <div v-else class="mt-12">
+      <div v-else class="mt-4">
         <!-- 三列式分类列表 -->
         <div class="category-grid">
           <div
@@ -49,7 +42,6 @@
           <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
             <div>
               <h2 class="text-2xl font-bold text-gray-800">{{ selectedCategory }}</h2>
-              <p class="text-sm text-gray-600 mt-1">{{ selectedCategoryDescription }}</p>
             </div>
             <div class="flex items-center space-x-2">
               <span class="text-sm text-gray-500">共 {{ categorizedBooks[selectedCategory]?.length || 0 }} 本图书</span>
@@ -165,11 +157,6 @@ const fetchBooksByCategory = async (categoryName) => {
   }
 };
 
-// 分类描述
-const selectedCategoryDescription = computed(() => {
-  return `探索${selectedCategory.value}类别的精选图书`;
-});
-
 // 监听选中的分类变化
 watch(selectedCategory, (newCategory) => {
   if (newCategory) {
@@ -207,7 +194,7 @@ main {
 }
 
 .page-header {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   animation: fadeIn 0.5s ease-out;
 }
 
@@ -304,10 +291,6 @@ main {
 
   .page-header h1 {
     font-size: 2rem;
-  }
-
-  .page-header p {
-    font-size: 0.9rem;
   }
 
   .categories-page {
