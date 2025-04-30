@@ -184,8 +184,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+console.log('LoanHistoryPage 组件开始初始化');
+
+import { ref, computed, onMounted, onBeforeMount } from 'vue';
 import { useRouter } from 'vue-router';
+import { getBorrowHistory } from '../../api/borrowApi';
+import { getBookDetail } from '../../api/books';
 
 // 获取路由实例
 const router = useRouter();
@@ -197,6 +201,11 @@ const searchQuery = ref('');
 const statusFilter = ref('all');
 const currentPage = ref(1);
 const pageSize = 5;
+const error = ref('');
+
+onBeforeMount(() => {
+  console.log('LoanHistoryPage 组件即将挂载');
+});
 
 // 格式化日期
 const formatDate = (dateString) => {
@@ -307,97 +316,91 @@ const extendLoan = (loanId) => {
   alert(`将会延长借阅ID: ${loanId}`);
 };
 
-// 模拟获取借阅数据
+// 获取借阅历史数据
 onMounted(async () => {
+  console.log('LoanHistoryPage 组件已挂载，开始获取数据');
   try {
-    // 这里应该是API调用，现在用模拟数据
-    await new Promise(resolve => setTimeout(resolve, 500));
+    console.log('开始获取借阅历史数据...');
+    loading.value = true;
+    error.value = '';
     
-    // 模拟借阅数据
-    loans.value = [
-      {
-        id: 1,
-        book: {
-          id: 101,
-          title: '三体',
-          author: '刘慈欣',
-          cover: '/images/books/threebody.jpg'
-        },
-        borrowDate: '2023-10-15',
-        dueDate: '2023-11-15',
-        returnDate: null,
-        status: 'active'
-      },
-      {
-        id: 2,
-        book: {
-          id: 102,
-          title: '百年孤独',
-          author: '加西亚·马尔克斯',
-          cover: '/images/books/solitude.jpg'
-        },
-        borrowDate: '2023-09-01',
-        dueDate: '2023-10-01',
-        returnDate: '2023-09-28',
-        status: 'returned'
-      },
-      {
-        id: 3,
-        book: {
-          id: 103,
-          title: '追风筝的人',
-          author: '卡勒德·胡赛尼',
-          cover: '/images/books/kiterunner.jpg'
-        },
-        borrowDate: '2023-08-10',
-        dueDate: '2023-09-10',
-        returnDate: null,
-        status: 'overdue'
-      },
-      {
-        id: 4,
-        book: {
-          id: 104,
-          title: '活着',
-          author: '余华',
-          cover: '/images/books/tolive.jpg'
-        },
-        borrowDate: '2023-07-22',
-        dueDate: '2023-08-22',
-        returnDate: '2023-08-20',
-        status: 'returned'
-      },
-      {
-        id: 5,
-        book: {
-          id: 105,
-          title: '月亮与六便士',
-          author: '毛姆',
-          cover: '/images/books/moon.jpg'
-        },
-        borrowDate: '2023-06-15',
-        dueDate: '2023-07-15',
-        returnDate: '2023-07-10',
-        status: 'returned'
-      },
-      {
-        id: 6,
-        book: {
-          id: 106,
-          title: '解忧杂货店',
-          author: '东野圭吾',
-          cover: '/images/books/grocery.jpg'
-        },
-        borrowDate: '2023-05-05',
-        dueDate: '2023-06-05',
-        returnDate: '2023-06-01',
-        status: 'returned'
-      }
-    ];
-  } catch (error) {
-    console.error('获取借阅历史失败:', error);
+    // 从API获取借阅历史数据
+    console.log('正在调用 getBorrowHistory API...');
+    const response = await getBorrowHistory();
+    console.log('getBorrowHistory API 响应:', {
+      state: response.state,
+      dataLength: response.data?.length,
+      data: response.data
+    });
+    
+    if (response.state === 'success' && response.data) {
+      console.log('开始处理借阅历史数据，共', response.data.length, '条记录');
+      
+      // 获取每本书的详细信息
+      const bookDetails = await Promise.all(
+        response.data.map(async (borrow, index) => {
+          try {
+            console.log(`正在获取第 ${index + 1} 本书的详情，bookId:`, borrow.bookId);
+            const bookDetail = await getBookDetail(borrow.bookId);
+            console.log(`第 ${index + 1} 本书的详情:`, {
+              bookId: borrow.bookId,
+              title: bookDetail?.title,
+              author: bookDetail?.author,
+              cover: bookDetail?.coverUrl || bookDetail?.cover
+            });
+            
+            if (bookDetail) {
+              return {
+                id: borrow.borrowId,
+                book: {
+                  id: borrow.bookId,
+                  title: bookDetail.title,
+                  author: bookDetail.author,
+                  cover: bookDetail.coverUrl || bookDetail.cover
+                },
+                borrowDate: borrow.borrowDate,
+                dueDate: borrow.dueDate,
+                returnDate: borrow.returnDate,
+                status: borrow.status
+              };
+            }
+            console.warn(`第 ${index + 1} 本书获取详情失败，bookId:`, borrow.bookId);
+            return null;
+          } catch (err) {
+            console.error(`获取第 ${index + 1} 本书详情时出错:`, err);
+            return null;
+          }
+        })
+      );
+      
+      // 过滤掉获取失败的书籍
+      const validBooks = bookDetails.filter(book => book !== null);
+      console.log('数据处理完成:', {
+        原始数据条数: response.data.length,
+        有效数据条数: validBooks.length,
+        无效数据条数: response.data.length - validBooks.length,
+        最终数据: validBooks
+      });
+      
+      loans.value = validBooks;
+    } else {
+      console.warn('API返回状态不是success或数据为空:', {
+        state: response.state,
+        hasData: !!response.data
+      });
+      loans.value = [];
+    }
+  } catch (err) {
+    console.error('获取借阅历史时发生错误:', err);
+    error.value = '获取借阅历史失败，请稍后重试';
+    loans.value = [];
   } finally {
     loading.value = false;
+    console.log('借阅历史数据加载完成，当前状态:', {
+      loading: loading.value,
+      error: error.value,
+      loansCount: loans.value.length
+    });
   }
 });
 </script> 

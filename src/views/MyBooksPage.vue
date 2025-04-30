@@ -127,8 +127,10 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { renewBook, getBorrowList, returnBook } from '../api/borrowApi';
+import { renewBook, getBorrowList, returnBook, getBorrowHistory } from '../api/borrowApi';
+import { getBookDetail } from '../api/books';
 import { sendEmailNotification } from '../utils/emailService';
+import { getUserInfo } from '../api/user';
 
 const router = useRouter();
 const activeTab = ref('borrowed');
@@ -149,15 +151,9 @@ const historyBooks = ref([]);
 // 获取用户余额
 const fetchUserBalance = async () => {
   try {
-    // 从localStorage中获取余额，实际应用中应该从API获取
-    const balanceStr = localStorage.getItem('userBalance');
-    userBalance.value = balanceStr ? parseFloat(balanceStr) : 0;
-    
-    // 也可以直接从localStorage获取之前在ProfilePage设置的余额
-    if (!balanceStr && localStorage.getItem('token')) {
-      const defaultBalance = 1250.00; // 使用默认余额
-      userBalance.value = defaultBalance;
-      localStorage.setItem('userBalance', defaultBalance.toString());
+    const response = await getUserInfo();
+    if (response.data) {
+      userBalance.value = response.data.balance || 0;
     }
   } catch (error) {
     console.error('获取用户余额失败:', error);
@@ -167,28 +163,111 @@ const fetchUserBalance = async () => {
 // 获取借阅列表
 const fetchBorrowedBooks = async () => {
   try {
-    // 从localStorage获取借阅数据
-    const borrowedBooksData = JSON.parse(localStorage.getItem('borrowedBooks') || '[]');
-    borrowedBooks.value = borrowedBooksData;
-    
-    // 这里可以添加API调用获取真实数据
-    // const bookIds = await getBorrowList();
-    // 然后根据bookIds获取详细信息
+    const response = await getBorrowList();
+    if (response.state === 'success' && response.data) {
+      // 获取每本书的详细信息
+      const bookDetails = await Promise.all(
+        response.data.map(async (borrow) => {
+          try {
+            const bookDetail = await getBookDetail(borrow.bookId);
+            if (bookDetail) {
+              return {
+                bookId: borrow.bookId,
+                title: bookDetail.title,
+                author: bookDetail.author,
+                cover: bookDetail.coverUrl || bookDetail.cover,
+                borrowDate: borrow.borrowDate,
+                dueDate: borrow.dueDate
+              };
+            }
+            return null;
+          } catch (err) {
+            console.error('获取书籍详情失败:', err);
+            return null;
+          }
+        })
+      );
+      
+      // 过滤掉获取失败的书籍
+      borrowedBooks.value = bookDetails.filter(book => book !== null);
+    } else {
+      borrowedBooks.value = [];
+    }
   } catch (error) {
     console.error('获取借阅书籍失败:', error);
+    borrowedBooks.value = [];
   }
 };
 
 // 获取借阅历史
 const fetchBorrowHistory = async () => {
   try {
-    // 从localStorage获取历史数据
-    const historyBooksData = JSON.parse(localStorage.getItem('borrowHistory') || '[]');
-    historyBooks.value = historyBooksData;
+    console.log('开始获取借阅历史数据...');
     
-    // 这里可以添加API调用获取真实数据
+    // 调用API获取借阅历史
+    const response = await getBorrowHistory();
+    console.log('getBorrowHistory API 响应:', {
+      state: response.state,
+      dataLength: response.data?.length,
+      data: response.data
+    });
+    
+    if (response.state === 'success' && response.data) {
+      console.log('开始处理借阅历史数据，共', response.data.length, '条记录');
+      
+      // 获取每本书的详细信息
+      const bookDetails = await Promise.all(
+        response.data.map(async (borrow, index) => {
+          try {
+            console.log(`正在获取第 ${index + 1} 本书的详情，bookId:`, borrow.bookId);
+            const bookDetail = await getBookDetail(borrow.bookId);
+            console.log(`第 ${index + 1} 本书的详情:`, {
+              bookId: borrow.bookId,
+              title: bookDetail?.title,
+              author: bookDetail?.author,
+              cover: bookDetail?.coverUrl || bookDetail?.cover
+            });
+            
+            if (bookDetail) {
+              return {
+                bookId: borrow.bookId,
+                title: bookDetail.title,
+                author: bookDetail.author,
+                cover: bookDetail.coverUrl || bookDetail.cover,
+                borrowDate: borrow.borrowDate,
+                returnDate: borrow.returnDate,
+                status: borrow.status
+              };
+            }
+            console.warn(`第 ${index + 1} 本书获取详情失败，bookId:`, borrow.bookId);
+            return null;
+          } catch (err) {
+            console.error(`获取第 ${index + 1} 本书详情时出错:`, err);
+            return null;
+          }
+        })
+      );
+      
+      // 过滤掉获取失败的书籍
+      const validBooks = bookDetails.filter(book => book !== null);
+      console.log('数据处理完成:', {
+        原始数据条数: response.data.length,
+        有效数据条数: validBooks.length,
+        无效数据条数: response.data.length - validBooks.length,
+        最终数据: validBooks
+      });
+      
+      historyBooks.value = validBooks;
+    } else {
+      console.warn('API返回状态不是success或数据为空:', {
+        state: response.state,
+        hasData: !!response.data
+      });
+      historyBooks.value = [];
+    }
   } catch (error) {
     console.error('获取借阅历史失败:', error);
+    historyBooks.value = [];
   }
 };
 
@@ -243,23 +322,21 @@ const handleRenewBook = async () => {
       const book = borrowedBooks.value.find(b => b.bookId === currentBookId.value);
       if (book) {
         book.dueDate = result.newDueDate;
-        // 更新localStorage
-        localStorage.setItem('borrowedBooks', JSON.stringify(borrowedBooks.value));
         
         // 发送续借成功邮件
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        sendEmailNotification('borrow', {
-          user: user,
-          book: book,
-          borrowDate: book.borrowDate,
-          dueDate: result.newDueDate
-        }).catch(err => console.error('发送续借邮件失败:', err));
+        const user = await getUserInfo();
+        if (user.data) {
+          sendEmailNotification('borrow', {
+            user: user.data,
+            book: book,
+            borrowDate: book.borrowDate,
+            dueDate: result.newDueDate
+          }).catch(err => console.error('发送续借邮件失败:', err));
+        }
       }
       
       // 扣除余额
       userBalance.value -= renewFee;
-      // 更新localStorage中的余额
-      localStorage.setItem('userBalance', userBalance.value.toString());
       
       // 显示成功信息
       renewSuccess.value = true;
@@ -310,39 +387,25 @@ const handleReturnBook = async () => {
     const result = await returnBook(currentBookId.value);
     
     if (result.state === 'success') {
-      // 更新mockData中的借阅计数
-      if (window.mockData && window.mockData.bookBorrowCount && window.mockData.bookBorrowCount[currentBookId.value]) {
-        window.mockData.bookBorrowCount[currentBookId.value] = Math.max(0, window.mockData.bookBorrowCount[currentBookId.value] - 1);
-      }
-      
       // 找到当前借阅的书籍
       const bookIndex = borrowedBooks.value.findIndex(b => b.bookId === currentBookId.value);
       
       if (bookIndex !== -1) {
         const book = borrowedBooks.value[bookIndex];
-        const returnDate = new Date().toISOString().split('T')[0];
-        
-        // 将书籍添加到借阅历史
-        const historyBook = {
-          ...book,
-          returnDate: returnDate // 当前日期作为归还日期
-        };
-        
-        historyBooks.value.push(historyBook);
-        localStorage.setItem('borrowHistory', JSON.stringify(historyBooks.value));
         
         // 从借阅列表中移除
         borrowedBooks.value.splice(bookIndex, 1);
-        localStorage.setItem('borrowedBooks', JSON.stringify(borrowedBooks.value));
         
         // 发送归还确认邮件
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        sendEmailNotification('return', {
-          user: user,
-          book: book,
-          borrowDate: book.borrowDate,
-          returnDate: returnDate
-        }).catch(err => console.error('发送归还邮件失败:', err));
+        const user = await getUserInfo();
+        if (user.data) {
+          sendEmailNotification('return', {
+            user: user.data,
+            book: book,
+            borrowDate: book.borrowDate,
+            returnDate: new Date().toISOString().split('T')[0]
+          }).catch(err => console.error('发送归还邮件失败:', err));
+        }
       }
       
       // 显示成功信息
