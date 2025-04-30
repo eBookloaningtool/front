@@ -359,12 +359,6 @@
                 </h3>
                 <div class="review-actions">
                   <button
-                    @click="editReview(review.id)"
-                    class="edit-btn"
-                  >
-                    Edit
-                  </button>
-                  <button
                     @click="deleteReview(review.id)"
                     class="delete-btn"
                   >
@@ -904,28 +898,53 @@ const handleRemoveFromWishlist = async (bookId) => {
 const fetchReviews = async () => {
   loadingReviews.value = true;
   try {
-    // 这里应该是API调用，现在用模拟数据
-    await new Promise(resolve => setTimeout(resolve, 500));
-    reviews.value = [
-      {
-        id: 1,
-        bookId: 101,
-        bookTitle: '三体',
-        rating: 5,
-        content: '这本书改变了我对科幻小说的看法，刘慈欣的想象力令人惊叹！',
-        createdAt: '2023-09-15T14:30:00Z'
-      },
-      {
-        id: 2,
-        bookId: 102,
-        bookTitle: '百年孤独',
-        rating: 4,
-        content: '马尔克斯的魔幻现实主义风格非常迷人，但有些段落需要反复阅读才能理解。',
-        createdAt: '2023-08-22T10:15:00Z'
-      }
-    ];
+    // 获取用户的评论ID列表
+    const userCommentsResponse = await post({
+      url: '/api/reviews/user'
+    });
+    
+    if (userCommentsResponse && userCommentsResponse.state === 'success' && userCommentsResponse.commentIds) {
+      // 获取每个评论的详细内容
+      const reviewPromises = userCommentsResponse.commentIds.map(async (commentId) => {
+        try {
+          const response = await get({
+            url: `/api/reviews/content?commentId=${commentId}`
+          });
+          
+          if (response.state === 'success') {
+            // 获取书籍详情
+            const bookResponse = await get({
+              url: `/api/books/get?bookId=${response.bookId}`
+            });
+            
+            return {
+              id: commentId,
+              bookId: response.bookId,
+              bookTitle: bookResponse.title || 'Unknown Book',
+              rating: response.rating,
+              content: response.comment,
+              createdAt: response.createdAt || new Date().toISOString(),
+              username: response.username
+            };
+          }
+          return null;
+        } catch (error) {
+          console.error(`获取评论 ${commentId} 详情失败:`, error);
+          return null;
+        }
+      });
+
+      // 等待所有评论详情获取完成
+      const reviewResults = await Promise.all(reviewPromises);
+      // 过滤掉获取失败的评论
+      reviews.value = reviewResults.filter(review => review !== null);
+    } else {
+      reviews.value = [];
+    }
   } catch (error) {
     console.error('获取评论失败:', error);
+    showToast('获取评论失败，请稍后重试', 'error');
+    reviews.value = [];
   } finally {
     loadingReviews.value = false;
   }
@@ -1148,10 +1167,26 @@ const viewBookDetails = (bookId) => {
   router.push(`/book/${bookId}`);
 };
 
-const deleteReview = (reviewId) => {
+// 删除评论
+const deleteReview = async (reviewId) => {
   if (confirm('Are you sure you want to delete this comment?')) {
-    reviews.value = reviews.value.filter(review => review.id !== reviewId);
-    // 这里应该有API调用来同步服务器数据
+    try {
+      const response = await post({
+        url: '/api/reviews/delete',
+        data: { commentId: reviewId }
+      });
+      
+      if (response.state === 'success') {
+        // 从列表中移除已删除的评论
+        reviews.value = reviews.value.filter(review => review.id !== reviewId);
+        showToast('评论已删除', 'success');
+      } else {
+        throw new Error('删除评论失败');
+      }
+    } catch (error) {
+      console.error('删除评论失败:', error);
+      showToast('删除评论失败，请稍后重试', 'error');
+    }
   }
 };
 
@@ -1807,27 +1842,16 @@ const updateUserInfo = async () => {
   gap: 8px;
 }
 
-.edit-btn, .delete-btn {
+.delete-btn {
   padding: 5px 10px;
   border: none;
   border-radius: 4px;
   font-size: 12px;
   cursor: pointer;
   transition: background-color 0.3s;
-}
-
-.edit-btn {
-  background-color: #f0f0f0;
-  color: #333;
-}
-
-.delete-btn {
   background-color: #fee2e2;
   color: #b91c1c;
-}
-
-.edit-btn:hover {
-  background-color: #e0e0e0;
+  outline: none;
 }
 
 .delete-btn:hover {
