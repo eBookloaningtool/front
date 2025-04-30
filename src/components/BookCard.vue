@@ -94,26 +94,29 @@ const handleBorrow = async (event) => {
 
   if (isBorrowing.value || !isAvailable.value) return;
 
-  // 检查余额是否足够
-  const price = props.book.price; // 使用API返回的实际价格
-  const balance = getBalance();
-  if (balance < price) {
-    showToast('余额不足，请先充值', 'error');
-    router.push({ name: 'TopUp' });
-    return;
-  }
-
   isBorrowing.value = true;
   try {
     const result = await borrowBook(props.book.bookId);
 
     if (result.state === 'success') {
       saveBorrowedBook(result.dueDate);
-      setBalance(balance - price); // 扣除实际价格
+      setBalance(result.balance); // 使用 API 返回的最新余额
       showToast('借阅成功，前往我的书籍查看', 'success');
-      router.push('/my-books');
     } else if (result.state === 'insufficient balance') {
+      showToast('余额不足，请先充值', 'error');
       router.push({ name: 'TopUp', query: { amount: result.newPayment } });
+    } else if (result.state === 'Reach borrow limit') {
+      showToast('已达到借阅上限', 'error');
+    } else if (result.state === 'Borrow failed.') {
+      let errorMessage = '借阅失败：';
+      if (result.InvalidBookIds?.includes(props.book.bookId)) {
+        errorMessage += '书籍无效';
+      } else if (result.LowStockBookIds?.includes(props.book.bookId)) {
+        errorMessage += '库存不足';
+      } else if (result.BorrowedBookIds?.includes(props.book.bookId)) {
+        errorMessage += '已借阅';
+      }
+      showToast(errorMessage, 'error');
     } else {
       showToast(result.message || '借阅失败，请稍后重试', 'error');
     }

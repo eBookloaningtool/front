@@ -1,14 +1,14 @@
 <!-- ShoppingCart.vue -->
 <template>
   <div class="shopping-cart-container">
-    <h1 class="cart-title">我的购物车</h1>
+    <h1 class="cart-title">My Cart</h1>
 
     <CartList ref="cartListRef" v-model:cartItems="cartItems" @cart-updated="handleCartUpdated" @remove-item="removeFromCart">
       <!-- 空购物车时的操作按钮 -->
       <template #empty-action>
         <router-link to="/" class="browse-books-btn">
           <i class="ri-book-open-line"></i>
-          浏览书籍
+          Browse books
         </router-link>
       </template>
 
@@ -17,9 +17,9 @@
         <div class="cart-actions">
           <button class="checkout-btn" @click="checkout" :disabled="isProcessing">
             <i class="ri-shopping-bag-line"></i>
-            借阅
+            Borrow
           </button>
-          <button class="clear-cart-btn" @click="handleClearCart" :disabled="isProcessing">清空购物车</button>
+          <button class="clear-cart-btn" @click="handleClearCart" :disabled="isProcessing">Clear cart</button>
         </div>
       </template>
     </CartList>
@@ -117,7 +117,7 @@ const checkout = async () => {
     // 调用借阅API批量借阅
     const result = await borrowBook(bookIds);
 
-    if (result.state === 'success') {
+    if (result?.state === 'success') {
       // 借阅成功
       // 保存借阅信息到localStorage
       const borrowedBooks = JSON.parse(localStorage.getItem('borrowedBooks') || '[]');
@@ -142,41 +142,41 @@ const checkout = async () => {
       saveCartItems();
 
       // 调用API清空服务器购物车
-      await clearCart();
+      const clearResult = await cartAPI.clearCart();
 
       // 显示成功消息
-      showToast(`借阅成功！到期日期: ${result.dueDate}，余额: ${result.balance}元`, 'success');
+      showToast(`Borrowed successfully! Due date: ${result.dueDate}, Balance: £${result.balance}`, 'success');
 
       // 跳转到我的借阅页面
       setTimeout(() => {
         router.push('/user/books');
       }, 1500);
-    } else if (result.state === 'insufficient balance') {
+    } else if (result?.state === 'insufficient balance') {
       // 余额不足
-      showToast(`余额不足，需要充值${result.newPayment}元`, 'error');
+      showToast(`Insufficient balance, need to recharge £${result.newPayment}`, 'error');
       setTimeout(() => {
         router.push('/user/topup');
       }, 1500);
-    } else if (result.state === 'Reach borrow limit') {
+    } else if (result?.state === 'Reach borrow limit') {
       // 达到借阅上限
-      showToast('您已达到借阅上限', 'error');
-    } else if (result.state === 'Borrow failed.') {
+      showToast('You have reached the borrow limit', 'error');
+    } else if (result?.state === 'Borrow failed.') {
       // 部分书籍借阅失败
-      let message = '部分书籍借阅失败: ';
+      let message = 'Some books borrow failed: ';
       let failedBookIds = [];
 
       if (result.InvalidBookIds && result.InvalidBookIds.length > 0) {
-        message += `${result.InvalidBookIds.length}本书不可用; `;
+        message += `${result.InvalidBookIds.length} books are not available; `;
         failedBookIds = [...failedBookIds, ...result.InvalidBookIds];
       }
 
       if (result.LowStockBookIds && result.LowStockBookIds.length > 0) {
-        message += `${result.LowStockBookIds.length}本书库存不足; `;
+        message += `${result.LowStockBookIds.length} books are out of stock; `;
         failedBookIds = [...failedBookIds, ...result.LowStockBookIds];
       }
 
       if (result.BorrowedBookIds && result.BorrowedBookIds.length > 0) {
-        message += `${result.BorrowedBookIds.length}本书您已借阅过; `;
+        message += `${result.BorrowedBookIds.length} books you have already borrowed; `;
         failedBookIds = [...failedBookIds, ...result.BorrowedBookIds];
       }
 
@@ -188,18 +188,18 @@ const checkout = async () => {
         // 显示部分成功的消息
         const successCount = bookIds.length - failedBookIds.length;
         if (successCount > 0) {
-          message += `成功借阅了${successCount}本书。`;
+          message += `Successfully borrowed ${successCount} books.`;
         }
       }
 
       showToast(message, 'warning');
     } else {
       // 其他错误
-      showToast('借阅失败，请稍后重试', 'error');
+      showToast('Borrow failed, please try again later', 'error');
     }
   } catch (error) {
-    console.error('借阅过程中出错:', error);
-    showToast('借阅失败，请稍后重试', 'error');
+    console.error('Borrowing failed:', error);
+    showToast('Borrowing failed, please try again later', 'error');
   } finally {
     isProcessing.value = false;
   }
@@ -209,17 +209,17 @@ const checkout = async () => {
 const removeItemFromWishlist = async (bookId) => {
   try {
     await removeWishlistItem(bookId);
-    showToast('已从愿望清单移除', 'success');
+    showToast('Removed from wishlist', 'success');
   } catch (err) {
-    console.error('从愿望清单移除失败:', err);
-    showToast('从愿望清单移除失败', 'error');
+    console.error('Failed to remove from wishlist:', err);
+    showToast('Failed to remove from wishlist', 'error');
   }
 };
 
 // 清空购物车方法
 const handleClearCart = async () => {
   if (cartItems.value.length === 0) {
-    showToast('购物车已经为空', 'info');
+    showToast('Cart is empty', 'info');
     return;
   }
 
@@ -236,15 +236,15 @@ const handleClearCart = async () => {
     localStorage.removeItem('cartItems');
 
     // 显示成功消息
-    showToast('购物车已清空', 'success');
+    showToast('Cart cleared', 'success');
 
     // 重新获取购物车数据
     if (cartListRef.value && typeof cartListRef.value.fetchCartItems === 'function') {
       await cartListRef.value.fetchCartItems();
     }
   } catch (error) {
-    console.error('清空购物车失败:', error);
-    showToast('清空购物车失败，请稍后重试', 'error');
+    console.error('Failed to clear cart:', error);
+    showToast('Failed to clear cart, please try again later', 'error');
   } finally {
     isProcessing.value = false;
   }

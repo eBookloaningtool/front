@@ -9,23 +9,22 @@
           探索我们的图书分类，发现您感兴趣的书籍。每个分类都包含精心挑选的图书，满足您的阅读需求。
         </p>
       </div>
-
+      
       <!-- 加载状态 -->
       <div v-if="loading" class="flex justify-center items-center py-12">
         <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
       </div>
-
+      
       <!-- 错误信息 -->
       <div v-else-if="error" class="text-center py-12">
         <p class="text-red-500">{{ error }}</p>
-        <button
-          @click="fetchCategories"
+        <button 
+          @click="fetchCategories" 
           class="mt-4 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg transition-colors"
         >
           重试
         </button>
       </div>
-
       <!-- 分类列表 - 三列布局 -->
       <div v-else class="mt-12">
         <!-- 三列式分类列表 -->
@@ -43,7 +42,6 @@
             <div class="category-name">{{ category.name }}</div>
           </div>
         </div>
-
         <!-- 选中分类的图书列表 -->
         <div v-if="selectedCategory" class="book-section mt-12">
           <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
@@ -138,10 +136,10 @@ const fetchBooksByCategory = async (categoryName) => {
   try {
     loading.value = true;
     error.value = '';
-
+    
     // 使用搜索 API 获取特定类别的图书
     const result = await searchBooks({ category: categoryName });
-
+    
     if (result.state === 'success' && result.bookId && result.bookId.length > 0) {
       // 获取每本书的详细信息
       const bookDetails = await Promise.all(
@@ -150,7 +148,7 @@ const fetchBooksByCategory = async (categoryName) => {
           return bookDetail;
         })
       );
-
+      
       // 过滤掉获取失败的书籍（返回 null 的情况）
       categorizedBooks.value[categoryName] = bookDetails.filter(book => book !== null);
     } else {

@@ -157,16 +157,24 @@ export const borrowBook = async (bookId: string | string[]): Promise<BorrowApiRe
  */
 export const returnBook = async (bookId: string): Promise<ReturnApiResponse> => {
   try {
-    const response = await axios.post<ReturnSuccessResponse>(
-      '/api/borrow/return/',
-      { bookId },
-      getAuthConfig()
-    );
-    return response.data;
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = {};
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    } else {
+      console.warn('归还书籍时未找到认证令牌，可能导致认证失败');
+    }
+
+    const response = await post({
+      url: '/api/borrow/return',
+      data: { bookId },
+      headers
+    });
+    return response;
   } catch (error) {
-    console.error('归还电子书失败:', (error as AxiosError)?.response?.data || (error as Error).message);
-    const axiosError = error as AxiosError<ErrorResponse>;
-    return axiosError.response?.data || { state: 'error', message: (error as Error).message || 'Unknown error occurred' };
+    console.error('归还电子书失败:', error);
+    return { state: 'error', message: (error as Error).message || 'Unknown error occurred' };
   }
 };
 
@@ -177,16 +185,24 @@ export const returnBook = async (bookId: string): Promise<ReturnApiResponse> => 
  */
 export const renewBook = async (bookId: string): Promise<RenewApiResponse> => {
   try {
-    const response = await axios.post<RenewSuccessResponse | InsufficientBalanceResponse>(
-      '/api/borrow/renew/',
-      { bookId },
-      getAuthConfig()
-    );
-    return response.data;
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = {};
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    } else {
+      console.warn('续借书籍时未找到认证令牌，可能导致认证失败');
+    }
+
+    const response = await post({
+      url: '/api/borrow/renew',
+      data: { bookId },
+      headers
+    });
+    return response;
   } catch (error) {
-    console.error('续借电子书失败:', (error as AxiosError)?.response?.data || (error as Error).message);
-    const axiosError = error as AxiosError<ErrorResponse>; // 假设错误响应也遵循 ErrorResponse 结构
-    return axiosError.response?.data || { state: 'error', message: (error as Error).message || 'Unknown error occurred' };
+    console.error('续借电子书失败:', error);
+    return { state: 'error', message: (error as Error).message || 'Unknown error occurred' };
   }
 };
 
@@ -197,7 +213,7 @@ export const renewBook = async (bookId: string): Promise<RenewApiResponse> => {
 export const getBorrowList = async (): Promise<BorrowListResponse> => {
   try {
     const response = await axios.post<BorrowListResponse>(
-      '/api/borrow/borrowlist/',
+      '/api/borrow/borrowlist',
       {},  // 无需请求体参数
       getAuthConfig()
     );
@@ -215,15 +231,13 @@ export const getBorrowList = async (): Promise<BorrowListResponse> => {
  */
 export const getBorrowHistory = async (): Promise<BorrowHistoryResponse> => {
   try {
-    const response = await axios.post<BorrowHistoryResponse>(
-      '/api/borrow/history/',
-      {},  // 无需请求体参数
-      getAuthConfig()
-    );
-    return response.data;
+    const response = await post({
+      url: '/api/borrow/history',
+      data: {}
+    });
+    return response;
   } catch (error) {
-    console.error('获取借阅历史失败:', (error as AxiosError)?.response?.data || (error as Error).message);
-    // 出错时返回空数据
+    console.error('获取借阅历史失败:', error);
     return { state: 'error', data: [] };
   }
 };
