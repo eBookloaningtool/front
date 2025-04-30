@@ -83,12 +83,6 @@ const routes = [
     component: MyBooksPage,
     meta: { requiresAuth: true }
   },
-  {
-    path: '/user/favorites',
-    name: 'Favorites',
-    component: FavoritesPage,
-    meta: { requiresAuth: true }
-  },
   // 用户资料页新增路由
   {
     path: '/user/recent-borrows',
