@@ -82,9 +82,11 @@ import CommentSection from '../components/CommentSection.vue';
 import { borrowBook } from '@/api/borrowApi';
 import { formatPrice } from '@/utils/format';
 import { sendEmailNotification } from '@/utils/emailService';
+import { useUserStore } from '@/stores/userStore';
 
 const route = useRoute();
 const router = useRouter();
+const userStore = useUserStore();
 const book = ref(null);
 const isLoading = ref(true);
 const error = ref(null);
@@ -340,6 +342,13 @@ const getBorrowCount = () => {
 };
 
 async function readBook() {
+  // 检查用户是否已登录
+  if (!userStore.isAuthenticated) {
+    alert('Please login to read the book');
+    router.push({ name: 'Login' }); // 可选：重定向到登录页面
+    return;
+  }
+
   try {
     const { data } = await axios.post('/api/books/content', {
       bookId: route.params.id,     // 当前详情页的书籍 ID
