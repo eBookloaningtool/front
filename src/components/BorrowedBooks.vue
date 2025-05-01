@@ -3,16 +3,16 @@
   <div class="borrowed-books">
     <div v-if="loading" class="loading-state">
       <div class="loading-spinner"></div>
-      <p>加载中...</p>
+      <p>Loading...</p>
     </div>
 
     <div v-else-if="error" class="error-state">
       <p>{{ error }}</p>
-      <button @click="fetchBooks" class="btn-retry">重试</button>
+      <button @click="fetchBooks" class="btn-retry">Retry</button>
     </div>
 
     <div v-else-if="books.length === 0" class="empty-state">
-      <p>您目前没有借阅任何书籍</p>
+      <p>You currently have no borrowed books</p>
     </div>
 
     <div v-else class="books-grid">
@@ -24,13 +24,13 @@
           <h3 class="book-title">{{ book.title }}</h3>
           <p class="book-author">{{ book.author }}</p>
           <div class="due-date">
-            <span class="due-label">借阅到期:</span>
+            <span class="due-label">Due Date:</span>
             <span class="due-value">{{ book.dueDate }}</span>
           </div>
         </div>
         <div class="book-actions">
-          <button @click="returnBook(book.bookId)" class="btn-return">归还</button>
-          <router-link :to="'/book/' + book.bookId" class="btn-view">查看详情</router-link>
+          <button @click="returnBook(book.bookId)" class="btn-return">Return</button>
+          <router-link :to="'/book/' + book.bookId" class="btn-view">View Details</router-link>
         </div>
       </div>
     </div>
@@ -77,7 +77,7 @@ const fetchBooks = async () => {
       if (response.state === 'success') {
         bookList = response.data;
       } else {
-        throw new Error('获取借阅列表失败');
+        throw new Error('Failed to get borrowing list');
       }
     } else if (props.bookIds.length > 0) {
       bookList = props.bookIds.map(id => ({ bookId: id }));
@@ -91,7 +91,7 @@ const fetchBooks = async () => {
     const bookPromises = bookList.map(item =>
       fetch(`/api/books/get?bookId=${item.bookId}`)
         .then(response => {
-          if (!response.ok) throw new Error(`获取书籍 ${item.bookId} 失败`);
+          if (!response.ok) throw new Error(`Failed to get book ${item.bookId}`);
           return response.json();
         })
     );
@@ -99,8 +99,8 @@ const fetchBooks = async () => {
     const booksData = await Promise.all(bookPromises);
     books.value = booksData;
   } catch (err) {
-    console.error('获取已借阅书籍信息出错:', err);
-    error.value = '获取书籍信息失败，请稍后重试';
+    console.error('Error getting borrowed books:', err);
+    error.value = 'Failed to get book information, please try again later';
   } finally {
     loading.value = false;
   }
@@ -113,16 +113,16 @@ const returnBook = async (bookId) => {
     const result = await apiReturnBook(bookId);
     if (result.state === 'success') {
       // 成功提示
-      this.$message.success('归还成功！');
+      this.$message.success('Return successful!');
 
       // 重新拉取借阅列表
       await fetchBooks();
     } else {
-      this.$message.error('归还失败，请稍后重试');
+      this.$message.error('Return failed, please try again later');
     }
   } catch (error) {
-    console.error('归还书籍出错:', error);
-    this.$message.error('归还失败，请稍后重试');
+    console.error('Error returning book:', error);
+    this.$message.error('Return failed, please try again later');
   }
 };
 

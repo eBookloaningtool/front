@@ -102,16 +102,16 @@
           <h2 class="page-title">Current Borrowings</h2>
 
           <div v-if="loadingBooks" class="loading-state">
-            <p>加载中...</p>
+            <p>Loading...</p>
           </div>
 
           <div v-else-if="recentBooks.length === 0" class="empty-state">
-            <p>您目前没有正在阅读的图书</p>
+            <p>You currently have no borrowed books</p>
             <router-link
               to="/books"
               class="browse-btn"
             >
-              浏览图书馆
+              Browse Library
             </router-link>
           </div>
 
@@ -124,8 +124,8 @@
                 <div class="book-header">
                   <h3 class="book-title">{{ book.title }}</h3>
                   <div class="book-dates">
-                    <div class="borrow-date">借阅日期: {{ formatDate(book.borrowDate) }}</div>
-                    <div class="due-date">应归还日期: {{ formatDate(book.dueDate) }}</div>
+                    <div class="borrow-date">Borrow Date: {{ formatDate(book.borrowDate) }}</div>
+                    <div class="due-date">Due Date: {{ formatDate(book.dueDate) }}</div>
                   </div>
                 </div>
                 <p class="book-author">{{ book.author }}</p>
@@ -134,7 +134,7 @@
                     @click="viewBookDetails(book.id)"
                     class="read-btn"
                   >
-                    查看详情
+                    View Details
                   </button>
                 </div>
               </div>
@@ -381,21 +381,21 @@
 
         <!-- 支付记录视图 -->
         <div v-if="currentView === 'PaymentOrders'" class="payment-orders">
-          <h2 class="page-title">支付记录</h2>
-          <p class="subtitle">查看您的充值记录</p>
+          <h2 class="page-title">Payment Records</h2>
+          <p class="subtitle">View your top-up records</p>
 
           <div v-if="loadingOrders" class="loading-state">
-            <p>加载中...</p>
+            <p>Loading...</p>
           </div>
 
           <div v-else>
             <div v-if="completedOrders.length === 0" class="empty-state">
-              <p>暂无充值记录</p>
+              <p>No payment records</p>
               <router-link
                 to="/top-up"
                 class="browse-btn"
               >
-                立即充值
+                Top Up Now
               </router-link>
             </div>
 
@@ -407,22 +407,22 @@
               >
                 <div class="order-header">
                   <div class="order-info">
-                    <span class="order-number">订单号: {{ order.orderNumber }}</span>
+                    <span class="order-number">Order No: {{ order.orderNumber }}</span>
                     <span class="order-date">{{ formatDate(order.createdAt) }}</span>
                   </div>
                   <span class="order-status status-completed">
-                    已完成
+                    Completed
                   </span>
                 </div>
 
                 <div class="order-content">
                   <div class="order-payment-info">
-                    <div class="payment-label">充值金额</div>
+                    <div class="payment-label">Amount</div>
                     <div class="payment-value">£{{ order.amount.toFixed(2) }}</div>
                   </div>
 
                   <div class="order-payment-info">
-                    <div class="payment-label">支付时间</div>
+                    <div class="payment-label">Payment Time</div>
                     <div class="payment-value">{{ formatDate(order.paidAt) }}</div>
                   </div>
                 </div>
@@ -664,15 +664,15 @@ const handleTopUp = async () => {
 
   try {
     const result = await topUpBalance(finalTopUpAmount.value);
-    
+
     if (result.state === 'success') {
       // 更新账户余额
       accountBalance.value = result.balance;
       // 更新 UserStore 中的余额
       const userStore = useUserStore();
       userStore.balance = result.balance;
-      
-      showToast(`充值成功！已添加 £${finalTopUpAmount.value} 到您的账户`, 'success');
+
+      showToast(`Top up successful! £${finalTopUpAmount.value} has been added to your account`, 'success');
 
       // 重置表单
       selectedTopUpAmount.value = null;
@@ -681,11 +681,11 @@ const handleTopUp = async () => {
       // 显示支付记录
       switchView('PaymentOrders');
     } else {
-      throw new Error('充值失败');
+      throw new Error('Top up failed');
     }
   } catch (error) {
     console.error('充值失败:', error);
-    showToast('充值失败，请稍后重试', 'error');
+    showToast('Top up failed, please try again later', 'error');
   } finally {
     processingTopUp.value = false;
   }
@@ -755,7 +755,7 @@ const logout = async () => {
     router.push('/login');
   } catch (error) {
     console.error('登出失败:', error);
-    showToast('登出失败，请重试', 'error');
+    showToast('Logout failed, please try again', 'error');
   }
 };
 
@@ -765,14 +765,14 @@ const fetchUserInfo = async () => {
     const response = await post({
       url: '/api/users/info'
     });
-    
+
     if (response) {
       // 更新用户信息
       username.value = response.name;
       email.value = response.email;
       registrationDate.value = formatDate(response.createdat);
       accountBalance.value = response.balance;
-      
+
       // 更新 UserStore 中的信息
       const userStore = useUserStore();
       userStore.userName = response.name;
@@ -782,7 +782,7 @@ const fetchUserInfo = async () => {
     }
   } catch (error) {
     console.error('获取用户信息失败:', error);
-    showToast('获取用户信息失败，请稍后重试', 'error');
+    showToast('Failed to get user information, please try again later', 'error');
   }
 };
 
@@ -792,7 +792,7 @@ const fetchRecentBooks = async () => {
   try {
     // 获取当前借阅列表
     const borrowListResponse = await getBorrowList();
-    
+
     if (borrowListResponse.state === 'success') {
       // 获取每本书的详细信息
       const bookDetailsPromises = borrowListResponse.data.map(async (borrow) => {
@@ -800,7 +800,7 @@ const fetchRecentBooks = async () => {
           const bookDetail = await get({
             url: `/api/books/get?bookId=${borrow.bookId}`
           });
-          
+
           return {
             id: borrow.bookId,
             title: bookDetail.title,
@@ -828,7 +828,7 @@ const fetchRecentBooks = async () => {
     }
   } catch (error) {
     console.error('获取最近阅读图书失败:', error);
-    showToast('获取最近阅读图书失败，请稍后重试', 'error');
+    showToast('Failed to get recently read books, please try again later', 'error');
   } finally {
     loadingBooks.value = false;
   }
@@ -845,7 +845,7 @@ const fetchLoanHistory = async () => {
     }));
   } catch (error) {
     console.error('获取借阅历史失败:', error);
-    showToast('获取借阅历史失败，请稍后重试', 'error');
+    showToast('Failed to get borrowing history, please try again later', 'error');
   } finally {
     loadingLoans.value = false;
   }
@@ -857,11 +857,11 @@ const fetchWishlist = async () => {
   try {
     // 获取愿望清单中的书籍ID列表
     const wishlistData = await getWishlist();
-    
+
     // 获取每本书的详情
     const bookPromises = wishlistData.bookId.map(bookId => getBookDetail(bookId));
     const bookDetails = await Promise.all(bookPromises);
-    
+
     // 转换数据格式
     wishlistItems.value = bookDetails.map(book => ({
       id: book.bookId,
@@ -872,7 +872,7 @@ const fetchWishlist = async () => {
     }));
   } catch (error) {
     console.error('获取愿望清单失败:', error);
-    showToast('获取愿望清单失败，请稍后重试', 'error');
+    showToast('Failed to get wishlist, please try again later', 'error');
   } finally {
     loadingWishlist.value = false;
   }
@@ -884,13 +884,13 @@ const handleRemoveFromWishlist = async (bookId) => {
     const result = await removeFromWishlist(bookId);
     if (result.state === 'success') {
       wishlistItems.value = wishlistItems.value.filter(item => item.id !== bookId);
-      showToast('已从愿望清单中移除', 'success');
+      showToast('Removed from wishlist', 'success');
     } else {
-      throw new Error('移除失败');
+      throw new Error('Failed to remove');
     }
   } catch (error) {
     console.error('移除书籍失败:', error);
-    showToast('移除书籍失败，请稍后重试', 'error');
+    showToast('Failed to remove book, please try again later', 'error');
   }
 };
 
@@ -902,7 +902,7 @@ const fetchReviews = async () => {
     const userCommentsResponse = await post({
       url: '/api/reviews/user'
     });
-    
+
     if (userCommentsResponse && userCommentsResponse.state === 'success' && userCommentsResponse.commentIds) {
       // 获取每个评论的详细内容
       const reviewPromises = userCommentsResponse.commentIds.map(async (commentId) => {
@@ -910,13 +910,13 @@ const fetchReviews = async () => {
           const response = await get({
             url: `/api/reviews/content?commentId=${commentId}`
           });
-          
+
           if (response.state === 'success') {
             // 获取书籍详情
             const bookResponse = await get({
               url: `/api/books/get?bookId=${response.bookId}`
             });
-            
+
             return {
               id: commentId,
               bookId: response.bookId,
@@ -943,7 +943,7 @@ const fetchReviews = async () => {
     }
   } catch (error) {
     console.error('获取评论失败:', error);
-    showToast('获取评论失败，请稍后重试', 'error');
+    showToast('Failed to get reviews, please try again later', 'error');
     reviews.value = [];
   } finally {
     loadingReviews.value = false;
@@ -967,11 +967,11 @@ const fetchOrders = async () => {
         type: 'top-up'
       }));
     } else {
-      throw new Error('获取支付历史失败');
+      throw new Error('Failed to get payment history');
     }
   } catch (error) {
     console.error('获取支付历史失败:', error);
-    showToast('获取支付历史失败，请稍后重试', 'error');
+    showToast('Failed to get payment history, please try again later', 'error');
     orders.value = [];
   } finally {
     loadingOrders.value = false;
@@ -993,7 +993,7 @@ const cancelledOrders = computed(() => {
 
 // 获取订单状态文本
 const getOrderStatusText = (status) => {
-  return '已完成';
+  return 'Completed';
 };
 
 // 查看订单详情
@@ -1175,17 +1175,17 @@ const deleteReview = async (reviewId) => {
         url: '/api/reviews/delete',
         data: { commentId: reviewId }
       });
-      
+
       if (response.state === 'success') {
         // 从列表中移除已删除的评论
         reviews.value = reviews.value.filter(review => review.id !== reviewId);
-        showToast('评论已删除', 'success');
+        showToast('Review deleted', 'success');
       } else {
-        throw new Error('删除评论失败');
+        throw new Error('Failed to delete review');
       }
     } catch (error) {
       console.error('删除评论失败:', error);
-      showToast('删除评论失败，请稍后重试', 'error');
+      showToast('Failed to delete review, please try again later', 'error');
     }
   }
 };
