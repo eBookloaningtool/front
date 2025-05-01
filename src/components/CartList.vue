@@ -2,18 +2,18 @@
   <div class="cart-list">
     <div v-if="isLoading" class="loading-state">
       <div class="loading-spinner"></div>
-      <p>正在加载购物车...</p>
+      <p>Loading cart...</p>
     </div>
 
     <div v-else-if="error" class="error-state">
       <i class="ri-error-warning-line"></i>
       <p>{{ error }}</p>
-      <button @click="fetchCartItems" class="retry-btn">重试</button>
+      <button @click="fetchCartItems" class="retry-btn">Retry</button>
     </div>
 
     <div v-else-if="cartItems.length === 0" class="empty-state">
       <i class="ri-shopping-cart-line"></i>
-      <p>购物车是空的</p>
+      <p>Your cart is empty</p>
       <slot name="empty-action"></slot>
     </div>
 
@@ -30,8 +30,8 @@
 
       <div class="cart-summary">
         <div class="summary-row">
-          <span>总计: {{ cartItems.length }} 本书</span>
-          <span class="total-price">￡{{ totalPrice.toFixed(2) }}</span>
+          <span>Total: {{ cartItems.length }} books</span>
+          <span class="total-price">£{{ totalPrice.toFixed(2) }}</span>
         </div>
         <slot name="cart-actions"></slot>
       </div>
@@ -95,7 +95,7 @@ const fetchCartItems = async () => {
           }
         })
       );
-      
+
       // 过滤掉获取失败的书籍
       cartItems.value = bookDetails.filter(Boolean);
       // 更新本地存储
@@ -150,10 +150,10 @@ const handleRemoveItem = async (bookId) => {
   try {
     await removeItem(bookId);
     await fetchCartItems();
-    showToast('商品已从购物车中移除', 'success');
+    showToast('Item removed from cart', 'success');
   } catch (err) {
     console.error('移除购物车商品错误:', err);
-    showToast('移除商品失败，请重试', 'error');
+    showToast('Failed to remove item, please try again', 'error');
   } finally {
     removingItems.value.delete(bookId);
   }

@@ -7,7 +7,7 @@
       <p class="author">{{ item.author }}</p>
       <p class="price">￡{{ item.price }}</p>
     </div>
-    <button class="remove-btn" @click="$emit('remove', item.bookId)">删除</button>
+    <button class="remove-btn" @click="$emit('remove', item.bookId)">Remove</button>
   </div>
 </template>
 

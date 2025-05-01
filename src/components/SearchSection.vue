@@ -4,47 +4,47 @@
     <div class="search-container">
       <div class="search-input">
         <i class="ri-book-line"></i>
-        <input 
-          type="text" 
-          v-model="searchTitle" 
-          placeholder="搜索书名" 
+        <input
+          type="text"
+          v-model="searchTitle"
+          placeholder="Search book title"
           @keyup.enter="handleSearch"
         />
-        <i 
-          v-show="searchTitle.length > 0" 
-          class="ri-close-line clear-btn" 
+        <i
+          v-show="searchTitle.length > 0"
+          class="ri-close-line clear-btn"
           @click="clearTitle"
         ></i>
       </div>
       <div class="search-input">
         <i class="ri-user-line"></i>
-        <input 
-          type="text" 
-          v-model="searchAuthor" 
-          placeholder="搜索作者" 
+        <input
+          type="text"
+          v-model="searchAuthor"
+          placeholder="Search author"
           @keyup.enter="handleSearch"
         />
-        <i 
-          v-show="searchAuthor.length > 0" 
-          class="ri-close-line clear-btn" 
+        <i
+          v-show="searchAuthor.length > 0"
+          class="ri-close-line clear-btn"
           @click="clearAuthor"
         ></i>
       </div>
       <div class="search-input">
         <i class="ri-folder-line"></i>
-        <input 
-          type="text" 
-          v-model="searchCategory" 
-          placeholder="搜索分类" 
+        <input
+          type="text"
+          v-model="searchCategory"
+          placeholder="Search category"
           @keyup.enter="handleSearch"
         />
-        <i 
-          v-show="searchCategory.length > 0" 
-          class="ri-close-line clear-btn" 
+        <i
+          v-show="searchCategory.length > 0"
+          class="ri-close-line clear-btn"
           @click="clearCategory"
         ></i>
       </div>
-      <button class="search-btn" @click="handleSearch">搜索</button>
+      <button class="search-btn" @click="handleSearch">Search</button>
     </div>
   </section>
 </template>
@@ -61,22 +61,22 @@ const searchCategory = ref('')
 const handleSearch = () => {
   // 至少需要一个搜索条件
   if (!searchTitle.value.trim() && !searchAuthor.value.trim() && !searchCategory.value.trim()) return
-  
+
   // 构建查询参数
   const queryParams = {}
-  
+
   if (searchTitle.value.trim()) {
     queryParams.title = searchTitle.value.trim()
   }
-  
+
   if (searchAuthor.value.trim()) {
     queryParams.author = searchAuthor.value.trim()
   }
-  
+
   if (searchCategory.value.trim()) {
     queryParams.category = searchCategory.value.trim()
   }
-  
+
   // 导航到搜索结果页面
   router.push({
     path: '/search',
@@ -168,13 +168,13 @@ const clearCategory = () => {
   .search-container {
     flex-wrap: wrap;
   }
-  
+
   .search-input {
     flex: 1 0 100%;
   }
-  
+
   .search-btn {
     flex: 1;
   }
 }
-</style> 
+</style>

@@ -6,14 +6,14 @@
       <div class="main-container">
         <SearchSection />
         <LoginSection v-if="!isLoggedIn" />
-        <BookList 
-          title="热门书籍推荐" 
-          :books="popularBooks" 
+        <BookList
+          title="Popular Book Recommendations"
+          :books="popularBooks"
           :loading="loading"
           :error="error"
           :loadingMore="loadingMore"
           :hasMore="hasMore"
-          @book-click="navigateToBookDetail" 
+          @book-click="navigateToBookDetail"
         />
       </div>
     </main>
@@ -100,28 +100,28 @@ const filterBooksByCategory = (books, category) => {
 // 加载更多热门书籍
 const loadMorePopularBooks = async () => {
   if (!hasMore.value || loadingMore.value) return
-  
+
   loadingMore.value = true
   try {
     // 获取热门书籍ID列表
     const popularResponse = await bookAPI.getPopularBooks()
     const allBookIds = popularResponse.data.bookId || []
-    
+
     // 计算当前页的书籍ID范围
     const startIndex = (currentPage.value - 1) * pageSize
     const endIndex = startIndex + pageSize
     const currentPageBookIds = allBookIds.slice(startIndex, endIndex)
-    
+
     if (currentPageBookIds.length > 0) {
       // 获取当前页书籍的详细信息
       const bookDetails = await Promise.all(
         currentPageBookIds.map(bookId => bookAPI.getBookDetail(bookId))
       )
-      
+
       const newBooks = bookDetails
         .map(response => response.data)
         .filter(book => book !== null)
-      
+
       popularBooks.value = [...popularBooks.value, ...newBooks]
       currentPage.value++
       hasMore.value = endIndex < allBookIds.length
@@ -142,7 +142,7 @@ const handleScroll = () => {
   const scrollHeight = document.documentElement.scrollHeight
   const scrollTop = document.documentElement.scrollTop
   const clientHeight = document.documentElement.clientHeight
-  
+
   // 当滚动到距离底部100px时加载更多
   if (scrollHeight - scrollTop - clientHeight < 100) {
     loadMorePopularBooks()
@@ -152,25 +152,25 @@ const handleScroll = () => {
 onMounted(async () => {
   // 检查登录状态
   isLoggedIn.value = userStore.isAuthenticated
-  
+
   // 添加滚动监听
   window.addEventListener('scroll', handleScroll)
-  
+
   try {
     // 初始加载第一页热门书籍
     await loadMorePopularBooks()
-    
+
     // 获取所有书籍数据
     const response = await bookAPI.getAllBooks()
     const allBooks = Array.isArray(response.data) ? response.data : []
-    
+
     // 随机选择10本作为新书展示
     newBooks.value = getRandomItems(allBooks, 10)
-    
+
     // 筛选小说类书籍
     const fictionBooksAll = filterBooksByCategory(allBooks, 'fiction')
     fictionBooks.value = getRandomItems(fictionBooksAll.length > 0 ? fictionBooksAll : allBooks, 10)
-    
+
     // 筛选历史和传记类书籍
     const historyBooksAll = [
       ...filterBooksByCategory(allBooks, 'history'),
@@ -182,7 +182,7 @@ onMounted(async () => {
     console.error('获取书籍数据失败:', error)
     error.value = '获取书籍数据失败，请稍后再试'
     loading.value = false
-    
+
     // 加载失败时使用空数组
     popularBooks.value = []
     newBooks.value = []
@@ -218,4 +218,4 @@ main {
 .rankings-section {
   margin-top: 40px;
 }
-</style> 
+</style>
