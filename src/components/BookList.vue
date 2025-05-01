@@ -225,7 +225,7 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 25px;
-  margin-top: 70px;
+  margin-top: 30px;
 }
 
 /* 简单布局 */
