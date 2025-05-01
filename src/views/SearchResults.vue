@@ -1,17 +1,29 @@
 <template>
-  <div class="search-results container mx-auto py-8 px-4">
-    <h1 class="text-2xl font-bold mb-6">{{ title }}</h1>
-    
-    <BookList 
-      :title="title"
-      :books="books"
-      :loading="loading"
-      :error="error"
-      :loadingMore="loadingMore"
-      :hasMore="hasMore"
-      :showHeader="false"
-      @retry="search"
-    />
+  <div class="search-results">
+    <div class="container mx-auto py-8 px-4 mt-32">
+
+      <div v-if="!loading && books.length === 0 && !error" class="empty-message">
+        <p>No more books</p>
+      </div>
+
+      <div v-else class="book-list-wrapper">
+        <BookList
+          :title="title"
+          :books="books"
+          :loading="loading"
+          :error="error"
+          :loadingMore="loadingMore"
+          :hasMore="hasMore"
+          :showHeader="false"
+          @retry="search"
+        />
+      </div>
+
+      <!-- 单独的提示，当有书籍但没有更多时显示 -->
+      <div v-if="!loading && !loadingMore && books.length > 0 && !hasMore" class="no-more-books">
+        <p>No more books</p>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -52,18 +64,18 @@ const search = async () => {
     loading.value = false;
     return;
   }
-  
+
   loading.value = true;
   error.value = '';
   currentPage.value = 1;
-  
+
   try {
     const result = await searchBooks({
       ...searchParams.value,
       page: currentPage.value,
       pageSize: pageSize
     });
-    
+
     if (result.state === 'success') {
       if (result.bookId && result.bookId.length > 0) {
         const bookDetails = await Promise.all(
@@ -72,7 +84,7 @@ const search = async () => {
             return bookDetail;
           })
         );
-        
+
         books.value = bookDetails.filter(book => book !== null);
         hasMore.value = result.bookId.length === pageSize;
       } else {
@@ -95,17 +107,17 @@ const search = async () => {
 // 加载更多搜索结果
 const loadMore = async () => {
   if (!hasMore.value || loadingMore.value) return;
-  
+
   loadingMore.value = true;
   currentPage.value++;
-  
+
   try {
     const result = await searchBooks({
       ...searchParams.value,
       page: currentPage.value,
       pageSize: pageSize
     });
-    
+
     if (result.state === 'success' && result.bookId && result.bookId.length > 0) {
       const bookDetails = await Promise.all(
         result.bookId.map(async (bookId) => {
@@ -113,7 +125,7 @@ const loadMore = async () => {
           return bookDetail;
         })
       );
-      
+
       const newBooks = bookDetails.filter(book => book !== null);
       books.value = [...books.value, ...newBooks];
       hasMore.value = newBooks.length === pageSize;
@@ -133,7 +145,7 @@ const handleScroll = () => {
   const scrollHeight = document.documentElement.scrollHeight;
   const scrollTop = document.documentElement.scrollTop;
   const clientHeight = document.documentElement.clientHeight;
-  
+
   if (scrollHeight - scrollTop - clientHeight < 100) {
     loadMore();
   }
@@ -157,5 +169,57 @@ onUnmounted(() => {
 <style scoped>
 .search-results {
   min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding-top: 2rem;
 }
-</style> 
+
+.container {
+  max-width: 1200px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.book-list-wrapper {
+  width: 100%;
+}
+
+.no-more-books {
+  text-align: center;
+  margin-top: 40px;
+  margin-bottom: 20px;
+  padding: 15px;
+  font-size: 16px;
+  color: #666;
+  border-radius: 8px;
+  width: 200px;
+  align-self: center;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 30px;
+  margin: 20px auto;
+  max-width: 300px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.empty-message p {
+  font-size: 16px;
+  color: #666;
+}
+
+/* 隐藏BookList中的no-more提示 */
+.book-list-wrapper :deep(.no-more) {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding-top: 1.5rem;
+  }
+}
+</style>

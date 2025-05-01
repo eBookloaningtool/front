@@ -7,12 +7,12 @@
       <div v-if="loading" class="flex justify-center items-center py-12">
         <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
       </div>
-      
+
       <!-- 错误信息 -->
       <div v-else-if="error" class="text-center py-12">
         <p class="text-red-500">{{ error }}</p>
-        <button 
-          @click="fetchCategory" 
+        <button
+          @click="fetchCategory"
           class="mt-4 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded"
         >
           重试
@@ -23,7 +23,7 @@
           </router-link>
         </div>
       </div>
-      
+
       <!-- 分类内容 -->
       <div v-else>
         <div class="mb-8 flex items-start justify-between">
@@ -35,19 +35,19 @@
             <i class="ri-arrow-left-line mr-1"></i> 所有分类
           </router-link>
         </div>
-        
+
         <!-- 书籍列表 -->
         <div v-if="books && books.length > 0">
           <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-            <div 
-              v-for="book in books" 
-              :key="book.id" 
+            <div
+              v-for="book in books"
+              :key="book.id"
               class="bg-white rounded-lg shadow-md overflow-hidden transition-transform hover:shadow-lg hover:-translate-y-1"
             >
               <router-link :to="`/book/${book.id}`" class="block h-full">
                 <div class="relative aspect-[2/3] overflow-hidden bg-gray-100">
-                  <img 
-                    :src="book.cover" 
+                  <img
+                    :src="book.cover"
                     :alt="book.title"
                     class="w-full h-full object-cover"
                     @error="e => e.target.src = 'https://source.unsplash.com/collection/1320303/300x450?sig=fallback'"
@@ -61,7 +61,7 @@
             </div>
           </div>
         </div>
-        
+
         <!-- 无书籍提示 -->
         <div v-else class="text-center py-12">
           <p class="text-gray-500">该分类暂无图书</p>
@@ -95,16 +95,16 @@ const navigateToBook = (bookId) => {
 const fetchCategory = async () => {
   loading.value = true;
   error.value = null;
-  
+
   try {
     // 获取分类信息
     const categoryResponse = await categoryAPI.getCategoryDetail(categoryId.value);
     category.value = categoryResponse.data;
-    
+
     // 获取该分类下的图书
     const booksResponse = await bookAPI.getBooksByCategory(categoryId.value);
     books.value = booksResponse.data;
-    
+
     loading.value = false;
   } catch (err) {
     console.error('获取分类数据失败:', err);
@@ -136,4 +136,4 @@ main {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-</style> 
+</style>
