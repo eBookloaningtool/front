@@ -1,20 +1,20 @@
 <template>
   <div class="my-books-page">
     <div class="container">
-      <h1 class="page-title">我的书籍</h1>
+      <h1 class="page-title">My Books</h1>
 
       <div class="tabs">
         <button
           :class="['tab-btn', { active: activeTab === 'borrowed' }]"
           @click="activeTab = 'borrowed'"
         >
-          已借阅
+          Borrowed
         </button>
         <button
           :class="['tab-btn', { active: activeTab === 'history' }]"
           @click="activeTab = 'history'"
         >
-          借阅历史
+          Borrowing History
         </button>
       </div>
 
@@ -26,18 +26,18 @@
           <div class="book-info">
             <h3 @click="viewBookDetail(book.bookId)" style="cursor: pointer;">{{ book.title }}</h3>
             <p class="author" @click="viewAuthorBooks(book.author)" style="cursor: pointer;">{{ book.author }}</p>
-            <p class="due-date">到期时间: {{ book.dueDate }}</p>
+            <p class="due-date">Due Date: {{ book.dueDate }}</p>
             <div class="book-actions">
-              <button 
-                class="renew-btn" 
+              <button
+                class="renew-btn"
                 :class="{ 'loading': isRenewing && currentBookId === book.bookId }"
                 :disabled="isRenewing && currentBookId === book.bookId"
                 @click="openRenewModal(book.bookId)"
               >
                 <i v-if="isRenewing && currentBookId === book.bookId" class="ri-loader-4-line loading-icon"></i>
-                {{ isRenewing && currentBookId === book.bookId ? '续借中...' : '续借' }}
+                {{ isRenewing && currentBookId === book.bookId ? 'Renewing...' : 'Renew' }}
               </button>
-              <button class="return-btn" @click="openReturnModal(book.bookId)">归还</button>
+              <button class="return-btn" @click="openReturnModal(book.bookId)">Return</button>
             </div>
           </div>
         </div>
@@ -51,16 +51,16 @@
           <div class="book-info">
             <h3 @click="viewBookDetail(book.bookId)" style="cursor: pointer;">{{ book.title }}</h3>
             <p class="author" @click="viewAuthorBooks(book.author)" style="cursor: pointer;">{{ book.author }}</p>
-            <p class="borrow-date">借阅时间: {{ book.borrowDate }}</p>
-            <p class="return-date">归还时间: {{ book.returnDate }}</p>
+            <p class="borrow-date">Borrow Date: {{ book.borrowDate }}</p>
+            <p class="return-date">Return Date: {{ book.returnDate }}</p>
           </div>
         </div>
       </div>
 
       <div class="empty-state" v-else>
-        <img src="../assets/empty-books.svg" alt="没有书籍" />
-        <p>您当前没有{{ activeTab === 'borrowed' ? '借阅' : '借阅历史' }}记录</p>
-        <router-link to="/" class="browse-btn">浏览书籍</router-link>
+        <img src="../assets/empty-books.svg" alt="No books" />
+        <p>You currently have no {{ activeTab === 'borrowed' ? 'borrowed books' : 'borrowing history' }}</p>
+        <router-link to="/" class="browse-btn">Browse Books</router-link>
       </div>
     </div>
 
@@ -75,34 +75,34 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h3>续借成功!</h3>
-          <p>借阅时间已延长30天</p>
-          <p class="balance">当前余额: ￡{{ userBalance.toFixed(2) }}</p>
+          <h3>Renewal Successful!</h3>
+          <p>Borrowing period extended by 30 days</p>
+          <p class="balance">Current Balance: £{{ userBalance.toFixed(2) }}</p>
         </div>
 
         <div v-else>
-          <h3>确认续借</h3>
-          <p>续借将延长借阅时间30天</p>
-          <p class="fee">续借费用: ￡{{ renewFee.toFixed(2) }}</p>
-          <p class="balance">当前余额: ￡{{ userBalance.toFixed(2) }}</p>
+          <h3>Confirm Renewal</h3>
+          <p>Renewing will extend the borrowing period by 30 days</p>
+          <p class="fee">Renewal Fee: £{{ renewFee.toFixed(2) }}</p>
+          <p class="balance">Current Balance: £{{ userBalance.toFixed(2) }}</p>
 
           <div v-if="renewError" class="error-message">
             {{ renewError }}
           </div>
 
           <div class="modal-actions">
-            <button class="cancel-btn" @click="closeRenewModal">取消</button>
-            <button 
-              v-if="userBalance >= renewFee" 
-              class="confirm-btn" 
+            <button class="cancel-btn" @click="closeRenewModal">Cancel</button>
+            <button
+              v-if="userBalance >= renewFee"
+              class="confirm-btn"
               :class="{ 'loading': isRenewing }"
               :disabled="isRenewing"
               @click="handleRenewBook"
             >
               <i v-if="isRenewing" class="ri-loader-4-line loading-icon"></i>
-              {{ isRenewing ? '续借中...' : '确认续借' }}
+              {{ isRenewing ? 'Renewing...' : 'Confirm Renewal' }}
             </button>
-            <button v-else class="topup-btn" @click="goToTopUp">充值</button>
+            <button v-else class="topup-btn" @click="goToTopUp">Top Up</button>
           </div>
         </div>
       </div>
@@ -119,28 +119,28 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h3>归还成功!</h3>
-          <p>书籍已成功归还</p>
+          <h3>Return Successful!</h3>
+          <p>Book has been successfully returned</p>
         </div>
 
         <div v-else>
-          <h3>确认归还</h3>
-          <p>您确定要归还这本书吗？</p>
+          <h3>Confirm Return</h3>
+          <p>Are you sure you want to return this book?</p>
 
           <div v-if="returnError" class="error-message">
             {{ returnError }}
           </div>
 
           <div class="modal-actions">
-            <button class="cancel-btn" @click="closeReturnModal">取消</button>
-            <button 
-              class="confirm-btn" 
+            <button class="cancel-btn" @click="closeReturnModal">Cancel</button>
+            <button
+              class="confirm-btn"
               :class="{ 'loading': isReturning }"
               :disabled="isReturning"
               @click="handleReturnBook"
             >
               <i v-if="isReturning" class="ri-loader-4-line loading-icon"></i>
-              {{ isReturning ? '归还中...' : '确认归还' }}
+              {{ isReturning ? 'Returning...' : 'Confirm Return' }}
             </button>
           </div>
         </div>
@@ -342,7 +342,7 @@ const openRenewModal = async (bookId) => {
       console.log('设置续借费用:', renewFee.value);
     } else {
       console.error('获取书籍信息失败');
-      renewError.value = '获取书籍信息失败，请稍后重试';
+      renewError.value = 'Failed to get book information, please try again later';
       showRenewModal.value = true;
       return;
     }
@@ -363,16 +363,16 @@ const openRenewModal = async (bookId) => {
       }
     } else if (result.state === 'insufficient balance') {
       console.log('余额不足:', result.newPayment);
-      renewError.value = `余额不足，需要 ￡${result.newPayment} `;
+      renewError.value = `Insufficient balance, you need £${result.newPayment}`;
     } else {
       console.error('续借失败:', result.message);
-      renewError.value = result.message || '续借失败，请稍后重试';
+      renewError.value = result.message || 'Renewal failed, please try again later';
     }
 
     showRenewModal.value = true;
   } catch (error) {
     console.error('检查续借状态失败:', error);
-    renewError.value = '检查续借状态失败，请稍后重试';
+    renewError.value = 'Failed to check renewal status, please try again later';
     showRenewModal.value = true;
   } finally {
     isRenewing.value = false;
@@ -405,11 +405,11 @@ const handleRenewBook = async () => {
         closeRenewModal();
       }, 3000);
     } else {
-      renewError.value = result.message || '续借失败，请稍后重试';
+      renewError.value = result.message || 'Renewal failed, please try again later';
     }
   } catch (error) {
     console.error('续借失败:', error);
-    renewError.value = '续借失败，请稍后重试';
+    renewError.value = 'Renewal failed, please try again later';
   } finally {
     isRenewing.value = false;
   }
@@ -458,11 +458,11 @@ const handleReturnBook = async () => {
         closeReturnModal();
       }, 3000);
     } else {
-      returnError.value = result.message || '归还失败，请稍后重试';
+      returnError.value = result.message || 'Return failed, please try again later';
     }
   } catch (error) {
     console.error('归还失败:', error);
-    returnError.value = '归还失败，请稍后重试';
+    returnError.value = 'Return failed, please try again later';
   } finally {
     isReturning.value = false;
   }
