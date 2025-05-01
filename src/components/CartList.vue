@@ -98,12 +98,23 @@ const fetchCartItems = async () => {
 
       // 过滤掉获取失败的书籍
       cartItems.value = bookDetails.filter(Boolean);
+      console.log('更新后的cartItems:', cartItems.value);
+
       // 更新本地存储
-      localStorage.setItem('cartItems', JSON.stringify(response.data.bookId.map(id => ({ bookId: id }))));
+      const storageData = response.data.bookId.map(id => ({ bookId: id }));
+      console.log('更新localStorage数据:', storageData);
+      localStorage.setItem('cartItems', JSON.stringify(storageData));
+
+      // 通知父组件
+      emit('update:cartItems', cartItems.value);
+      emit('cart-updated', cartItems.value);
     } else {
       cartItems.value = [];
       // 清空本地存储
       localStorage.removeItem('cartItems');
+      // 通知父组件
+      emit('update:cartItems', []);
+      emit('cart-updated', []);
     }
     calculateTotal();
   } catch (err) {
@@ -131,9 +142,12 @@ const updateQuantity = async (itemId, newQuantity) => {
 };
 
 const removeItem = async (itemId) => {
+  console.log('开始删除商品，itemId:', itemId);
   try {
     await cartAPI.removeFromCart(itemId);
+    console.log('删除商品API调用成功');
     await fetchCartItems();
+    console.log('重新获取购物车数据完成');
   } catch (err) {
     console.error('删除购物车项失败:', err);
     error.value = '删除购物车项失败，请稍后重试';
@@ -143,9 +157,14 @@ const removeItem = async (itemId) => {
 
 // 从购物车移除商品
 const handleRemoveItem = async (bookId) => {
-  if (!bookId || removingItems.value.has(bookId)) return;
+  console.log('handleRemoveItem被调用，bookId:', bookId);
+  if (!bookId || removingItems.value.has(bookId)) {
+    console.log('移除被阻止，原因:', !bookId ? 'bookId为空' : '商品正在移除中');
+    return;
+  }
 
   removingItems.value.add(bookId);
+  console.log('当前正在移除的商品列表:', Array.from(removingItems.value));
 
   try {
     await removeItem(bookId);
@@ -156,6 +175,7 @@ const handleRemoveItem = async (bookId) => {
     showToast('Failed to remove item, please try again', 'error');
   } finally {
     removingItems.value.delete(bookId);
+    console.log('移除完成，当前正在移除的商品列表:', Array.from(removingItems.value));
   }
 };
 
