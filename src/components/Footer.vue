@@ -19,19 +19,16 @@
       <div class="footer-section contact">
         <h3>Contact Us</h3>
         <ul>
-          <li><i class="ri-mail-line"></i> contact@ebookservice.com</li>
+          <li><i class="ri-mail-line"></i> contact@borrowbee.wcy.one</li>
           <li><i class="ri-phone-line"></i> 400-123-4567</li>
-          <li><i class="ri-map-pin-line"></i> No.1 Zhongguancun Street, Haidian District, Beijing</li>
+          <li><i class="ri-map-pin-line"></i> Urban Science Building, Newcastle University, Pitt Street, Newcastle Upon Tyne, NE4 5TH</li>
         </ul>
       </div>
 
       <div class="footer-section social">
         <h3>Follow Us</h3>
         <div class="social-icons">
-          <a href="#" title="Weibo"><i class="ri-weibo-line"></i></a>
-          <a href="#" title="WeChat"><i class="ri-wechat-line"></i></a>
-          <a href="#" title="QQ"><i class="ri-qq-line"></i></a>
-          <a href="#" title="Zhihu"><i class="ri-zhihu-line"></i></a>
+          <a href="https://github.com/eBookloaningtool" title="GitHub" target="_blank"><i class="ri-github-line"></i></a>
         </div>
       </div>
     </div>
