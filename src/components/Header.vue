@@ -83,10 +83,14 @@ const toggleUserMenu = () => {
   showUserMenu.value = !showUserMenu.value
 }
 
-const logout = () => {
-  userStore.logout()
-  showUserMenu.value = false
-  router.push('/login')
+const logout = async () => {
+  try {
+    await userStore.logout()
+    showUserMenu.value = false
+    router.push('/login')
+  } catch (error) {
+    console.error('登出失败:', error)
+  }
 }
 
 const handleSearch = () => {
