@@ -108,15 +108,13 @@ async function fetchBookDetail() {
 
   try {
     console.log('开始获取书籍详情，bookId:', bookId.value);
-    const response = await get({
-      url: `/api/books/get?bookId=${bookId.value}`
-    });
+    const response = await axios.get(`/api/books/get?bookId=${bookId.value}`);
     console.log('获取书籍详情响应:', response);
 
-    if (response) {
-      book.value = response;
+    if (response.data) {
+      book.value = response.data;
       console.log('书籍详情数据:', book.value);
-      cacheBookData(response);
+      cacheBookData(response.data);
     } else {
       // 实际API调用
       const response = await fetch(`https://api.borrowbee.wcy.one:61700/api/books/get?bookId=${bookId.value}`, {
@@ -145,8 +143,8 @@ async function fetchBookDetail() {
 
       book.value = bookData;
       cacheBookData(bookData);
-      isLoading.value = false;
     }
+    isLoading.value = false;
   } catch (err) {
     console.error('Error fetching book details:', err);
     error.value = `Unable to load book details: ${err.message}`;

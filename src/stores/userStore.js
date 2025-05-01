@@ -53,6 +53,15 @@ export const useUserStore = defineStore('user', {
           console.error('获取用户信息失败:', error)
           this.logout()
         }
+      } else {
+        // 如果没有token，确保状态被清除
+        this.isAuthenticated = false
+        this.token = null
+        this.uuid = null
+        this.userName = null
+        this.userEmail = null
+        this.balance = 0
+        this.createdAt = null
       }
     },
 
