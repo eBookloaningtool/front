@@ -60,7 +60,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import AddToCartButton from './AddToCartButton.vue';
 import BookCover from './BookCover.vue';
-import { borrowBook } from '../api/borrowApi.ts';
+import { borrowBook, getBorrowList } from '../api/borrowApi.ts';
 import { useToast } from '../composables/useToast';
 import { getWishlist, addToWishlist, removeFromWishlist } from '../api/wishlist';
 
@@ -115,12 +115,29 @@ const toggleWishlist = async (event) => {
 
   const token = localStorage.getItem('token');
   if (!token) {
-    showToast('请先登录', 'error');
+    showToast('Please login first', 'error');
     return;
   }
 
   loading.value = true;
   try {
+    // 如果是要添加到心愿单，先检查是否已借阅
+    if (!isInWishlist.value) {
+      const isBookBorrowed = await checkIfBookBorrowed();
+      if (isBookBorrowed) {
+        // 已借阅，显示特定提示并提供跳转链接
+        showToast('Already borrowed. View in My Books.', 'info');
+        loading.value = false;
+
+        // 添加点击处理，1.5秒后自动跳转到我的书籍页面
+        setTimeout(() => {
+          router.push('/user/books');
+        }, 1500);
+        return;
+      }
+    }
+
+    // 正常的心愿单添加/删除逻辑
     if (isInWishlist.value) {
       await removeFromWishlist(props.book.bookId);
       isInWishlist.value = false;
@@ -162,6 +179,25 @@ const checkWishlistStatus = async () => {
     isInWishlist.value = bookIds.includes(String(props.book.bookId));
   } catch (error) {
     console.error('检查心愿单状态失败:', error);
+  }
+};
+
+// 检查书籍是否已被借阅
+const checkIfBookBorrowed = async () => {
+  try {
+    const response = await getBorrowList();
+    if (response.state === 'success' && response.data) {
+      // 检查当前书籍ID是否在借阅列表中，且状态为"借阅中"（未归还）
+      return response.data.some(item => {
+        // 当书籍ID匹配且未归还时，视为已借阅
+        return String(item.bookId) === String(props.book.bookId) &&
+               (!item.returnDate || item.status === 'borrowed' || item.status === 'active');
+      });
+    }
+    return false;
+  } catch (error) {
+    console.error('检查借阅状态失败:', error);
+    return false;
   }
 };
 
@@ -209,6 +245,8 @@ const handleBorrow = async (event) => {
     // 检查是否是余额不足的响应
     if (result?.state === 'insufficient balance' || result?.message?.includes('insufficient balance')) {
       showToast('Insufficient balance, please recharge first', 'error');
+      // 跳转到充值页面
+      router.push('/user/profile?view=TopUp');
       return;
     }
 

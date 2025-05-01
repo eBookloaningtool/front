@@ -108,7 +108,7 @@
           <div v-else-if="recentBooks.length === 0" class="empty-state">
             <p>You currently have no borrowed books</p>
             <router-link
-              to="/books"
+              to="/"
               class="browse-btn"
             >
               Browse Library
@@ -298,7 +298,7 @@
           <div v-else-if="wishlistItems.length === 0" class="empty-state">
             <p>Your wish list is empty</p>
             <router-link
-              to="/books"
+              to="/"
               class="browse-btn"
             >
               Browse Library
@@ -344,7 +344,7 @@
           <div v-else-if="reviews.length === 0" class="empty-state">
             <p>You haven't posted any reviews yet</p>
             <router-link
-              to="/books"
+              to="/"
               class="browse-btn"
             >
               Browse Books
@@ -391,12 +391,13 @@
           <div v-else>
             <div v-if="completedOrders.length === 0" class="empty-state">
               <p>No payment records</p>
-              <router-link
-                to="/top-up"
+              <button
+                @click="switchView('TopUp')"
                 class="browse-btn"
+                style="border: none;"
               >
                 Top Up Now
-              </router-link>
+              </button>
             </div>
 
             <div v-else class="orders-list">
@@ -1046,7 +1047,38 @@ onMounted(() => {
   // 获取用户信息
   fetchUserInfo();
 
-  // 根据路由路径设置初始视图
+  // 先检查是否有查询参数指定视图
+  const queryView = route.query.view;
+  if (queryView && ['Profile', 'RecentBorrows', 'LoanHistory', 'Wishlist', 'MyReviews', 'PaymentOrders', 'TopUp', 'Settings'].includes(queryView)) {
+    currentView.value = queryView;
+    // 根据视图加载相应数据
+    if (queryView === 'RecentBorrows') {
+      fetchRecentBooks();
+    } else if (queryView === 'LoanHistory') {
+      fetchLoanHistory();
+    } else if (queryView === 'Wishlist') {
+      fetchWishlist();
+    } else if (queryView === 'MyReviews') {
+      fetchReviews();
+    } else if (queryView === 'PaymentOrders') {
+      fetchOrders();
+    } else if (queryView === 'TopUp') {
+      // 加载充值页面时获取当前余额
+      fetchUserInfo();
+    } else if (queryView === 'Settings') {
+      // Reset form fields
+      updateForm.value = {
+        name: '',
+        email: '',
+        password: ''
+      };
+      // Clear any previous error messages
+      updateError.value = '';
+    }
+    return;
+  }
+
+  // 如果没有查询参数，则根据路由路径设置初始视图
   const path = route.path;
   if (path === '/user/profile') {
     currentView.value = 'Profile';
