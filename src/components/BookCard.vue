@@ -10,7 +10,7 @@
           :disabled="loading"
           class="wishlist-btn"
           :class="{ 'active': isInWishlist, 'loading': loading }"
-          :title="isInWishlist ? '从心愿单移除' : '添加到心愿单'"
+          :title="isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'"
         >
           <i v-if="loading" class="ri-loader-4-line loading-icon"></i>
           <i v-else-if="isInWishlist" class="ri-heart-fill"></i>
@@ -30,7 +30,7 @@
            :class="['ri-star-' + (n <= (book.rating || 0) ? 'fill' : 'line')]">
         </i>
       </div>
-      <span class="rating-count">可借</span>
+      <span class="rating-count">Available</span>
     </div>
 
     <div class="book-actions">
@@ -41,15 +41,15 @@
         @click.stop="handleBorrow"
       >
         <i v-if="isBorrowing" class="ri-loader-4-line loading-icon"></i>
-        {{ isAvailable ? (isBorrowing ? '借阅中...' : '借阅') : '暂不可用' }}
+        {{ isAvailable ? (isBorrowing ? 'Borrowing...' : 'Borrow') : 'Not Available' }}
       </button>
 
-      <AddToCartButton 
-        v-if="showCart" 
-        :book-id="book.bookId" 
-        @click.stop 
+      <AddToCartButton
+        v-if="showCart"
+        :book-id="book.bookId"
+        @click.stop
         class="cart-btn-container"
-        @not-logged-in="showToast('请先登录', 'error')"
+        @not-logged-in="showToast('Please login first', 'error')"
       />
     </div>
   </div>
@@ -124,14 +124,14 @@ const toggleWishlist = async (event) => {
     if (isInWishlist.value) {
       await removeFromWishlist(props.book.bookId);
       isInWishlist.value = false;
-      showToast('已从心愿单移除', 'success');
+      showToast('Removed from wishlist', 'success');
     } else {
       const response = await addToWishlist(props.book.bookId);
       if (response.state === 'success') {
         isInWishlist.value = true;
-        showToast('已添加到心愿单', 'success');
+        showToast('Added to wishlist', 'success');
       } else if (response.state === 'Book already exist.') {
-        showToast('这本书已经在您的愿望清单中', 'info');
+        showToast('This book is already in your wishlist', 'info');
         isInWishlist.value = false; // 保持非激活状态
       } else {
         throw new Error('添加失败');
@@ -145,7 +145,7 @@ const toggleWishlist = async (event) => {
     });
   } catch (error) {
     console.error('操作心愿单失败:', error);
-    showToast('操作失败，请稍后重试', 'error');
+    showToast('Operation failed, please try again later', 'error');
   } finally {
     loading.value = false;
   }
@@ -196,7 +196,7 @@ const handleBorrow = async (event) => {
 
   const token = localStorage.getItem('token');
   if (!token) {
-    showToast('请先登录', 'error');
+    showToast('Please login first', 'error');
     return;
   }
 
@@ -218,15 +218,15 @@ const handleBorrow = async (event) => {
       setBalance(result.balance);
       showToast('Borrowed successfully, go to My Books to view', 'success');
     } else if (result.state === 'Reach borrow limit') {
-      showToast('已达到借阅上限', 'error');
+      showToast('Reached borrowing limit', 'error');
     } else if (result.state === 'Borrow failed.') {
-      let errorMessage = '借阅失败：';
+      let errorMessage = 'Borrow failed: ';
       if (result.InvalidBookIds?.includes(props.book.bookId)) {
-        errorMessage += '书籍无效';
+        errorMessage += 'Invalid book';
       } else if (result.LowStockBookIds?.includes(props.book.bookId)) {
-        errorMessage += '库存不足';
+        errorMessage += 'Out of stock';
       } else if (result.BorrowedBookIds?.includes(props.book.bookId)) {
-        errorMessage += '已借阅';
+        errorMessage += 'Already borrowed';
       }
       showToast(errorMessage, 'error');
     } else {

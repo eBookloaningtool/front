@@ -5,20 +5,20 @@
     <div class="book-list-header" v-if="showHeader">
       <h2 class="title">{{ title }}</h2>
       <router-link v-if="moreLink" :to="moreLink" class="view-more">
-        查看更多 <i class="ri-arrow-right-s-line"></i>
+        View more <i class="ri-arrow-right-s-line"></i>
       </router-link>
     </div>
 
     <!-- 加载中状态 -->
     <div v-if="isLoading" class="loading">
       <div class="simple-spinner"></div>
-      <p>加载中...</p>
+      <p>Loading...</p>
     </div>
 
     <!-- 错误状态 -->
     <div v-else-if="errorMessage" class="error">
       <p>{{ errorMessage }}</p>
-      <button @click="$emit('retry')" class="retry-btn">重试</button>
+      <button @click="$emit('retry')" class="retry-btn">Retry</button>
     </div>
 
     <!-- 正常显示书籍 -->
@@ -53,18 +53,18 @@
       <!-- 加载更多提示 -->
       <div v-if="loadingMore" class="loading-more">
         <div class="simple-spinner"></div>
-        <p>正在加载更多...</p>
+        <p>Loading more...</p>
       </div>
 
       <!-- 没有更多数据提示 -->
       <div v-else-if="!hasMore" class="no-more">
-        <p>没有更多书籍了</p>
+        <p>No more books</p>
       </div>
     </div>
 
     <!-- 没有数据 -->
     <div v-else class="empty-state">
-      <p>暂无数据</p>
+      <p>No data available</p>
     </div>
   </div>
 </template>
@@ -118,8 +118,8 @@ onMounted(async () => {
     try {
       localBooks.value = await props.loadBooks();
     } catch (error) {
-      console.error('获取书籍列表失败:', error);
-      localError.value = '获取数据失败，请稍后再试';
+      console.error('Failed to get book list:', error);
+      localError.value = 'Failed to get data, please try again later';
     } finally {
       localLoading.value = false;
     }

@@ -31,7 +31,7 @@
       </template>
 
       <!-- 按钮文本 -->
-      {{ isInWishlist ? '从愿望清单移除' : '添加到愿望清单' }}
+      {{ isInWishlist ? 'Remove from wishlist' : 'Add to wishlist' }}
     </button>
 
     <!-- 通知气泡 -->
@@ -109,7 +109,7 @@ const checkWishlistStatus = async () => {
     isInWishlist.value = bookIds.includes(String(props.bookId));
   } catch (error) {
     console.error('检查愿望清单状态失败:', error);
-    showNotification('加载愿望清单失败', 'error');
+    showNotification('Failed to load wishlist', 'error');
   } finally {
     loading.value = false;
   }
@@ -123,7 +123,7 @@ const toggleWishlist = async () => {
 
   const token = localStorage.getItem('token');
   if (!token) {
-    showNotification('请先登录', 'error');
+    showNotification('Please login first', 'error');
     return;
   }
 
@@ -143,7 +143,7 @@ const toggleWishlist = async () => {
 
     // 更新状态
     isInWishlist.value = !isInWishlist.value;
-    showNotification(isInWishlist.value ? '已添加到愿望清单' : '已从愿望清单移除', 'success');
+    showNotification(isInWishlist.value ? 'Added to wishlist' : 'Removed from wishlist', 'success');
 
     // 通知父组件
     emit('update:wishlist', {
@@ -152,7 +152,7 @@ const toggleWishlist = async () => {
     });
   } catch (error) {
     console.error('操作愿望清单失败:', error);
-    showNotification('操作失败，请稍后重试', 'error');
+    showNotification('Operation failed, please try again later', 'error');
   } finally {
     loading.value = false;
   }

@@ -234,10 +234,10 @@ function initializeRegisterForm() {
         const isAgreed = agreeTerms?.checked;
 
         if (submitButton) {
-            submitButton.disabled = !password || 
-                                  !confirmPassword || 
-                                  password !== confirmPassword || 
-                                  checkPasswordStrength(password) < 3 || 
+            submitButton.disabled = !password ||
+                                  !confirmPassword ||
+                                  password !== confirmPassword ||
+                                  checkPasswordStrength(password) < 3 ||
                                   !isAgreed;
         }
     }
@@ -250,7 +250,7 @@ function initializeRegisterForm() {
     // 处理表单提交
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         const formData = {
             email: document.getElementById('email')?.value,
             password: passwordInput?.value,
@@ -308,7 +308,7 @@ async function loadBookDetails() {
     try {
         // 获取完整的书籍信息
         const fullBookInfo = await getBookDetails(bookInfo.bookId);
-        
+
         // 设置基本信息
         document.getElementById('bookCover').src = fullBookInfo.coverUrl;
         document.getElementById('bookTitle').textContent = fullBookInfo.title;
@@ -447,7 +447,7 @@ async function handleWishlist() {
                 })
             });
             icon.classList.replace('ri-heart-line', 'ri-heart-fill');
-            alert('已添加到心愿单');
+            alert('Added to wishlist');
         }
     } catch (error) {
         alert('操作失败，请重试');
@@ -594,7 +594,7 @@ function initializeComments() {
     const submitBtn = commentForm.querySelector('.submit-comment');
     submitBtn.addEventListener('click', () => {
         const comment = commentForm.querySelector('textarea').value;
-        
+
         if (!checkLoginStatus()) {
             alert('请先登录后再发表评论');
             return;
@@ -612,7 +612,7 @@ function initializeComments() {
 
         // 添加新评论到列表
         addNewComment(comment, currentRating);
-        
+
         // 重置表单
         commentForm.querySelector('textarea').value = '';
         currentRating = 0;
