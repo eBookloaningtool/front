@@ -395,7 +395,7 @@ function initializeDetailPageActions() {
 // 处理借阅
 async function handleBorrow() {
     if (!checkLoginStatus()) {
-        alert('请先登录后再进行借阅');
+        alert('Please login first');
         return;
     }
 
@@ -420,7 +420,7 @@ async function handleBorrow() {
 // 处理心愿单
 async function handleWishlist() {
     if (!checkLoginStatus()) {
-        alert('请先登录后再添加到心愿单');
+        alert('please login first');
         return;
     }
 
@@ -596,7 +596,7 @@ function initializeComments() {
         const comment = commentForm.querySelector('textarea').value;
 
         if (!checkLoginStatus()) {
-            alert('请先登录后再发表评论');
+            alert('please login first');
             return;
         }
 
