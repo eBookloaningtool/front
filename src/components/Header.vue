@@ -281,7 +281,7 @@ const handleSearch = () => {
 .user-actions {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 10px;
 }
 
 .auth-buttons {
@@ -318,8 +318,8 @@ const handleSearch = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   color: #333;
   transition: all 0.3s;
@@ -338,13 +338,13 @@ const handleSearch = () => {
 }
 
 .cart-btn i, .wishlist-btn i {
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .cart-counter, .wishlist-counter {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: -2px;
+  right: -2px;
   background-color: #f44336;
   color: white;
   font-size: 10px;
@@ -373,10 +373,10 @@ const handleSearch = () => {
 .user-profile {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
   position: relative;
-  padding: 6px 10px;
+  padding: 5px 8px;
   border-radius: 4px;
 }
 
@@ -436,7 +436,47 @@ const handleSearch = () => {
   }
 
   .header-container {
-    padding: 10px 20px;
+    padding: 10px 15px;
+  }
+
+  .user-actions {
+    gap: 6px;
+  }
+
+  .username {
+    max-width: 70px;
+  }
+
+  .search-container {
+    max-width: 180px;
+  }
+}
+
+/* 在更小的屏幕上进一步优化 */
+@media (max-width: 480px) {
+  .user-actions {
+    gap: 4px;
+  }
+
+  .cart-btn, .wishlist-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .cart-btn i, .wishlist-btn i {
+    font-size: 16px;
+  }
+
+  .user-profile {
+    padding: 4px 6px;
+  }
+
+  .username {
+    max-width: 50px;
+  }
+
+  .search-container {
+    max-width: 150px;
   }
 }
 </style>
