@@ -13,7 +13,7 @@
           <div v-else-if="wishlistItems.length === 0" class="text-center py-8">
             <p class="text-gray-500">您的愿望清单是空的</p>
             <RouterLink
-              to="/books"
+              to="/"
               class="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
               浏览图书馆
