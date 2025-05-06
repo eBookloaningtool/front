@@ -53,6 +53,27 @@
       />
     </div>
   </div>
+
+  <!-- 使用Teleport将模态框传送到body元素 -->
+  <Teleport to="body">
+    <!-- 余额不足提示框 -->
+    <div v-if="showBalanceDialog" class="modal-overlay" @click="showBalanceDialog = false">
+      <div class="modal-content" @click.stop>
+        <button class="close-btn" @click="showBalanceDialog = false">&times;</button>
+        <div class="error-message">
+          <div class="error-icon">
+            <i class="ri-error-warning-line"></i>
+          </div>
+          <h3>Insufficient Balance</h3>
+          <p>Your account balance is insufficient. You need to top up {{ requiredAmount }} to borrow this book</p>
+          <div class="modal-actions">
+            <button class="cancel-btn" @click="showBalanceDialog = false">Cancel</button>
+            <button class="topup-btn" @click="goToTopUp">Top up</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
@@ -80,6 +101,10 @@ const fallbackCover = 'https://source.unsplash.com/collection/1320303/300x450?si
 const isBorrowing = ref(false);
 const loading = ref(false);
 const isInWishlist = ref(false);
+
+// 余额不足模态框相关
+const showBalanceDialog = ref(false);
+const requiredAmount = ref('£0.00');
 
 // 监听登录状态变化
 const checkLoginStatus = () => {
@@ -192,6 +217,12 @@ const getBalance = () => Number(localStorage.getItem('accountBalance') || 0);
 // 保存余额
 const setBalance = (val) => localStorage.setItem('accountBalance', val);
 
+// 跳转到充值页面
+const goToTopUp = () => {
+  router.push({ path: '/user/profile', query: { view: 'TopUp' } });
+  showBalanceDialog.value = false;
+};
+
 // 借阅处理
 const handleBorrow = async (event) => {
   event.stopPropagation();
@@ -210,7 +241,9 @@ const handleBorrow = async (event) => {
 
     // 检查是否是余额不足的响应
     if (result?.state === 'insufficient balance' || result?.message?.includes('insufficient balance')) {
-      showToast('Insufficient balance, please recharge first', 'error');
+      // 更新所需金额并显示模态框
+      requiredAmount.value = `£${result.newPayment || '0.00'}`;
+      showBalanceDialog.value = true;
       return;
     }
 
@@ -433,5 +466,88 @@ onMounted(() => {
 
 .cart-btn-container {
   margin-top: 0;
+}
+
+/* 模态框样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  padding: 25px;
+  width: 90%;
+  max-width: 400px;
+  position: relative;
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #999;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  font-size: 20px;
+  color: #333;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 25px;
+  gap: 10px;
+}
+
+.cancel-btn, .topup-btn {
+  padding: 8px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  border: none;
+}
+
+.cancel-btn {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.topup-btn {
+  background: #4c9fe9;
+  color: white;
+}
+
+.error-message {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.error-icon {
+  width: 50px;
+  height: 50px;
+  background: #fff0f0;
+  color: #ff4d4d;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 15px;
+  font-size: 24px;
 }
 </style>

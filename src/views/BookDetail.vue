@@ -58,13 +58,81 @@
       </div>
 
       <!-- 余额不足提示框 -->
-      <div v-if="showBalanceDialog" class="dialog-overlay">
-        <div class="dialog">
-          <h3>Insufficient Balance</h3>
-          <p>Your account balance is insufficient. You need to top up {{ formatPrice(requiredAmount) }} to borrow this book</p>
-          <div class="dialog-actions">
-            <button @click="goToTopUp">Top up</button>
-            <button @click="showBalanceDialog = false">Cancel</button>
+      <div v-if="showBalanceDialog" class="modal-overlay">
+        <div class="modal-content">
+          <button class="close-btn" @click="showBalanceDialog = false">&times;</button>
+          <div class="error-message">
+            <div class="error-icon">
+              <i class="ri-error-warning-line"></i>
+            </div>
+            <h3>Insufficient Balance</h3>
+            <p>Your account balance is insufficient. You need to top up {{ formatPrice(requiredAmount) }} to borrow this book</p>
+            <div class="modal-actions">
+              <button class="cancel-btn" @click="showBalanceDialog = false">Cancel</button>
+              <button class="topup-btn" @click="goToTopUp">Top up</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 借阅成功提示框 -->
+      <div v-if="showBorrowSuccess" class="modal-overlay">
+        <div class="modal-content">
+          <button class="close-btn" @click="closeBorrowSuccessModal">&times;</button>
+          <div class="success-message">
+            <div class="success-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3>Borrow Successful!</h3>
+            <p>Book has been successfully borrowed</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 需要先借阅提示框 -->
+      <div v-if="showNeedBorrowMessage" class="modal-overlay">
+        <div class="modal-content">
+          <button class="close-btn" @click="closeNeedBorrowModal">&times;</button>
+          <div class="error-message">
+            <div class="error-icon">
+              <i class="ri-information-line"></i>
+            </div>
+            <h3>Borrow Required</h3>
+            <p>You need to borrow this book first before reading it</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 登录提示框 -->
+      <div v-if="showLoginMessage" class="modal-overlay">
+        <div class="modal-content">
+          <button class="close-btn" @click="closeLoginModal">&times;</button>
+          <div class="error-message">
+            <div class="error-icon">
+              <i class="ri-user-line"></i>
+            </div>
+            <h3>Login Required</h3>
+            <p>Please login to {{ loginAction }} the book</p>
+            <div class="modal-actions">
+              <button class="cancel-btn" @click="closeLoginModal">Cancel</button>
+              <button class="confirm-btn" @click="goToLogin">Login</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 错误信息提示框 -->
+      <div v-if="showErrorModal" class="modal-overlay">
+        <div class="modal-content">
+          <button class="close-btn" @click="closeErrorModal">&times;</button>
+          <div class="error-message">
+            <div class="error-icon">
+              <i class="ri-error-warning-line"></i>
+            </div>
+            <h3>Error</h3>
+            <p>{{ errorMessage }}</p>
           </div>
         </div>
       </div>
@@ -95,9 +163,15 @@ const showBalanceDialog = ref(false);
 const requiredAmount = ref(0);
 const borrowCountCache = ref(0); // 缓存借阅数量
 
-const bookId = computed(() => {
-  return route.params.id;
-});
+// 新增模态框控制变量
+const showBorrowSuccess = ref(false);
+const showNeedBorrowMessage = ref(false);
+const showLoginMessage = ref(false);
+const loginAction = ref('');
+
+// 显示错误信息模态框
+const errorMessage = ref('');
+const showErrorModal = ref(false);
 
 onMounted(() => {
   fetchBookDetail();
@@ -231,6 +305,14 @@ function viewAuthorBooks(author) {
 const handleBorrow = async () => {
   isBorrowing.value = true;
   try {
+    // 检查用户是否已登录
+    if (!userStore.isAuthenticated) {
+      loginAction.value = 'borrow';
+      showLoginMessage.value = true;
+      isBorrowing.value = false;
+      return;
+    }
+
     const result = await borrowBook(bookId.value);
     if (result.state === 'success') {
       // 借阅成功，更新借阅计数缓存
@@ -249,47 +331,48 @@ const handleBorrow = async () => {
       localStorage.setItem('borrowedBooks', JSON.stringify(borrowedBooks));
 
       // 显示成功提示
-      alert('Successfully borrowed. Please click Read button to start reading');
+      showBorrowSuccess.value = true;
+      // 3秒后自动关闭窗口
+      setTimeout(() => {
+        showBorrowSuccess.value = false;
+      }, 3000);
     } else if (result.state === 'insufficient balance') {
-      // 余额不足，直接跳转到充值页面
+      // 余额不足，显示充值对话框
       requiredAmount.value = result.newPayment;
-      alert(`Insufficient balance. You need to top up ${formatPrice(result.newPayment)} to borrow this book. Redirecting to top-up page...`);
-      router.push({
-        name: 'TopUp'
-      });
+      showBalanceDialog.value = true;
     } else if (result.state === 'exceed_limit') {
       // 书籍借阅次数已达上限（全局限制）
-      alert('This book has reached the maximum borrow limit (10 times). Not available for borrowing.');
+      showErrorMessage('This book has reached the maximum borrow limit (10 times). Not available for borrowing.');
     } else if (result.state === 'Reach borrow limit') {
       // 用户借阅书籍数量已达上限（用户限制）
-      alert('You have reached the maximum borrow limit (10 books). Please return some books before trying again.');
+      showErrorMessage('You have reached the maximum borrow limit (10 books). Please return some books before trying again.');
     } else if (result.state === 'Borrow failed.') {
       // 处理借阅失败情况，可能是无效书籍ID、库存不足或已借阅
       if (result.InvalidBookIds?.length) {
-        alert('Borrow failed: Invalid book');
+        showErrorMessage('Borrow failed: Invalid book');
       } else if (result.LowStockBookIds?.length) {
-        alert('Borrow failed: Out of stock');
+        showErrorMessage('Borrow failed: Out of stock');
       } else if (result.BorrowedBookIds?.length) {
-        alert('Borrow failed: You have already borrowed this book');
+        showErrorMessage('Borrow failed: You have already borrowed this book');
       } else {
-        alert('Borrow failed: You have already borrowed this book');
+        showErrorMessage('Borrow failed: You have already borrowed this book');
       }
     } else {
       // 其他错误状态
-      alert(`Borrow failed: ${result.message || 'Unknown error'}`);
+      showErrorMessage(`Borrow failed: ${result.message || 'Unknown error'}`);
     }
   } catch (error) {
     console.error('Error borrowing book:', error);
     // 检查是否是网络错误或服务器错误
     if (error.response) {
       // 服务器返回了错误状态码
-      alert(`Borrow request failed: Server returned a ${error.response.status} error`);
+      showErrorMessage(`Borrow request failed: Server returned a ${error.response.status} error`);
     } else if (error.request) {
       // 请求发出但没有收到响应
-      alert('Borrow request failed: Unable to connect to server. Please check your network connection');
+      showErrorMessage('Borrow request failed: Unable to connect to server. Please check your network connection');
     } else {
       // 其他错误
-      alert('Error processing borrow request. Please try again later');
+      showErrorMessage('Error processing borrow request. Please try again later');
     }
   } finally {
     isBorrowing.value = false;
@@ -297,7 +380,7 @@ const handleBorrow = async () => {
 };
 
 const goToTopUp = () => {
-  router.push({ name: 'TopUpPage' });
+  router.push({ path: '/user/profile', query: { view: 'TopUp' } });
   showBalanceDialog.value = false;
 };
 
@@ -327,8 +410,8 @@ const getBorrowCount = () => {
 async function readBook() {
   // 检查用户是否已登录
   if (!userStore.isAuthenticated) {
-    alert('Please login to read the book');
-    router.push({ name: 'Login' });
+    loginAction.value = 'read';
+    showLoginMessage.value = true;
     return;
   }
 
@@ -339,9 +422,13 @@ async function readBook() {
     if (response.state === 'success') {
       // 检查当前书籍是否在借阅列表中
       const isBorrowed = response.data.some(borrow => borrow.bookId === route.params.id);
-      
+
       if (!isBorrowed) {
-        alert('You need to borrow this book first before reading it');
+        showNeedBorrowMessage.value = true;
+        // 3秒后自动关闭窗口
+        setTimeout(() => {
+          showNeedBorrowMessage.value = false;
+        }, 3000);
         return;
       }
 
@@ -349,7 +436,7 @@ async function readBook() {
       const { data } = await axios.post('https://api.borrowbee.wcy.one:61700/api/books/content', {
         bookId: route.params.id,
       });
-      
+
       router.push({
         name: 'Reader',
         query: { url: encodeURIComponent(data.contentURL) },
@@ -361,21 +448,60 @@ async function readBook() {
     console.error(e);
     if (e.response) {
       if (e.response.status === 403) {
-        alert('Your session has expired. Please login again');
-        router.push({ name: 'Login' });
+        showErrorMessage('Your session has expired. Please login again');
+        setTimeout(() => {
+          router.push({ name: 'Login' });
+        }, 3000);
       } else if (e.response.status === 400) {
-        alert('You need to borrow this book first before reading it');
+        showErrorMessage('You need to borrow this book first before reading it');
       } else {
-        alert('Unable to load e-book. Please try again later');
+        showErrorMessage('Unable to load e-book. Please try again later');
       }
     } else {
-      alert('Network error. Please check your connection and try again');
+      showErrorMessage('Network error. Please check your connection and try again');
     }
   }
 }
+
+// 关闭借阅成功模态框
+const closeBorrowSuccessModal = () => {
+  showBorrowSuccess.value = false;
+};
+
+// 关闭需要先借阅模态框
+const closeNeedBorrowModal = () => {
+  showNeedBorrowMessage.value = false;
+};
+
+// 关闭登录模态框
+const closeLoginModal = () => {
+  showLoginMessage.value = false;
+};
+
+// 跳转到登录页面
+const goToLogin = () => {
+  router.push({ name: 'Login' });
+  closeLoginModal();
+};
+
+// 显示错误信息模态框
+const showErrorMessage = (message) => {
+  errorMessage.value = message;
+  showErrorModal.value = true;
+  // 5秒后自动关闭
+  setTimeout(() => {
+    showErrorModal.value = false;
+  }, 5000);
+};
+
+const closeErrorModal = () => {
+  showErrorModal.value = false;
+};
+
+const bookId = computed(() => {
+  return route.params.id;
+});
 </script>
-
-
 
 <style scoped>
 .book-detail-container {
@@ -544,5 +670,119 @@ async function readBook() {
 .book-rating .rating-value {
   color: #666;
   font-size: 14px;
+}
+
+/* 模态框样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  padding: 25px;
+  width: 90%;
+  max-width: 400px;
+  position: relative;
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #999;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  font-size: 20px;
+  color: #333;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 25px;
+  gap: 10px;
+}
+
+.cancel-btn, .confirm-btn, .topup-btn {
+  padding: 8px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  border: none;
+}
+
+.cancel-btn {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.confirm-btn {
+  background: #e9a84c;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.topup-btn {
+  background: #4c9fe9;
+  color: white;
+}
+
+.error-message {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.error-icon {
+  width: 50px;
+  height: 50px;
+  background: #fff0f0;
+  color: #ff4d4d;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 15px;
+  font-size: 24px;
+}
+
+.success-message {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.success-icon {
+  width: 50px;
+  height: 50px;
+  background: #e6f7e6;
+  color: #4caf50;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 15px;
+}
+
+.success-message h3 {
+  color: #4caf50;
+  margin-bottom: 10px;
 }
 </style>
