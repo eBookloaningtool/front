@@ -11,8 +11,8 @@
           </div>
           <div v-else-if="reviews.length === 0" class="text-center py-8">
             <p class="text-gray-500">您还没有发表过评论</p>
-            <RouterLink 
-              to="/books" 
+            <RouterLink
+              to="/"
               class="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
               浏览图书
@@ -36,14 +36,14 @@
                     </div>
                   </div>
                   <div class="flex space-x-2">
-                    <button 
-                      @click="editReview(review.id)" 
+                    <button
+                      @click="editReview(review.id)"
                       class="text-sm text-blue-600 hover:text-blue-800"
                     >
                       编辑
                     </button>
-                    <button 
-                      @click="deleteReview(review.id)" 
+                    <button
+                      @click="deleteReview(review.id)"
                       class="text-sm text-red-600 hover:text-red-800"
                     >
                       删除
@@ -125,4 +125,4 @@ const deleteReview = (reviewId) => {
     // 这里应该有API调用来同步服务器数据
   }
 };
-</script> 
+</script>

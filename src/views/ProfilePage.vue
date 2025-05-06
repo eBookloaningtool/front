@@ -114,7 +114,7 @@
           <div v-else-if="recentBooks.length === 0" class="empty-state">
             <p>You currently have no borrowed books</p>
             <router-link
-              to="/books"
+              to="/"
               class="browse-btn"
             >
               Browse Library
@@ -303,7 +303,7 @@
           <div v-else-if="wishlistItems.length === 0" class="empty-state">
             <p>Your wish list is empty</p>
             <router-link
-              to="/books"
+              to="/"
               class="browse-btn"
             >
               Browse Library
@@ -349,7 +349,7 @@
           <div v-else-if="reviews.length === 0" class="empty-state">
             <p>You haven't posted any reviews yet</p>
             <router-link
-              to="/books"
+              to="/"
               class="browse-btn"
             >
               Browse Books
@@ -396,12 +396,13 @@
           <div v-else>
             <div v-if="completedOrders.length === 0" class="empty-state">
               <p>No payment records</p>
-              <router-link
-                to="/top-up"
+              <button
+                @click="switchView('TopUp')"
                 class="browse-btn"
+                style="border: none"
               >
                 Top Up Now
-              </router-link>
+              </button>
             </div>
 
             <div v-else class="orders-list">
@@ -926,6 +927,9 @@ const handleRemoveFromWishlist = async (bookId) => {
     if (result.state === 'success') {
       wishlistItems.value = wishlistItems.value.filter(item => item.id !== bookId);
       showToast('Removed from wishlist', 'success');
+
+      // 触发自定义事件，通知Header组件更新心愿单数量
+      document.dispatchEvent(new CustomEvent('wishlist-updated'));
     } else {
       throw new Error('Failed to remove');
     }

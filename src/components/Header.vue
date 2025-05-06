@@ -32,8 +32,15 @@
 
       <div class="user-actions">
         <template v-if="isLoggedIn">
-          <router-link to="/cart" class="cart-btn">
-            <i class="ri-shopping-cart-line"></i>
+          <!-- 心愿单按钮 -->
+          <router-link to="/user/profile?view=Wishlist" class="wishlist-btn" :class="{ 'has-items': wishlistItemCount > 0 }">
+            <i :class="wishlistItemCount > 0 ? 'ri-heart-fill' : 'ri-heart-line'"></i>
+            <span v-if="wishlistItemCount > 0" class="wishlist-counter">{{ wishlistItemCount }}</span>
+          </router-link>
+
+          <router-link to="/cart" class="cart-btn" :class="{ 'has-items': cartItemCount > 0 }">
+            <i :class="cartItemCount > 0 ? 'ri-shopping-cart-fill' : 'ri-shopping-cart-line'"></i>
+            <span v-if="cartItemCount > 0" class="cart-counter">{{ cartItemCount }}</span>
           </router-link>
           <div class="user-profile" @click="toggleUserMenu">
             <i class="ri-user-line"></i>
@@ -64,19 +71,96 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/userStore'
+import { cartAPI } from '../services/api'
+import { getWishlist } from '../api/booksApi'
 
 const router = useRouter()
 const userStore = useUserStore()
 const showUserMenu = ref(false)
 const searchQuery = ref('')
+const cartItemCount = ref(0)
+const wishlistItemCount = ref(0)
 
 // 使用computed计算属性获取登录状态
 const isLoggedIn = computed(() => userStore.isAuthenticated)
 const username = computed(() => userStore.userName || 'User')
 
+// 获取购物车商品数量
+const fetchCartItemCount = async () => {
+  if (isLoggedIn.value) {
+    try {
+      const response = await cartAPI.getCart()
+      if (response.data && response.data.bookId && Array.isArray(response.data.bookId)) {
+        cartItemCount.value = response.data.bookId.length
+      } else {
+        // 回退到localStorage
+        try {
+          const localCart = JSON.parse(localStorage.getItem('cartItems') || '[]')
+          cartItemCount.value = localCart.length
+        } catch (err) {
+          console.error('读取本地购物车数据失败:', err)
+          cartItemCount.value = 0
+        }
+      }
+    } catch (err) {
+      console.error('获取购物车数据失败:', err)
+      // 回退到localStorage
+      try {
+        const localCart = JSON.parse(localStorage.getItem('cartItems') || '[]')
+        cartItemCount.value = localCart.length
+      } catch (err) {
+        console.error('读取本地购物车数据失败:', err)
+        cartItemCount.value = 0
+      }
+    }
+  } else {
+    cartItemCount.value = 0
+  }
+}
+
+// 获取愿望清单商品数量
+const fetchWishlistItemCount = async () => {
+  if (isLoggedIn.value) {
+    try {
+      const wishlistData = await getWishlist()
+      if (wishlistData && wishlistData.bookId && Array.isArray(wishlistData.bookId)) {
+        wishlistItemCount.value = wishlistData.bookId.length
+      } else {
+        wishlistItemCount.value = 0
+      }
+    } catch (err) {
+      console.error('获取愿望清单数据失败:', err)
+      wishlistItemCount.value = 0
+    }
+  } else {
+    wishlistItemCount.value = 0
+  }
+}
+
 onMounted(() => {
   // 初始化用户状态
   userStore.initUserState()
+  // 获取购物车数量
+  fetchCartItemCount()
+  // 获取愿望清单数量
+  fetchWishlistItemCount()
+
+  // 监听localStorage变化，更新购物车数量
+  window.addEventListener('storage', event => {
+    if (event.key === 'cartItems') {
+      fetchCartItemCount()
+    }
+  })
+
+  // 自定义事件监听购物车变化
+  document.addEventListener('cart-updated', () => {
+    fetchCartItemCount()
+  })
+
+  // 自定义事件监听愿望清单变化
+  document.addEventListener('wishlist-updated', () => {
+    fetchWishlistItemCount()
+  })
 })
 
 const toggleUserMenu = () => {
@@ -197,7 +281,7 @@ const handleSearch = () => {
 .user-actions {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 10px;
 }
 
 .auth-buttons {
@@ -230,34 +314,69 @@ const handleSearch = () => {
   background: #d89638;
 }
 
-.cart-btn {
+.cart-btn, .wishlist-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   color: #333;
   transition: all 0.3s;
   text-decoration: none;
+  position: relative;
 }
 
-.cart-btn:hover {
+.cart-btn.has-items, .wishlist-btn.has-items {
+  color: #e9a84c;
+  animation: pulse 1s;
+}
+
+.cart-btn:hover, .wishlist-btn:hover {
   background: #f5f5f5;
   color: #e9a84c;
 }
 
-.cart-btn i {
-  font-size: 20px;
+.cart-btn i, .wishlist-btn i {
+  font-size: 18px;
+}
+
+.cart-counter, .wishlist-counter {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background-color: #f44336;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .user-profile {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
   position: relative;
-  padding: 6px 10px;
+  padding: 5px 8px;
   border-radius: 4px;
 }
 
@@ -317,7 +436,47 @@ const handleSearch = () => {
   }
 
   .header-container {
-    padding: 10px 20px;
+    padding: 10px 15px;
+  }
+
+  .user-actions {
+    gap: 6px;
+  }
+
+  .username {
+    max-width: 70px;
+  }
+
+  .search-container {
+    max-width: 180px;
+  }
+}
+
+/* 在更小的屏幕上进一步优化 */
+@media (max-width: 480px) {
+  .user-actions {
+    gap: 4px;
+  }
+
+  .cart-btn, .wishlist-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .cart-btn i, .wishlist-btn i {
+    font-size: 16px;
+  }
+
+  .user-profile {
+    padding: 4px 6px;
+  }
+
+  .username {
+    max-width: 50px;
+  }
+
+  .search-container {
+    max-width: 150px;
   }
 }
 </style>

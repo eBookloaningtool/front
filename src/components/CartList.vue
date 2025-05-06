@@ -108,6 +108,9 @@ const fetchCartItems = async () => {
       // 通知父组件
       emit('update:cartItems', cartItems.value);
       emit('cart-updated', cartItems.value);
+
+      // 触发自定义事件通知Header组件更新购物车图标
+      document.dispatchEvent(new CustomEvent('cart-updated'));
     } else {
       cartItems.value = [];
       // 清空本地存储
@@ -115,6 +118,9 @@ const fetchCartItems = async () => {
       // 通知父组件
       emit('update:cartItems', []);
       emit('cart-updated', []);
+
+      // 触发自定义事件通知Header组件更新购物车图标
+      document.dispatchEvent(new CustomEvent('cart-updated'));
     }
     calculateTotal();
   } catch (err) {
@@ -170,6 +176,8 @@ const handleRemoveItem = async (bookId) => {
     await removeItem(bookId);
     await fetchCartItems();
     showToast('Item removed from cart', 'success');
+    // 触发自定义事件通知Header组件更新购物车图标
+    document.dispatchEvent(new CustomEvent('cart-updated'));
   } catch (err) {
     console.error('移除购物车商品错误:', err);
     showToast('Failed to remove item, please try again', 'error');

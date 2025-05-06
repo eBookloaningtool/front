@@ -35,7 +35,7 @@
               <div v-if="unpaidOrders.length === 0" class="text-center py-10">
                 <p class="text-gray-500">您没有待支付的订单</p>
                 <RouterLink
-                  to="/books"
+                  to="/"
                   class="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
                   浏览图书
