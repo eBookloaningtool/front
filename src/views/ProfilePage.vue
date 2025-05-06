@@ -554,18 +554,6 @@
               <span v-else>Save Changes</span>
             </button>
           </form>
-
-          <!-- Delete Account section -->
-          <div class="delete-account-section">
-            <h3 class="danger-title">Delete Account</h3>
-            <p class="danger-subtitle">Once your account is deleted, all of your data will be permanently removed. This action cannot be undone.</p>
-            <button
-              @click="showDeleteAccountConfirm = true"
-              class="delete-account-btn"
-            >
-              Delete Account
-            </button>
-          </div>
         </div>
       </div>
     </div>

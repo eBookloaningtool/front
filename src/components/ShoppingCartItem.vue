@@ -1,9 +1,13 @@
 <!-- ShoppingCartItem.vue -->
 <template>
   <div class="cart-item">
-    <img :src="item.coverUrl" :alt="item.title" class="book-cover" />
+    <router-link :to="{ path: `/book/${item.bookId}` }" class="book-link">
+      <img :src="item.coverUrl" :alt="item.title" class="book-cover" />
+    </router-link>
     <div class="item-details">
-      <h3>{{ item.title }}</h3>
+      <router-link :to="{ path: `/book/${item.bookId}` }" class="book-title-link">
+        <h3>{{ item.title }}</h3>
+      </router-link>
       <p class="author">{{ item.author }}</p>
       <p class="price">￡{{ item.price }}</p>
     </div>
@@ -42,15 +46,30 @@ const updateQuantity = (newQuantity) => {
   height: 120px;
   object-fit: cover;
   border-radius: 4px;
+  transition: transform 0.2s ease;
+}
+
+.book-link:hover .book-cover {
+  transform: scale(1.05);
 }
 
 .item-details {
   flex: 1;
 }
 
+.book-title-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.book-title-link:hover h3 {
+  color: #e9a84c;
+}
+
 .item-details h3 {
   margin: 0 0 0.5rem 0;
   font-size: 1.1rem;
+  transition: color 0.2s ease;
 }
 
 .author {

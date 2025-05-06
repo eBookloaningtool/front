@@ -3,11 +3,14 @@
     <button
       @click="handleBorrow"
       class="borrow-button"
-      :class="{ 'borrowed': isBorrowed }"
+      :class="{ 'borrowed': isBorrowed, 'borrowing': isBorrowing }"
       :disabled="isLoading || isBorrowed || isBorrowing"
     >
-      <span v-if="isLoading || isBorrowing" class="loading-icon">
+      <span v-if="isLoading" class="loading-icon">
         <i class="fas fa-spinner fa-spin"></i>
+      </span>
+      <span v-else-if="isBorrowing" class="loading-icon">
+        <i class="fas fa-spinner fa-spin"></i> Borrowing...
       </span>
       <span v-else-if="isBorrowed">
         Borrowed (Return date: {{ formattedDueDate }})
@@ -121,11 +124,16 @@ async function handleBorrow() {
   cursor: default;
 }
 
+.borrow-button.borrowing {
+  background-color: #f39c12;
+  cursor: progress;
+  box-shadow: 0 4px 6px rgba(243, 156, 18, 0.2);
+}
+
 .borrow-button:disabled {
-  background-color: #95a5a6;
+  opacity: 0.8;
   cursor: not-allowed;
   transform: none;
-  box-shadow: none;
 }
 
 .loading-icon {

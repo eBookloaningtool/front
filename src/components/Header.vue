@@ -3,16 +3,16 @@
   <header class="header">
     <div class="header-container">
       <div class="logo">
-        <router-link to="/">
+        <router-link to="/" @click="closeUserMenu">
           <h1>BorrowBee</h1>
         </router-link>
       </div>
 
       <nav class="main-nav">
         <ul>
-          <li><router-link to="/">Home</router-link></li>
-          <li><router-link to="/categories">Categories</router-link></li>
-          <li v-if="isLoggedIn"><router-link to="/user/books">My Books</router-link></li>
+          <li><router-link to="/" @click="closeUserMenu">Home</router-link></li>
+          <li><router-link to="/categories" @click="closeUserMenu">Categories</router-link></li>
+          <li v-if="isLoggedIn"><router-link to="/user/books" @click="closeUserMenu">My Books</router-link></li>
         </ul>
       </nav>
 
@@ -33,12 +33,12 @@
       <div class="user-actions">
         <template v-if="isLoggedIn">
           <!-- 心愿单按钮 -->
-          <router-link to="/user/profile?view=Wishlist" class="wishlist-btn" :class="{ 'has-items': wishlistItemCount > 0 }">
+          <router-link to="/user/profile?view=Wishlist" class="wishlist-btn" :class="{ 'has-items': wishlistItemCount > 0 }" @click="closeUserMenu">
             <i :class="wishlistItemCount > 0 ? 'ri-heart-fill' : 'ri-heart-line'"></i>
             <span v-if="wishlistItemCount > 0" class="wishlist-counter">{{ wishlistItemCount }}</span>
           </router-link>
 
-          <router-link to="/cart" class="cart-btn" :class="{ 'has-items': cartItemCount > 0 }">
+          <router-link to="/cart" class="cart-btn" :class="{ 'has-items': cartItemCount > 0 }" @click="closeUserMenu">
             <i :class="cartItemCount > 0 ? 'ri-shopping-cart-fill' : 'ri-shopping-cart-line'"></i>
             <span v-if="cartItemCount > 0" class="cart-counter">{{ cartItemCount }}</span>
           </router-link>
@@ -49,8 +49,8 @@
 
             <div class="user-menu" v-if="showUserMenu">
               <ul>
-                <li><router-link to="/user/profile">Profile</router-link></li>
-                <li><router-link to="/user/books">My Books</router-link></li>
+                <li><router-link to="/user/profile" @click="closeUserMenu">Profile</router-link></li>
+                <li><router-link to="/user/books" @click="closeUserMenu">My Books</router-link></li>
                 <li><a href="#" @click.prevent="logout">Logout</a></li>
               </ul>
             </div>
@@ -58,8 +58,8 @@
         </template>
         <template v-else>
           <div class="auth-buttons">
-            <router-link to="/login" class="login-btn">Login</router-link>
-            <router-link to="/register" class="register-btn">Register</router-link>
+            <router-link to="/login" class="login-btn" @click="closeUserMenu">Login</router-link>
+            <router-link to="/register" class="register-btn" @click="closeUserMenu">Register</router-link>
           </div>
         </template>
       </div>
@@ -68,7 +68,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/userStore'
 import { cartAPI } from '../services/api'
@@ -84,6 +84,16 @@ const wishlistItemCount = ref(0)
 // 使用computed计算属性获取登录状态
 const isLoggedIn = computed(() => userStore.isAuthenticated)
 const username = computed(() => userStore.userName || 'User')
+
+// 创建一个关闭用户菜单的方法
+const closeUserMenu = () => {
+  showUserMenu.value = false
+}
+
+// 监听路由变化，关闭用户菜单
+watch(() => router.currentRoute.value.path, () => {
+  closeUserMenu()
+})
 
 // 获取购物车商品数量
 const fetchCartItemCount = async () => {
@@ -184,6 +194,7 @@ const handleSearch = () => {
       query: { title: searchQuery.value.trim() }
     })
     searchQuery.value = ''
+    closeUserMenu()
   }
 }
 </script>
