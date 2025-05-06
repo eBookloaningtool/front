@@ -87,6 +87,9 @@ const removeFromCart = async (bookId) => {
     // 保存更新后的购物车
     saveCartItems();
     showToast('商品已从购物车中移除', 'success');
+
+    // 触发自定义事件通知Header组件更新购物车图标
+    document.dispatchEvent(new CustomEvent('cart-updated'));
   } catch (err) {
     console.error('从购物车移除失败:', err);
     showToast('从购物车移除失败', 'error');
@@ -98,6 +101,9 @@ const handleCartUpdated = (items) => {
   console.log('购物车已更新:', items);
   cartItems.value = items;
   saveCartItems();
+
+  // 触发自定义事件通知Header组件更新购物车图标
+  document.dispatchEvent(new CustomEvent('cart-updated'));
 };
 
 // 结账功能
@@ -143,6 +149,9 @@ const checkout = async () => {
 
       // 调用API清空服务器购物车
       const clearResult = await cartAPI.clearCart();
+
+      // 触发自定义事件通知Header组件更新购物车图标
+      document.dispatchEvent(new CustomEvent('cart-updated'));
 
       // 显示成功消息
       showToast(`Borrowed successfully! Due date: ${result.dueDate}, Balance: £${result.balance}`, 'success');
@@ -234,6 +243,9 @@ const handleClearCart = async () => {
     // 清空本地购物车数据
     cartItems.value = [];
     localStorage.removeItem('cartItems');
+
+    // 触发自定义事件通知Header组件更新购物车图标
+    document.dispatchEvent(new CustomEvent('cart-updated'));
 
     // 显示成功消息
     showToast('Cart cleared', 'success');

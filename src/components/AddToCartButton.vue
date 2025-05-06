@@ -76,6 +76,9 @@ const handleAddToCart = async (event) => {
 
       updateLocalCart(props.bookId);
 
+      // 触发自定义事件通知Header组件更新购物车图标
+      document.dispatchEvent(new CustomEvent('cart-updated'));
+
       setTimeout(() => {
         showSuccess.value = false;
       }, SUCCESS_RESET_DELAY);
