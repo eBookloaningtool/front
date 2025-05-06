@@ -60,6 +60,12 @@
             <span class="text">Log out</span>
           </a>
         </div>
+        <div class="menu-item">
+          <a href="#" @click.prevent="showDeleteAccountConfirm = true">
+            <span class="icon"><i class="ri-delete-bin-line"></i></span>
+            <span class="text">Delete Account</span>
+          </a>
+        </div>
       </div>
 
       <!-- 右侧内容 -->
@@ -165,9 +171,8 @@
               <div class="status-select">
                 <select v-model="statusFilter" class="select-field">
                   <option value="all">All</option>
-                  <option value="active">Active</option>
+                  <option value="borrowed">Borrowed</option>
                   <option value="returned">Returned</option>
-                  <option value="overdue">Overdue</option>
                 </select>
               </div>
             </div>
@@ -548,6 +553,42 @@
               <span v-else>Save Changes</span>
             </button>
           </form>
+
+          <!-- Delete Account section -->
+          <div class="delete-account-section">
+            <h3 class="danger-title">Delete Account</h3>
+            <p class="danger-subtitle">Once your account is deleted, all of your data will be permanently removed. This action cannot be undone.</p>
+            <button
+              @click="showDeleteAccountConfirm = true"
+              class="delete-account-btn"
+            >
+              Delete Account
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Account Confirmation Modal -->
+    <div v-if="showDeleteAccountConfirm" class="modal-overlay" @click.self="showDeleteAccountConfirm = false">
+      <div class="modal-content">
+        <button class="close-btn" @click="showDeleteAccountConfirm = false">&times;</button>
+        <h3>Confirm Account Deletion</h3>
+        <p>Are you sure you want to delete your account? This action cannot be undone.</p>
+        <div v-if="deleteAccountError" class="error-message">
+          {{ deleteAccountError }}
+        </div>
+        <div class="modal-actions">
+          <button class="cancel-btn" @click="showDeleteAccountConfirm = false">Cancel</button>
+          <button
+            class="delete-btn"
+            :class="{ 'loading': isDeletingAccount }"
+            :disabled="isDeletingAccount"
+            @click="handleDeleteAccount"
+          >
+            <i v-if="isDeletingAccount" class="ri-loader-4-line loading-icon"></i>
+            {{ isDeletingAccount ? 'Deleting...' : 'Confirm Delete' }}
+          </button>
         </div>
       </div>
     </div>
@@ -1046,7 +1087,15 @@ onMounted(() => {
   // 获取用户信息
   fetchUserInfo();
 
-  // 根据路由路径设置初始视图
+  // 检查URL查询参数中是否有view参数
+  const viewParam = route.query.view;
+  if (viewParam) {
+    // 如果有view参数，优先使用它来设置视图
+    switchView(viewParam);
+    return;
+  }
+
+  // 如果没有view参数，则根据路由路径设置初始视图
   const path = route.path;
   if (path === '/user/profile') {
     currentView.value = 'Profile';
@@ -1236,6 +1285,35 @@ const updateUserInfo = async () => {
     updateError.value = error.response?.data?.message || 'An error occurred while updating your information';
   } finally {
     isUpdating.value = false;
+  }
+};
+
+// Delete Account section
+const showDeleteAccountConfirm = ref(false);
+const deleteAccountError = ref('');
+const isDeletingAccount = ref(false);
+
+const handleDeleteAccount = async () => {
+  if (isDeletingAccount.value) return;
+
+  isDeletingAccount.value = true;
+  deleteAccountError.value = '';
+
+  try {
+    const userStore = useUserStore();
+    const result = await userStore.deleteAccount();
+
+    if (result.state === 'success') {
+      showToast('Account deleted successfully', 'success');
+      await logout();
+    } else {
+      throw new Error('Failed to delete account');
+    }
+  } catch (error) {
+    console.error('Delete account error:', error);
+    deleteAccountError.value = error.response?.data?.message || 'An error occurred while deleting your account';
+  } finally {
+    isDeletingAccount.value = false;
   }
 };
 </script>
@@ -2541,6 +2619,117 @@ const updateUserInfo = async () => {
 
 .update-btn:disabled {
   background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Delete Account section */
+.delete-account-section {
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #fff7ed;
+  border-radius: 8px;
+}
+
+.danger-title {
+  font-size: 18px;
+  color: #dc2626;
+  margin-bottom: 10px;
+}
+
+.danger-subtitle {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.delete-account-btn {
+  padding: 10px 20px;
+  background-color: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.delete-account-btn:hover {
+  background-color: #b91c1c;
+}
+
+/* Delete Account Confirmation Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 450px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  padding: 20px;
+  position: relative;
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 25px;
+  gap: 10px;
+}
+
+.cancel-btn {
+  padding: 8px 16px;
+  background-color: #f0f0f0;
+  color: #333;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.delete-btn {
+  padding: 8px 16px;
+  background-color: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.delete-btn:hover {
+  background-color: #b91c1c;
+}
+
+.delete-btn.loading {
+  opacity: 0.7;
   cursor: not-allowed;
 }
 </style>
