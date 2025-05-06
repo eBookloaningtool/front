@@ -5,32 +5,32 @@
       <div class="loading-spinner"></div>
       <p>加载中...</p>
     </div>
-    
+
     <div v-else-if="error" class="error-state">
       <p>{{ error }}</p>
       <button @click="fetchBooks" class="btn-retry">重试</button>
     </div>
-    
+
     <div v-else>
       <div class="history-timeline">
         <div v-for="(group, month) in groupedBooks" :key="month" class="timeline-group">
           <div class="timeline-month">{{ month }}</div>
-          
+
           <div class="timeline-books">
             <div v-for="book in group" :key="book.bookId" class="timeline-item">
               <div class="timeline-dot"></div>
-              
+
               <div class="timeline-content">
                 <div class="book-card">
                   <div class="book-cover">
                     <img :src="book.coverUrl || '/default-book-cover.jpg'" :alt="book.title" class="cover-img" />
                   </div>
-                  
+
                   <div class="book-info">
                     <h3 class="book-title">{{ book.title }}</h3>
                     <p class="book-author">{{ book.author }}</p>
                     <p class="book-publisher">{{ book.publisher }}</p>
-                    
+
                     <div class="book-actions">
                       <router-link :to="'/book/' + book.bookId" class="btn-view">查看详情</router-link>
                       <button @click="addToWishlist(book.bookId)" class="btn-wishlist">
@@ -49,7 +49,10 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, defineProps } from 'vue';
+import { ref, computed, watch, defineProps, onMounted } from 'vue';
+import { getBorrowHistory } from '../api/borrowApi';
+import { useRouter } from 'vue-router';
+import { wishlistAPI } from '../services/api';
 
 const props = defineProps({
   bookIds: {
@@ -61,6 +64,9 @@ const props = defineProps({
 const books = ref([]);
 const loading = ref(false);
 const error = ref(null);
+
+// 路由实例
+const router = useRouter();
 
 // 监听 bookIds 变化
 watch(() => props.bookIds, () => {
@@ -74,46 +80,46 @@ watch(() => props.bookIds, () => {
 // 按月份分组显示
 const groupedBooks = computed(() => {
   const grouped = {};
-  
+
   // 模拟时间数据，实际应该从API获取
   books.value.forEach((book, index) => {
     // 这里应该使用实际的借阅日期，这里只是模拟
     const date = new Date();
     date.setMonth(date.getMonth() - (index % 3)); // 随机分配到最近3个月
-    
+
     const monthKey = date.toLocaleDateString('zh-CN', {
       year: 'numeric',
       month: 'long'
     });
-    
+
     if (!grouped[monthKey]) {
       grouped[monthKey] = [];
     }
-    
+
     grouped[monthKey].push(book);
   });
-  
+
   return grouped;
 });
 
 // 获取书籍详情
 const fetchBooks = async () => {
   if (!props.bookIds || props.bookIds.length === 0) return;
-  
+
   loading.value = true;
   error.value = null;
   books.value = [];
-  
+
   try {
     // 并行获取所有书籍信息
-    const bookPromises = props.bookIds.map(bookId => 
+    const bookPromises = props.bookIds.map(bookId =>
       fetch(`/api/books/get?bookId=${bookId}`)
         .then(response => {
           if (!response.ok) throw new Error(`获取书籍 ${bookId} 失败`);
           return response.json();
         })
     );
-    
+
     const booksData = await Promise.all(bookPromises);
     books.value = booksData;
   } catch (err) {
@@ -126,8 +132,29 @@ const fetchBooks = async () => {
 
 // 添加到愿望清单
 const addToWishlist = async (bookId) => {
-  // 这里实现添加到愿望清单的逻辑
-  console.log(`添加到愿望清单: ${bookId}`);
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      // 未登录情况下处理
+      alert('请先登录');
+      return;
+    }
+
+    // 调用API添加到愿望清单
+    const response = await wishlistAPI.addToWishlist(bookId);
+
+    if (response && response.data && response.data.state === 'success') {
+      // 成功添加
+      console.log(`添加到愿望清单成功: ${bookId}`);
+
+      // 触发自定义事件，通知Header组件更新心愿单数量
+      document.dispatchEvent(new CustomEvent('wishlist-updated'));
+    } else {
+      console.error('添加到愿望清单失败:', response);
+    }
+  } catch (error) {
+    console.error('添加到愿望清单出错:', error);
+  }
 };
 </script>
 
@@ -361,14 +388,14 @@ const addToWishlist = async (bookId) => {
   .book-card {
     flex-direction: column;
   }
-  
+
   .book-cover {
     width: 100%;
     height: 140px;
   }
-  
+
   .timeline-dot {
     top: 70px;
   }
 }
-</style> 
+</style>

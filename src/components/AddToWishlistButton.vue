@@ -145,6 +145,9 @@ const toggleWishlist = async () => {
     isInWishlist.value = !isInWishlist.value;
     showNotification(isInWishlist.value ? 'Added to wishlist' : 'Removed from wishlist', 'success');
 
+    // 触发自定义事件，通知Header组件更新心愿单数量
+    document.dispatchEvent(new CustomEvent('wishlist-updated'));
+
     // 通知父组件
     emit('update:wishlist', {
       bookId: props.bookId,

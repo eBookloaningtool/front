@@ -926,6 +926,9 @@ const handleRemoveFromWishlist = async (bookId) => {
     if (result.state === 'success') {
       wishlistItems.value = wishlistItems.value.filter(item => item.id !== bookId);
       showToast('Removed from wishlist', 'success');
+
+      // 触发自定义事件，通知Header组件更新心愿单数量
+      document.dispatchEvent(new CustomEvent('wishlist-updated'));
     } else {
       throw new Error('Failed to remove');
     }

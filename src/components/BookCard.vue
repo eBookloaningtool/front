@@ -111,11 +111,10 @@ const isAvailable = computed(() => {
 // 心愿单相关函数
 const toggleWishlist = async (event) => {
   event.stopPropagation();
-  if (loading.value) return;
 
   const token = localStorage.getItem('token');
   if (!token) {
-    showToast('请先登录', 'error');
+    showToast('Please login first', 'error');
     return;
   }
 
@@ -137,6 +136,9 @@ const toggleWishlist = async (event) => {
         throw new Error('添加失败');
       }
     }
+
+    // 触发自定义事件，通知Header组件更新心愿单数量
+    document.dispatchEvent(new CustomEvent('wishlist-updated'));
 
     // 通知父组件
     emit('favorite-change', {
