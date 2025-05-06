@@ -963,8 +963,8 @@ const fetchReviews = async () => {
               bookId: response.bookId,
               bookTitle: bookResponse.title || 'Unknown Book',
               rating: response.rating,
-              content: response.comment,
-              createdAt: response.createdAt || new Date().toISOString(),
+              content: response.content,
+              createdAt: response.createDate || new Date().toISOString(),
               username: response.username
             };
           }
