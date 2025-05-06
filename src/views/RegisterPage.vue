@@ -15,7 +15,7 @@ const handleRegistrationSuccess = async (userData) => {
     localStorage.setItem('userName', userData.name);
   }
 
-  // 不自动登录，而是跳转到登录页面
+  // Do not auto-login, redirect to login page instead
   router.push('/login');
 };
 </script>

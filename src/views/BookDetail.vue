@@ -17,7 +17,7 @@
           <div class="book-basic-info">
             <h1 class="book-title">{{ book.title }}</h1>
             <p class="book-author">Author: <a @click="viewAuthorBooks(book.author)">{{ book.author }}</a></p>
-            <p class="book-category">Category: <RouterLink :to="`/category/${book.category}`">{{ book.category }}</RouterLink></p>
+            <p class="book-category">Category: {{ book.category }}</p>
             <p class="book-price">Price: £{{ book.price }}</p>
             <div class="book-rating">
               <div class="stars">
@@ -226,11 +226,6 @@ function goBack() {
 // 添加导航到作者页面功能
 function viewAuthorBooks(author) {
   router.push({ path: '/search', query: { author } });
-}
-
-// 添加导航到分类页面功能
-function viewCategory(category) {
-  router.push({ path: '/category/' + category });
 }
 
 const handleBorrow = async () => {
