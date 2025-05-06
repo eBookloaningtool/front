@@ -8,7 +8,7 @@
           :class="['tab-btn', { active: activeTab === 'borrowed' }]"
           @click="activeTab = 'borrowed'"
         >
-          Borrowed
+          Currently Borrowed
         </button>
         <button
           :class="['tab-btn', { active: activeTab === 'history' }]"

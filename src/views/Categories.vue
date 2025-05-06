@@ -42,7 +42,7 @@
               <h2 class="text-2xl font-bold text-gray-800">{{ selectedCategory }}</h2>
             </div>
             <div class="flex items-center space-x-2">
-              <span class="text-sm text-gray-500">共 {{ categorizedBooks[selectedCategory]?.length || 0 }} 本图书</span>
+              <span class="text-sm text-gray-500">Currently {{ categorizedBooks[selectedCategory]?.length || 0 }} books in total. </span>
             </div>
           </div>
 

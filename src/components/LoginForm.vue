@@ -116,7 +116,7 @@ const handleForgetPassword = async () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(forgetPasswordEmail.value)) {
       forgetPasswordMessage.value = {
-        text: '请输入有效的邮箱地址',
+        text: 'Please enter a valid email address',
         type: 'error'
       };
       return;
@@ -185,11 +185,11 @@ const handleLogin = async () => {
       }, 1000);
     } else {
       // Handle login failure with specific error message
-      errorMessage.value = response.message || '登录失败，请检查邮箱和密码';
+      errorMessage.value = response.message || 'Login failed, please check your email and password';
     }
   } catch (error) {
     console.error('Login error:', error);
-    errorMessage.value = '登录过程中发生错误，请稍后重试';
+    errorMessage.value = 'Login failed, please try again later';
   } finally {
     isSubmitting.value = false;
   }
@@ -271,7 +271,7 @@ const handleLogin = async () => {
       <!-- Login button -->
       <button
         type="submit"
-        class="w-full py-4 px-4 bg-yellow-400 hover:bg-yellow-500 text-white font-medium rounded-lg transition duration-300 text-base"
+        class="login-btn w-full py-4 px-4 text-white font-medium rounded-lg transition-all duration-200 text-base shadow-md hover:shadow-lg"
         :disabled="isSubmitting"
       >
         <span v-if="isSubmitting">Logging in...</span>
@@ -300,7 +300,7 @@ const handleLogin = async () => {
         </div>
 
         <div class="modal-body">
-          <p class="text-gray-600 mb-6 text-base">Please enter your email address and we'll send you a password reset link.</p>
+          <p class="text-gray-600 mb-6 text-base">Please enter your email address and we'll send you a new password.</p>
 
           <!-- Message display -->
           <div v-if="forgetPasswordMessage.text"
@@ -344,13 +344,12 @@ const handleLogin = async () => {
             Cancel
           </button>
           <button
-            class="submit-button bg-yellow-400 hover:bg-yellow-500"
-            style="background-color: #F59E0B !important;"
+            class="submit-button"
             @click="handleForgetPassword"
             :disabled="forgetPasswordSubmitting"
           >
             <span v-if="forgetPasswordSubmitting">Processing...</span>
-            <span v-else>Send Reset Link</span>
+            <span v-else>Send A New Password</span>
           </button>
         </div>
       </div>
@@ -397,6 +396,57 @@ input:focus {
   outline: none;
   border: none;
   box-shadow: none;
+}
+
+/* 登录按钮样式 */
+.login-form-container .login-btn {
+  border: none;
+  position: relative;
+  overflow: hidden;
+  background-color: #fb923c !important; /* Orange-300 with !important */
+  color: white !important;
+}
+
+.login-form-container .login-btn:hover {
+  background-color: #f97316 !important; /* Orange-400 with !important */
+}
+
+.login-form-container .login-btn:active {
+  background-color: #f59e0b !important; /* Orange-500 with !important */
+  transform: scale(0.98);
+}
+
+.login-btn:after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1, 1) translate(-50%);
+  transform-origin: 50% 50%;
+}
+
+.login-btn:focus:not(:active)::after {
+  animation: ripple 0.6s ease-out;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0, 0);
+    opacity: 0.5;
+  }
+  20% {
+    transform: scale(25, 25);
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(40, 40);
+  }
 }
 
 button {
@@ -516,14 +566,22 @@ button:disabled {
   align-items: center;
   justify-content: center;
   height: auto;
+  background-color: #fb923c !important; /* 与登录按钮一致的颜色 */
+}
+
+.submit-button:hover {
+  background-color: #f97316 !important;
+}
+
+.submit-button:active {
+  background-color: #f59e0b !important;
+  transform: scale(0.98);
 }
 
 .submit-button:disabled {
   opacity: 0.7;
-  background-color: #facc15 !important;
   cursor: not-allowed;
 }
-
 
 .message-alert {
   padding: 0.75rem 1rem;

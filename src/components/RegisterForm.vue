@@ -9,13 +9,14 @@ const router = useRouter();
 const name = ref('');
 const email = ref('');
 const password = ref('');
+const confirmPassword = ref('');
 const errorMessage = ref('');
 const isSubmitting = ref(false);
 const registerSuccess = ref(false);
 
 // Simple validation
 const validateForm = () => {
-  if (!name.value || !email.value || !password.value) {
+  if (!name.value || !email.value || !password.value || !confirmPassword.value) {
     errorMessage.value = 'Please fill in all fields';
     return false;
   }
@@ -30,6 +31,12 @@ const validateForm = () => {
   // Password length validation
   if (password.value.length < 6) {
     errorMessage.value = 'Password must be at least 6 characters long';
+    return false;
+  }
+
+  // Password confirmation validation
+  if (password.value !== confirmPassword.value) {
+    errorMessage.value = 'Passwords do not match';
     return false;
   }
 
@@ -78,7 +85,7 @@ const handleSubmit = async () => {
       }, 1000);
     } else {
       // Handle failure
-      errorMessage.value = response.data.message || 'Registration failed, please try again later';
+      errorMessage.value = response.data.message || 'Email has already been registered';
 
       // 检查错误信息是否包含"Email already registered"或"邮箱已注册"
       if (
@@ -174,10 +181,22 @@ const emit = defineEmits(['registration-success']);
         />
       </div>
 
+      <!-- Confirm Password input -->
+      <div class="form-group">
+        <input
+          id="confirmPassword"
+          v-model="confirmPassword"
+          type="password"
+          class="w-full px-6 py-4 bg-gray-100 border-none rounded-lg transition-colors text-base"
+          placeholder="Confirm Password"
+          required
+        />
+      </div>
+
       <!-- Register button -->
       <button
         type="submit"
-        class="w-full py-4 px-4 bg-yellow-400 hover:bg-yellow-500 text-white font-medium rounded-lg transition duration-300 text-base"
+        class="create-account-btn w-full py-4 px-4 text-white font-medium rounded-lg transition-all duration-200 text-base shadow-md hover:shadow-lg"
         :disabled="isSubmitting"
       >
         <span v-if="isSubmitting">Registering...</span>
@@ -245,5 +264,56 @@ button {
 button:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+/* 增加样式优先级 */
+.register-form-container .create-account-btn {
+  border: none;
+  position: relative;
+  overflow: hidden;
+  background-color: #fb923c !important; /* Orange-300 with !important - 更浅的橙色 */
+  color: white !important;
+}
+
+.register-form-container .create-account-btn:hover {
+  background-color: #f97316 !important; /* Orange-400 with !important - 悬停时稍深 */
+}
+
+.register-form-container .create-account-btn:active {
+  background-color: #f59e0b !important; /* Orange-500 with !important - 点击时更深 */
+  transform: scale(0.98);
+}
+
+.create-account-btn:after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1, 1) translate(-50%);
+  transform-origin: 50% 50%;
+}
+
+.create-account-btn:focus:not(:active)::after {
+  animation: ripple 0.6s ease-out;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0, 0);
+    opacity: 0.5;
+  }
+  20% {
+    transform: scale(25, 25);
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(40, 40);
+  }
 }
 </style>
