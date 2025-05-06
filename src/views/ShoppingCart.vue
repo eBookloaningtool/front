@@ -155,7 +155,7 @@ const checkout = async () => {
       // 余额不足
       showToast(`Insufficient balance, need to recharge £${result.newPayment}`, 'error');
       setTimeout(() => {
-        router.push('/user/topup');
+        router.push('/user/profile?view=TopUp');
       }, 1500);
     } else if (result?.state === 'Reach borrow limit') {
       // 达到借阅上限

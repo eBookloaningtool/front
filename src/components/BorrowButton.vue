@@ -24,6 +24,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { borrowBook } from '../api/borrowApi';
+import { useUserStore } from '@/stores/userStore';
+import { useRouter } from 'vue-router';
 
 const props = defineProps({
   book: {
@@ -37,6 +39,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['borrow']);
+const userStore = useUserStore();
+const router = useRouter();
 
 const isLoading = ref(false);
 const isBorrowed = ref(false);
@@ -65,6 +69,13 @@ onMounted(() => {
 
 async function handleBorrow() {
   if (isLoading.value || isBorrowed.value) return;
+
+  // 检查用户是否已登录
+  if (!userStore.isAuthenticated) {
+    alert('Please login to borrow the book');
+    router.push({ name: 'Login' });
+    return;
+  }
 
   // 调用父组件的借阅处理方法
   emit('borrow');

@@ -18,9 +18,9 @@ import { useUserStore } from './stores/userStore'
 const router = useRouter()
 const userStore = useUserStore()
 
-onMounted(() => {
+onMounted(async () => {
   // 初始化用户状态
-  userStore.initUserState()
+  await userStore.initUserState()
 
   // 认证检查
   const publicPages = ['/login', '/register'] // 白名单路由

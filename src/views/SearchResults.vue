@@ -171,7 +171,7 @@ onUnmounted(() => {
   min-height: 100vh;
   display: flex;
   justify-content: center;
-  padding-top: 2rem;
+  padding-top: 5rem;
 }
 
 .container {

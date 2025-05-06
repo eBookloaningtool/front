@@ -79,9 +79,8 @@ import AddToCartButton from '../components/AddToCartButton.vue';
 import BorrowButton from '../components/BorrowButton.vue';
 import axios from 'axios';
 import CommentSection from '../components/CommentSection.vue';
-import { borrowBook } from '@/api/borrowApi';
+import { borrowBook, getBorrowList } from '@/api/borrowApi';
 import { formatPrice } from '@/utils/format';
-import { sendEmailNotification } from '@/utils/emailService';
 import { useUserStore } from '@/stores/userStore';
 
 const route = useRoute();
@@ -110,15 +109,13 @@ async function fetchBookDetail() {
 
   try {
     console.log('开始获取书籍详情，bookId:', bookId.value);
-    const response = await get({
-      url: `/api/books/get?bookId=${bookId.value}`
-    });
+    const response = await axios.get(`/api/books/get?bookId=${bookId.value}`);
     console.log('获取书籍详情响应:', response);
 
-    if (response) {
-      book.value = response;
+    if (response.data) {
+      book.value = response.data;
       console.log('书籍详情数据:', book.value);
-      cacheBookData(response);
+      cacheBookData(response.data);
     } else {
       // 实际API调用
       const response = await fetch(`https://api.borrowbee.wcy.one:61700/api/books/get?bookId=${bookId.value}`, {
@@ -147,8 +144,8 @@ async function fetchBookDetail() {
 
       book.value = bookData;
       cacheBookData(bookData);
-      isLoading.value = false;
     }
+    isLoading.value = false;
   } catch (err) {
     console.error('Error fetching book details:', err);
     error.value = `Unable to load book details: ${err.message}`;
@@ -251,15 +248,6 @@ const handleBorrow = async () => {
       });
       localStorage.setItem('borrowedBooks', JSON.stringify(borrowedBooks));
 
-      // 发送借阅成功邮件
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      sendEmailNotification('borrow', {
-        user: user,
-        book: book.value,
-        borrowDate: new Date().toISOString().split('T')[0],
-        dueDate: result.dueDate
-      }).catch(err => console.error('发送借阅邮件失败:', err));
-
       // 显示成功提示
       alert('Successfully borrowed. Please click Read button to start reading');
     } else if (result.state === 'insufficient balance') {
@@ -340,21 +328,49 @@ async function readBook() {
   // 检查用户是否已登录
   if (!userStore.isAuthenticated) {
     alert('Please login to read the book');
-    router.push({ name: 'Login' }); // 可选：重定向到登录页面
+    router.push({ name: 'Login' });
     return;
   }
 
   try {
-    const { data } = await axios.post('/api/books/content', {
-      bookId: route.params.id,     // 当前详情页的书籍 ID
-    })
-    router.push({
-      name: 'Reader',              // 需在路由表中注册 Reader 页面
-      query: { url: encodeURIComponent(data.contentURL) },
-    })
+    // 获取用户的借阅列表
+    const response = await getBorrowList();
+
+    if (response.state === 'success') {
+      // 检查当前书籍是否在借阅列表中
+      const isBorrowed = response.data.some(borrow => borrow.bookId === route.params.id);
+      
+      if (!isBorrowed) {
+        alert('You need to borrow this book first before reading it');
+        return;
+      }
+
+      // 获取书籍内容
+      const { data } = await axios.post('https://api.borrowbee.wcy.one:61700/api/books/content', {
+        bookId: route.params.id,
+      });
+      
+      router.push({
+        name: 'Reader',
+        query: { url: encodeURIComponent(data.contentURL) },
+      });
+    } else {
+      throw new Error('Failed to get borrow list');
+    }
   } catch (e) {
-    console.error(e)
-    alert('Unable to load e-book. Please try again later')
+    console.error(e);
+    if (e.response) {
+      if (e.response.status === 403) {
+        alert('Your session has expired. Please login again');
+        router.push({ name: 'Login' });
+      } else if (e.response.status === 400) {
+        alert('You need to borrow this book first before reading it');
+      } else {
+        alert('Unable to load e-book. Please try again later');
+      }
+    } else {
+      alert('Network error. Please check your connection and try again');
+    }
   }
 }
 </script>

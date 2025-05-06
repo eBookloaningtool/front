@@ -16,6 +16,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { addToCart } from '../api/cart.ts';
 import { useToast } from '../composables/useToast';
+import { useUserStore } from '@/stores/userStore';
+import { useRouter } from 'vue-router';
 
 const props = defineProps({
   bookId: {
@@ -31,6 +33,8 @@ const props = defineProps({
 const isLoading = ref(false);
 const showSuccess = ref(false);
 const { showToast } = useToast();
+const userStore = useUserStore();
+const router = useRouter();
 const SUCCESS_RESET_DELAY = 3000;
 
 onMounted(() => {
@@ -49,6 +53,12 @@ const handleAddToCart = async (event) => {
   event?.stopPropagation?.();
 
   if (isLoading.value || showSuccess.value) return;
+
+  if (!userStore.isAuthenticated) {
+    showToast('Please login to add items to cart', 'error');
+    router.push({ name: 'Login' });
+    return;
+  }
 
   if (!props.bookId) {
     showToast('Failed to add to cart: Invalid book ID', 'error');
