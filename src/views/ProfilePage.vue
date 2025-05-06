@@ -171,9 +171,8 @@
               <div class="status-select">
                 <select v-model="statusFilter" class="select-field">
                   <option value="all">All</option>
-                  <option value="active">Active</option>
+                  <option value="borrowed">Borrowed</option>
                   <option value="returned">Returned</option>
-                  <option value="overdue">Overdue</option>
                 </select>
               </div>
             </div>

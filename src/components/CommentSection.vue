@@ -183,7 +183,7 @@ const loadComments = async () => {
           content: commentData.content,
           username: commentData.username,
           bookId: commentData.bookId,
-          createdAt: new Date().toISOString()
+          createdAt: commentData.createDate
         }
         console.log('处理后的评论对象:', comment)
         return comment
