@@ -93,6 +93,9 @@ const closeUserMenu = () => {
 // 监听路由变化，关闭用户菜单
 watch(() => router.currentRoute.value.path, () => {
   closeUserMenu()
+  // 在路由变化时重新获取购物车和心愿单数量
+  fetchCartItemCount()
+  fetchWishlistItemCount()
 })
 
 // 获取购物车商品数量
