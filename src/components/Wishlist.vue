@@ -2,13 +2,13 @@
   <div class="wishlist-container">
     <h2 class="text-2xl font-bold text-gray-800 mb-4">My Wishlist</h2>
 
-    <!-- 加载状态 -->
+    <!-- Loading status -->
     <div v-if="loading" class="flex flex-col items-center justify-center py-10">
       <div class="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
       <p class="mt-4 text-gray-600">Loading wishlist...</p>
     </div>
 
-    <!-- 错误状态 -->
+    <!-- Error status -->
     <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
       <p class="text-red-600" v-text="error"></p>
       <button
@@ -19,7 +19,7 @@
       </button>
     </div>
 
-    <!-- 空状态 -->
+    <!-- Empty status -->
     <div v-else-if="books.length === 0" class="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
       <svg class="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
@@ -28,14 +28,14 @@
       <p class="mt-2 text-gray-500">Browse books and add your favorites to your wishlist</p>
     </div>
 
-    <!-- 书籍列表 -->
+    <!-- Book list -->
     <div v-else class="space-y-4">
       <div
         v-for="book in books"
         :key="book.id"
         class="flex items-start p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition duration-200"
       >
-        <!-- 书籍封面 -->
+        <!-- Book cover -->
         <div class="w-24 h-32 flex-shrink-0 mr-4 overflow-hidden rounded">
           <img
             :src="book.coverUrl || '/images/default-cover.jpg'"
@@ -44,7 +44,7 @@
           />
         </div>
 
-        <!-- 书籍信息 -->
+        <!-- Book information -->
         <div class="flex-grow">
           <h3 class="text-lg font-semibold text-gray-800" v-text="book.title"></h3>
           <p class="text-sm text-gray-600" v-text="book.author"></p>
@@ -61,7 +61,7 @@
           </div>
         </div>
 
-        <!-- 操作按钮 -->
+        <!-- Action buttons -->
         <div class="flex flex-col space-y-2">
           <button
             @click="removeFromWishlist(book.id)"
@@ -80,7 +80,7 @@
       </div>
     </div>
 
-    <!-- 操作结果提示 -->
+    <!-- Operation result notification -->
     <div
       v-if="notification.show"
       :class="[
@@ -108,7 +108,7 @@ const notification = ref({
   type: 'success'
 });
 
-// 获取愿望清单
+// Get wishlist
 const fetchWishlist = async () => {
   loading.value = true;
   error.value = null;
@@ -116,20 +116,20 @@ const fetchWishlist = async () => {
   try {
     const response = await wishlistAPI.getWishlist();
     if (response.data && response.data.bookId && Array.isArray(response.data.bookId)) {
-      // 获取书籍详情
+      // Get book details
       await fetchBookDetails(response.data.bookId);
     } else {
       books.value = [];
     }
   } catch (err) {
-    console.error('获取愿望清单失败:', err);
-    error.value = '获取愿望清单失败，请稍后重试';
+    console.error('Failed to get wishlist:', err);
+    error.value = 'Failed to get wishlist, please try again later';
   } finally {
     loading.value = false;
   }
 };
 
-// 获取书籍详情信息
+// Get book details
 const fetchBookDetails = async (bookIds) => {
   if (!bookIds || bookIds.length === 0) {
     books.value = [];
@@ -140,38 +140,38 @@ const fetchBookDetails = async (bookIds) => {
     const response = await bookAPI.getBookDetails(bookIds);
     books.value = response.data;
   } catch (err) {
-    console.error('获取书籍详情失败:', err);
-    error.value = '获取书籍详情失败，请稍后重试';
+    console.error('Failed to get book details:', err);
+    error.value = 'Failed to get book details, please try again later';
   }
 };
 
-// 从愿望清单中移除
+// Remove from wishlist
 const removeFromWishlist = async (bookId) => {
   if (removeLoading.value[bookId]) return;
 
-  // 设置当前书籍的加载状态
+  // Set loading state for current book
   removeLoading.value = { ...removeLoading.value, [bookId]: true };
 
   try {
     await wishlistAPI.removeFromWishlist(bookId);
 
-    // 从列表中移除
+    // Remove from list
     books.value = books.value.filter(book => book.id !== bookId);
 
-    // 显示成功提示
+    // Show success notification
     showNotification('Successfully removed from wishlist', 'success');
   } catch (err) {
     console.error('Failed to remove from wishlist:', err);
     showNotification('Failed to remove from wishlist, please try again', 'error');
   } finally {
-    // 清除加载状态
+    // Clear loading state
     const newRemoveLoading = { ...removeLoading.value };
     delete newRemoveLoading[bookId];
     removeLoading.value = newRemoveLoading;
   }
 };
 
-// 显示通知
+// Show notification
 const showNotification = (message, type = 'success') => {
   notification.value = {
     show: true,
@@ -179,7 +179,7 @@ const showNotification = (message, type = 'success') => {
     type
   };
 
-  // 3秒后自动关闭
+  // Auto close after 3 seconds
   setTimeout(() => {
     notification.value.show = false;
   }, 3000);

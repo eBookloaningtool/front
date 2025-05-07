@@ -1,24 +1,24 @@
 import csv
 import json
 
-# 打开CSV文件并读取数据
-with open('API文档/gutenberg_books.csv', 'r', encoding='utf-8') as csvfile:
-    # 读取并打印头部
+# Open CSV file and read data
+with open('API_Documentation/gutenberg_books.csv', 'r', encoding='utf-8') as csvfile:
+    # Read and print header
     first_line = csvfile.readline().strip()
-    print(f"CSV头部: {first_line}")
+    print(f"CSV header: {first_line}")
     headers = first_line.split(',')
-    print(f"解析的头部: {headers}")
+    print(f"Parsed header: {headers}")
     
-    # 重置文件指针到开始
+    # Reset file pointer to beginning
     csvfile.seek(0)
     
-    # 使用csv模块读取
+    # Use csv module for reading
     reader = csv.reader(csvfile)
-    next(reader)  # 跳过头部
+    next(reader)  # Skip header
     
     books = []
     for row in reader:
-        if len(row) >= 8:  # 确保行有足够的列
+        if len(row) >= 8:  # Make sure row has enough columns
             book = {
                 'id': row[0],
                 'title': row[1],
@@ -31,8 +31,8 @@ with open('API文档/gutenberg_books.csv', 'r', encoding='utf-8') as csvfile:
             }
             books.append(book)
     
-    # 将数据写入JSON文件
+    # Write data to JSON file
     with open('books.json', 'w', encoding='utf-8') as jsonfile:
         json.dump(books, jsonfile, ensure_ascii=False, indent=2)
     
-    print(f'CSV文件已成功转换为JSON格式并保存为books.json，共转换{len(books)}条记录') 
+    print(f'CSV file has been successfully converted to JSON format and saved as books.json, {len(books)} records converted') 

@@ -1,47 +1,47 @@
 import axios from 'axios';
 
-// 用户相关API
+// User related APIs
 export const userAPI = {
-  // 用户注册
+  // User registration
   register: (data) => axios.post('/api/users/register', data),
 
-  // 用户登录
+  // User login
   login: (data) => axios.post('/api/auth/login', data),
 
-  // 用户登出
+  // User logout
   logout: () => axios.post('/api/auth/logout'),
 
-  // 获取用户信息
+  // Get user information
   getUserInfo: () => axios.post('/api/users/info'),
 
-  // 更新用户信息
+  // Update user information
   updateUserInfo: (data) => axios.post('/api/users/update', data),
 
-  // 删除账号
+  // Delete account
   deleteAccount: () => axios.post('/api/users/delete'),
 
-  // 忘记密码
+  // Forgot password
   forgetPassword: (data) => axios.post('/api/auth/forget', data)
 };
 
-// 书籍相关API
+// Book related APIs
 export const bookAPI = {
-  // 获取热门书籍榜单
+  // Get popular books list
   getPopularBooks: () => {
     return axios.get('/api/books/popular');
   },
 
-  // 获取书籍详情
+  // Get book details
   getBookDetail: (bookId) => {
     return axios.get(`/api/books/get?bookId=${bookId}`);
   },
 
-  // 获取书籍内容
+  // Get book content
   getBookContent: (bookId) => {
     return axios.post('/api/books/content', { bookId });
   },
 
-  // 搜索书籍
+  // Search books
   searchBooks: (params) => {
     const { title, author, category } = params;
     const queryParams = new URLSearchParams();
@@ -51,62 +51,62 @@ export const bookAPI = {
     return axios.get(`/api/books/search?${queryParams.toString()}`);
   },
 
-  // 获取所有书籍
+  // Get all books
   getAllBooks: () => {
     return axios.get('/api/books/popular');
   },
 
-  // 获取分类书籍
+  // Get books by category
   getBooksByCategory: (categoryId) => {
     return axios.get(`/api/books?categoryId=${categoryId}`);
   }
 };
 
-// 分类相关API
+// Category related APIs
 export const categoryAPI = {
-  // 获取所有分类
+  // Get all categories
   getAllCategories: () => axios.get('/api/categories/getAll'),
 
-  // 获取分类详情
+  // Get category details
   getCategoryDetail: (categoryId) => axios.get(`/api/categories/${categoryId}`),
 
-  // 获取带书籍的分类
+  // Get categories with books
   getCategoriesWithBooks: () => axios.get('/api/categories/getAll')
 };
 
-// 借阅相关API
+// Borrow related APIs
 export const borrowAPI = {
-  // 借阅书籍
+  // Borrow books
   borrowBooks: (bookIds) => axios.post('/api/borrow', { bookIds }),
 
-  // 归还书籍
+  // Return book
   returnBook: (bookId) => axios.post(`/api/borrow/${bookId}/return`),
 
-  // 续借
+  // Renew book
   renewBook: (bookId) => axios.post(`/api/borrow/${bookId}/renew`),
 
-  // 获取借阅列表
+  // Get borrow list
   getBorrowList: () => axios.get('/api/borrow'),
 
-  // 获取借阅历史
+  // Get borrow history
   getBorrowHistory: () => axios.get('/api/borrow/history')
 };
 
-// 愿望清单相关API
+// Wishlist related APIs
 export const wishlistAPI = {
-  // 添加到愿望清单
+  // Add to wishlist
   addToWishlist: (bookId) => axios.post('/api/wishlist', { bookId }),
 
-  // 从愿望清单移除
+  // Remove from wishlist
   removeFromWishlist: (bookId) => axios.delete(`/api/wishlist/${bookId}`),
 
-  // 获取愿望清单
+  // Get wishlist
   getWishlist: () => axios.get('/api/wishlist')
 };
 
-// 购物车相关API
+// Cart related APIs
 export const cartAPI = {
-  // 添加到购物车
+  // Add to cart
   addToCart: async (bookId) => {
     const response = await axios.post('/api/cart/add', { bookId }, {
       headers: {
@@ -114,7 +114,7 @@ export const cartAPI = {
       }
     });
 
-    // 添加成功后触发自定义事件通知Header组件更新购物车图标
+    // Trigger custom event to notify Header component to update cart icon after successful addition
     if (response.data && response.data.state === 'success') {
       document.dispatchEvent(new CustomEvent('cart-updated'));
     }
@@ -122,73 +122,73 @@ export const cartAPI = {
     return response;
   },
 
-  // 从购物车移除
+  // Remove from cart
   removeFromCart: (bookId) => axios.post('/api/cart/remove', { bookId: Array.isArray(bookId) ? bookId : [bookId] }, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`
     }
   }),
 
-  // 更新购物车商品数量
+  // Update cart item quantity
   updateCartItem: (bookId, quantity) => axios.put(`/api/cart/${bookId}`, { quantity }, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`
     }
   }),
 
-  // 获取购物车
+  // Get cart
   getCart: () => axios.post('/api/cart/get', {}, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`
     }
   }),
 
-  // 清空购物车
+  // Clear cart
   clearCart: async () => {
     try {
-      // 先获取当前购物车中的所有书籍ID
+      // First get all book IDs in the current cart
       const response = await cartAPI.getCart();
       if (response.data && response.data.bookId && response.data.bookId.length > 0) {
-        // 使用remove API删除所有书籍
+        // Use remove API to delete all books
         return await cartAPI.removeFromCart(response.data.bookId);
       }
       return { state: 'success' };
     } catch (error) {
-      console.error('清空购物车失败:', error);
+      console.error('Failed to clear cart:', error);
       throw error;
     }
   }
 };
 
-// 评论相关API
+// Review related APIs
 export const reviewAPI = {
-  // 添加评论
+  // Add review
   addReview: (data) => axios.post('/api/reviews', data),
 
-  // 获取用户评论
+  // Get user reviews
   getUserReviews: () => axios.get('/api/reviews/user'),
 
-  // 获取书籍评论
+  // Get book reviews
   getBookReviews: (bookId) => axios.get(`/api/reviews/book/${bookId}`),
 
-  // 获取评论详情
+  // Get review details
   getReviewDetail: (reviewId) => axios.get(`/api/reviews/${reviewId}`),
 
-  // 删除评论
+  // Delete review
   deleteReview: (reviewId) => axios.delete(`/api/reviews/${reviewId}`)
 };
 
-// 支付相关API
+// Payment related APIs
 export const paymentAPI = {
-  // 创建支付订单
+  // Create payment order
   createOrder: (data) => axios.post('/api/payments/orders', data),
 
-  // 获取订单详情
+  // Get order details
   getOrderDetail: (orderId) => axios.get(`/api/payments/orders/${orderId}`),
 
-  // 支付订单
+  // Pay order
   payOrder: (orderId, data) => axios.post(`/api/payments/orders/${orderId}/pay`, data),
 
-  // 获取支付历史
+  // Get payment history
   getPaymentHistory: () => axios.get('/api/payments/history')
 };

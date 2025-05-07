@@ -3,7 +3,7 @@
     <div class="book-cover">
       <BookCover :src="book.cover || book.coverUrl || fallbackCover" :alt="book.title" />
 
-      <!-- 心愿单按钮 -->
+      <!-- Wishlist button -->
       <div v-if="showWishlist" class="wishlist-button-container" @click.stop>
         <button
           @click="toggleWishlist"
@@ -19,8 +19,8 @@
       </div>
     </div>
 
-    <h3 class="book-title">{{ book.title || '未命名书籍' }}</h3>
-    <p class="book-author">{{ book.author || '未知作者' }}</p>
+    <h3 class="book-title">{{ book.title || 'Untitled book' }}</h3>
+    <p class="book-author">{{ book.author || 'Unknown author' }}</p>
     <p class="book-price">£{{ book.price?.toFixed(2) || '0.00' }}</p>
 
     <div class="book-rating" v-if="showRating">
@@ -55,9 +55,9 @@
     </div>
   </div>
 
-  <!-- 使用Teleport将模态框传送到body元素 -->
+  <!-- Using Teleport to send modal to body element -->
   <Teleport to="body">
-    <!-- 余额不足提示框 -->
+    <!-- Insufficient balance prompt -->
     <div v-if="showBalanceDialog" class="modal-overlay" @click="showBalanceDialog = false">
       <div class="modal-content" @click.stop>
         <button class="close-btn" @click="showBalanceDialog = false">&times;</button>
@@ -75,7 +75,7 @@
       </div>
     </div>
 
-    <!-- 已借阅提示框 -->
+    <!-- Already borrowed prompt -->
     <div v-if="showAlreadyBorrowedDialog" class="modal-overlay" @click="showAlreadyBorrowedDialog = false">
       <div class="modal-content" @click.stop>
         <button class="close-btn" @click="showAlreadyBorrowedDialog = false">&times;</button>
@@ -120,14 +120,14 @@ const fallbackCover = 'https://source.unsplash.com/collection/1320303/300x450?si
 const isBorrowing = ref(false);
 const loading = ref(false);
 const isInWishlist = ref(false);
-const isAlreadyBorrowed = ref(false); // 是否已经借阅过该书
+const isAlreadyBorrowed = ref(false); // Whether the book has already been borrowed
 
-// 余额不足模态框相关
+// Balance modal related
 const showBalanceDialog = ref(false);
 const showAlreadyBorrowedDialog = ref(false);
 const requiredAmount = ref('£0.00');
 
-// 监听登录状态变化
+// Monitor login status changes
 const checkLoginStatus = () => {
   const token = localStorage.getItem('token');
   if (!token) {
@@ -135,30 +135,30 @@ const checkLoginStatus = () => {
   }
 };
 
-// 在组件挂载时添加登录状态监听
+// Add login status listener when component mounts
 onMounted(() => {
   checkLoginStatus();
-  checkBorrowStatus(); // 检查借阅状态
+  checkBorrowStatus(); // Check borrow status
   window.addEventListener('storage', (e) => {
     if (e.key === 'token') {
       checkLoginStatus();
-      checkBorrowStatus(); // 登录状态改变时也检查借阅状态
+      checkBorrowStatus(); // Also check borrow status when login status changes
     }
   });
 });
 
-// 在组件卸载时移除监听
+// Remove listener when component unmounts
 onUnmounted(() => {
   window.removeEventListener('storage', checkLoginStatus);
 });
 
 const isAvailable = computed(() => {
-  // 如果已经借阅，则显示不可用
+  // If already borrowed, show as unavailable
   if (isAlreadyBorrowed.value) return false;
-  return true; // 默认视为可用（如果有库存字段可以做判断）
+  return true; // Default as available (can be determined by inventory field if available)
 });
 
-// 检查用户是否已借阅该书籍
+// Check if user has already borrowed this book
 const checkBorrowStatus = async () => {
   const token = localStorage.getItem('token');
   if (!token) {
@@ -166,9 +166,9 @@ const checkBorrowStatus = async () => {
     return;
   }
 
-  // 检查本地存储中的借阅记录
+  // Check borrowing records in local storage
   try {
-    // 首先检查本地存储
+    // First check local storage
     const borrowedBooks = JSON.parse(localStorage.getItem('borrowedBooks') || '[]');
     const borrowed = borrowedBooks.some(item => String(item.bookId) === String(props.book.bookId));
 
@@ -177,7 +177,7 @@ const checkBorrowStatus = async () => {
       return;
     }
 
-    // 如果本地没有记录，则请求API获取借阅列表
+    // If no record in local storage, request API to get borrow list
     const response = await getBorrowList();
     if (response.state === 'success' && Array.isArray(response.data)) {
       isAlreadyBorrowed.value = response.data.some(
@@ -185,12 +185,12 @@ const checkBorrowStatus = async () => {
       );
     }
   } catch (error) {
-    console.error('检查借阅状态失败:', error);
+    console.error('Failed to check borrow status:', error);
     isAlreadyBorrowed.value = false;
   }
 };
 
-// 心愿单相关函数
+// Wishlist related functions
 const toggleWishlist = async (event) => {
   event.stopPropagation();
 
@@ -200,7 +200,7 @@ const toggleWishlist = async (event) => {
     return;
   }
 
-  // 检查是否已借阅该书籍
+  // Check if already borrowed this book
   if (isAlreadyBorrowed.value) {
     showToast('You have already borrowed this book', 'warning');
     return;
@@ -219,29 +219,29 @@ const toggleWishlist = async (event) => {
         showToast('Added to wishlist', 'success');
       } else if (response.state === ' exist.') {
         showToast('This book is already in your wishlist', 'info');
-        isInWishlist.value = false; // 保持非激活状态
+        isInWishlist.value = false; // Keep non-activated state
       } else {
-        throw new Error('添加失败');
+        throw new Error('Adding failed');
       }
     }
 
-    // 触发自定义事件，通知Header组件更新心愿单数量
+    // Trigger custom event to notify Header component to update wishlist count
     document.dispatchEvent(new CustomEvent('wishlist-updated'));
 
-    // 通知父组件
+    // Notify parent component
     emit('favorite-change', {
       bookId: props.book.bookId,
       isFavorite: isInWishlist.value
     });
   } catch (error) {
-    console.error('操作心愿单失败:', error);
+    console.error('Operation failed:', error);
     showToast('Operation failed, please try again later', 'error');
   } finally {
     loading.value = false;
   }
 };
 
-// 检查心愿单状态
+// Check wishlist status
 const checkWishlistStatus = async () => {
   const token = localStorage.getItem('token');
   if (!token) return;
@@ -251,11 +251,11 @@ const checkWishlistStatus = async () => {
     const bookIds = response?.bookId?.map(id => String(id)) || [];
     isInWishlist.value = bookIds.includes(String(props.book.bookId));
   } catch (error) {
-    console.error('检查心愿单状态失败:', error);
+    console.error('Failed to check wishlist status:', error);
   }
 };
 
-// 跳转到书籍详情
+// Navigate to book detail
 const navigateToDetail = () => {
   try {
     if (props.book?.bookId) {
@@ -270,29 +270,29 @@ const navigateToDetail = () => {
     }
     router.push(`/book/${props.book.bookId}`);
   } catch (error) {
-    console.error('跳转书籍详情失败:', error);
+    console.error('Failed to navigate to book detail:', error);
     showToast('Page navigation failed, please try again later', 'error');
   }
 };
 
-// 跳转到我的图书页面
+// Navigate to my books page
 const goToMyBooks = () => {
   router.push('/user/books');
   showAlreadyBorrowedDialog.value = false;
 };
 
-// 读取余额
+// Read balance
 const getBalance = () => Number(localStorage.getItem('accountBalance') || 0);
-// 保存余额
+// Save balance
 const setBalance = (val) => localStorage.setItem('accountBalance', val);
 
-// 跳转到充值页面
+// Navigate to top up page
 const goToTopUp = () => {
   router.push({ path: '/user/profile', query: { view: 'TopUp' } });
   showBalanceDialog.value = false;
 };
 
-// 借阅处理
+// Borrow handling
 const handleBorrow = async (event) => {
   event.stopPropagation();
 
@@ -302,7 +302,7 @@ const handleBorrow = async (event) => {
     return;
   }
 
-  // 如果已经借阅了，显示对应的提示框
+  // If already borrowed, show corresponding prompt
   if (isAlreadyBorrowed.value) {
     showAlreadyBorrowedDialog.value = true;
     return;
@@ -314,20 +314,20 @@ const handleBorrow = async (event) => {
   try {
     const result = await borrowBook(props.book.bookId);
 
-    // 检查是否是余额不足的响应
+    // Check if it's a response of insufficient balance
     if (result?.state === 'insufficient balance' || result?.message?.includes('insufficient balance')) {
-      // 更新所需金额并显示模态框
+      // Update required amount and show modal
       requiredAmount.value = `£${result.newPayment || '0.00'}`;
       showBalanceDialog.value = true;
       return;
     }
 
-    // 处理其他响应状态
+    // Handle other response status
     if (result.state === 'success') {
       saveBorrowedBook(result.dueDate);
       setBalance(result.balance);
       showToast('Borrowed successfully, go to My Books to view', 'success');
-      isAlreadyBorrowed.value = true; // 更新借阅状态
+      isAlreadyBorrowed.value = true; // Update borrow status
     } else if (result.state === 'Reach borrow limit') {
       showToast('Reached borrowing limit', 'error');
     } else if (result.state === 'Borrow failed.') {
@@ -338,8 +338,8 @@ const handleBorrow = async (event) => {
         errorMessage += 'Out of stock';
       } else if (result.BorrowedBookIds?.includes(props.book.bookId)) {
         errorMessage += 'You have already borrowed this book';
-        isAlreadyBorrowed.value = true; // 更新借阅状态
-        showAlreadyBorrowedDialog.value = true; // 显示已借阅提示框
+        isAlreadyBorrowed.value = true; // Update borrow status
+        showAlreadyBorrowedDialog.value = true; // Show already borrowed prompt
         return;
       }
       showToast(errorMessage, 'error');
@@ -347,14 +347,14 @@ const handleBorrow = async (event) => {
       showToast(result.message || 'Borrowing failed, please try again later', 'error');
     }
   } catch (error) {
-    // 这里只处理真正的异常情况
+    // Here only handle true exceptions
     showToast('Request exception, please try again later', 'error');
   } finally {
     isBorrowing.value = false;
   }
 };
 
-// 保存借阅到本地
+// Save borrowed book to local storage
 const saveBorrowedBook = (dueDate) => {
   const borrowedBooks = JSON.parse(localStorage.getItem('borrowedBooks') || '[]');
   borrowedBooks.push({
@@ -368,7 +368,7 @@ const saveBorrowedBook = (dueDate) => {
   localStorage.setItem('borrowedBooks', JSON.stringify(borrowedBooks));
 };
 
-// 组件挂载时检查心愿单状态
+// Check wishlist status when component mounts
 onMounted(() => {
   checkWishlistStatus();
 });
@@ -403,7 +403,7 @@ onMounted(() => {
   transform: scale(1.05);
 }
 
-/* 心愿单按钮容器样式 */
+/* Wishlist button container style */
 .wishlist-button-container {
   position: absolute;
   top: 8px;
@@ -411,7 +411,7 @@ onMounted(() => {
   z-index: 10;
 }
 
-/* 心愿单按钮样式 */
+/* Wishlist button style */
 .wishlist-btn {
   width: 32px;
   height: 32px;
@@ -552,7 +552,7 @@ onMounted(() => {
   margin-top: 0;
 }
 
-/* 模态框样式 */
+/* Modal style */
 .modal-overlay {
   position: fixed;
   top: 0;

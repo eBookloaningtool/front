@@ -57,7 +57,7 @@
         </div>
       </div>
 
-      <!-- 余额不足提示框 -->
+      <!-- Balance Insufficient Dialog -->
       <div v-if="showBalanceDialog" class="modal-overlay">
         <div class="modal-content">
           <button class="close-btn" @click="showBalanceDialog = false">&times;</button>
@@ -75,7 +75,7 @@
         </div>
       </div>
 
-      <!-- 借阅成功提示框 -->
+      <!-- Borrow Success Dialog -->
       <div v-if="showBorrowSuccess" class="modal-overlay">
         <div class="modal-content">
           <button class="close-btn" @click="closeBorrowSuccessModal">&times;</button>
@@ -91,7 +91,7 @@
         </div>
       </div>
 
-      <!-- 需要先借阅提示框 -->
+      <!-- Need To Borrow First Dialog -->
       <div v-if="showNeedBorrowMessage" class="modal-overlay">
         <div class="modal-content">
           <button class="close-btn" @click="closeNeedBorrowModal">&times;</button>
@@ -105,7 +105,7 @@
         </div>
       </div>
 
-      <!-- 登录提示框 -->
+      <!-- Login Required Dialog -->
       <div v-if="showLoginMessage" class="modal-overlay">
         <div class="modal-content login-modal-content">
           <button class="close-btn" @click="closeLoginModal">&times;</button>
@@ -123,7 +123,7 @@
         </div>
       </div>
 
-      <!-- 错误信息提示框 -->
+      <!-- Error Message Dialog -->
       <div v-if="showErrorModal" class="modal-overlay">
         <div class="modal-content">
           <button class="close-btn" @click="closeErrorModal">&times;</button>
@@ -162,15 +162,15 @@ const defaultCover = 'https://source.unsplash.com/collection/1320303/300x450?sig
 const isBorrowing = ref(false);
 const showBalanceDialog = ref(false);
 const requiredAmount = ref(0);
-const borrowCountCache = ref(0); // 缓存借阅数量
+const borrowCountCache = ref(0); // Cache borrow count
 
-// 新增模态框控制变量
+// Modal control variables
 const showBorrowSuccess = ref(false);
 const showNeedBorrowMessage = ref(false);
 const showLoginMessage = ref(false);
 const loginAction = ref('');
 
-// 显示错误信息模态框
+// Display error message modal
 const errorMessage = ref('');
 const showErrorModal = ref(false);
 
@@ -183,16 +183,16 @@ async function fetchBookDetail() {
   error.value = null;
 
   try {
-    console.log('开始获取书籍详情，bookId:', bookId.value);
+    console.log('Starting to fetch book details, bookId:', bookId.value);
     const response = await axios.get(`/api/books/get?bookId=${bookId.value}`);
-    console.log('获取书籍详情响应:', response);
+    console.log('Book details response:', response);
 
     if (response.data) {
       book.value = response.data;
-      console.log('书籍详情数据:', book.value);
+      console.log('Book details data:', book.value);
       cacheBookData(response.data);
     } else {
-      // 实际API调用
+      // Actual API call
       const response = await fetch(`https://api.borrowbee.wcy.one:61700/api/books/get?bookId=${bookId.value}`, {
         headers: {
           'Accept': 'application/json',
@@ -204,7 +204,8 @@ async function fetchBookDetail() {
         throw new Error(`Failed to get book details: ${response.status} ${response.statusText}`);
       }
 
-      // 检查响应类型
+
+      // Check response type
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         throw new Error('Server returned a non-JSON response');
@@ -212,7 +213,7 @@ async function fetchBookDetail() {
 
       const bookData = await response.json();
 
-      // 验证返回的数据结构
+      // Validate returned data structure
       if (!bookData || typeof bookData !== 'object') {
         throw new Error('Returned data format is incorrect');
       }
@@ -228,7 +229,7 @@ async function fetchBookDetail() {
   }
 }
 
-// 缓存书籍数据到localStorage
+// Cache book data to localStorage
 function cacheBookData(bookData) {
   try {
     if (!bookData) {
@@ -236,7 +237,7 @@ function cacheBookData(bookData) {
       return;
     }
 
-    // 确保bookId存在，可能来自bookId或id字段
+    // Ensure bookId exists, possibly from bookId or id field
     const bookId = bookData.bookId || bookData.id || route.params.id;
 
     if (!bookId) {
@@ -244,27 +245,27 @@ function cacheBookData(bookData) {
       return;
     }
 
-    // 确保所有必要字段存在
+    // Ensure all necessary fields exist
     const bookCache = {
-      bookId: bookId, // 确保这里一定有bookId
-      id: bookId,     // 同时存储id，以适应不同组件的需求
+      bookId: bookId, // Ensure bookId is always present
+      id: bookId,     // Store id for potential use in different components
       title: bookData.title || 'Unknown book',
       author: bookData.author || 'Unknown author',
       price: bookData.price || 0,
       coverUrl: bookData.coverUrl || bookData.cover || defaultCover
     };
 
-    // 存储到localStorage
+    // Store to localStorage
     const cacheKey = `book_${bookId}`;
     localStorage.setItem(cacheKey, JSON.stringify(bookCache));
     console.log('Book data cached:', bookId, bookCache);
 
-    // 同步更新本地购物车中可能存在的相同书籍数据
+    // Sync update of book information in localStorage for any existing cart items
     try {
       const cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
       let updated = false;
 
-      // 更新购物车中相同ID的书籍信息
+      // Update cart items with new book information
       for (let i = 0; i < cartItems.length; i++) {
         if (cartItems[i].bookId === bookId || cartItems[i].id === bookId) {
           cartItems[i] = { ...cartItems[i], ...bookCache };
@@ -272,7 +273,7 @@ function cacheBookData(bookData) {
         }
       }
 
-      // 如果有更新，保存回localStorage
+      // If there was an update, save back to localStorage
       if (updated) {
         localStorage.setItem('cartItems', JSON.stringify(cartItems));
         console.log('Updated book information in cart:', bookId);
@@ -293,12 +294,12 @@ function handleImageError(event) {
   event.target.src = defaultCover;
 }
 
-// 添加返回功能
+// Add back functionality
 function goBack() {
   router.back();
 }
 
-// 添加导航到作者页面功能
+// Add navigation to author page functionality
 function viewAuthorBooks(author) {
   router.push({ path: '/search', query: { author } });
 }
@@ -306,7 +307,7 @@ function viewAuthorBooks(author) {
 const handleBorrow = async () => {
   isBorrowing.value = true;
   try {
-    // 检查用户是否已登录
+    // Check if user is logged in
     if (!userStore.isAuthenticated) {
       loginAction.value = 'borrow';
       showLoginMessage.value = true;
@@ -316,50 +317,50 @@ const handleBorrow = async () => {
 
     const result = await borrowBook(bookId.value);
     if (result.state === 'success') {
-      // 借阅成功，更新借阅计数缓存
+      // Borrow successful, update borrow count cache
       borrowCountCache.value = Math.min(10, (borrowCountCache.value || 0) + 1);
 
-      // 借阅成功，保存借阅信息到localStorage
+      // Borrow successful, save borrow information to localStorage
       const borrowedBooks = JSON.parse(localStorage.getItem('borrowedBooks') || '[]');
       borrowedBooks.push({
         bookId: bookId.value,
         title: book.value.title,
         cover: book.value.coverUrl || book.value.cover,
         author: book.value.author,
-        dueDate: result.dueDate, // 服务器返回的到期日期（30天后）
-        borrowDate: new Date().toISOString().split('T')[0] // 当前日期
+        dueDate: result.dueDate, // Server returned due date (30 days from now)
+        borrowDate: new Date().toISOString().split('T')[0] // Current date
       });
       localStorage.setItem('borrowedBooks', JSON.stringify(borrowedBooks));
 
-      // 从心愿单中移除当前书籍
+      // Remove current book from wishlist
       try {
         await removeFromWishlist(bookId.value);
-        console.log('已从心愿单中移除:', bookId.value);
+        console.log('Removed from wishlist:', bookId.value);
       } catch (wishlistError) {
-        console.error('从心愿单移除失败:', wishlistError);
+        console.error('Failed to remove from wishlist:', wishlistError);
       } finally {
-        // 无论移除是否成功，都触发wishlist-updated事件更新心愿单数量
+        // Trigger wishlist-updated event to update wishlist count
         document.dispatchEvent(new CustomEvent('wishlist-updated'));
       }
 
-      // 显示成功提示
+      // Show success notification
       showBorrowSuccess.value = true;
-      // 3秒后自动关闭窗口
+      // Close window after 3 seconds
       setTimeout(() => {
         showBorrowSuccess.value = false;
       }, 3000);
     } else if (result.state === 'insufficient balance') {
-      // 余额不足，显示充值对话框
+      // Insufficient balance, show top-up dialog
       requiredAmount.value = result.newPayment;
       showBalanceDialog.value = true;
     } else if (result.state === 'exceed_limit') {
-      // 书籍借阅次数已达上限（全局限制）
+      // Book borrow count has reached the maximum (global limit)
       showErrorMessage('This book has reached the maximum borrow limit (10 times). Not available for borrowing.');
     } else if (result.state === 'Reach borrow limit') {
-      // 用户借阅书籍数量已达上限（用户限制）
+      // User has reached the maximum borrow limit (user limit)
       showErrorMessage('You have reached the maximum borrow limit (10 books). Please return some books before trying again.');
     } else if (result.state === 'Borrow failed.') {
-      // 处理借阅失败情况，可能是无效书籍ID、库存不足或已借阅
+      // Handle borrow failure, possibly invalid book ID, out of stock, or already borrowed
       if (result.InvalidBookIds?.length) {
         showErrorMessage('Borrow failed: Invalid book');
       } else if (result.LowStockBookIds?.length) {
@@ -370,20 +371,20 @@ const handleBorrow = async () => {
         showErrorMessage('Borrow failed: You have already borrowed this book');
       }
     } else {
-      // 其他错误状态
+      // Other error status
       showErrorMessage(`Borrow failed: ${result.message || 'Unknown error'}`);
     }
   } catch (error) {
     console.error('Error borrowing book:', error);
-    // 检查是否是网络错误或服务器错误
+    // Check if it's a network error or server error
     if (error.response) {
-      // 服务器返回了错误状态码
+      // Server returned an error status code
       showErrorMessage(`Borrow request failed: Server returned a ${error.response.status} error`);
     } else if (error.request) {
-      // 请求发出但没有收到响应
+      // Request sent but no response received
       showErrorMessage('Borrow request failed: Unable to connect to server. Please check your network connection');
     } else {
-      // 其他错误
+      // Other error
       showErrorMessage('Error processing borrow request. Please try again later');
     }
   } finally {
@@ -396,31 +397,31 @@ const goToTopUp = () => {
   showBalanceDialog.value = false;
 };
 
-// 获取当前书籍已借阅数量
+// Get current book borrowed count
 const getBorrowCount = () => {
-  // 优先使用缓存的值
+  // Prefer cached value
   if (borrowCountCache.value > 0) {
     return borrowCountCache.value;
   }
 
-  // 在真实环境中，这个数据应该从API获取
-  // 这里从mockData获取或使用默认值
+  // In a real environment, this data should come from API
+  // Here from mockData or use default value
   if (window.mockData && window.mockData.bookBorrowCount && window.mockData.bookBorrowCount[bookId.value]) {
     borrowCountCache.value = window.mockData.bookBorrowCount[bookId.value];
     return borrowCountCache.value;
   }
 
-  // 如果没有数据，根据availableCopies和totalCopies计算
+  // If no data, calculate from availableCopies and totalCopies
   if (book.value && book.value.availableCopies !== undefined && book.value.totalCopies !== undefined) {
     borrowCountCache.value = book.value.totalCopies - book.value.availableCopies;
     return borrowCountCache.value;
   }
 
-  return 0; // 默认值
+  return 0; // Default value
 };
 
 async function readBook() {
-  // 检查用户是否已登录
+  // Check if user is logged in
   if (!userStore.isAuthenticated) {
     loginAction.value = 'read';
     showLoginMessage.value = true;
@@ -428,23 +429,23 @@ async function readBook() {
   }
 
   try {
-    // 获取用户的借阅列表
+    // Get user's borrow list
     const response = await getBorrowList();
 
     if (response.state === 'success') {
-      // 检查当前书籍是否在借阅列表中
+      // Check if current book is in borrow list
       const isBorrowed = response.data.some(borrow => borrow.bookId === route.params.id);
 
       if (!isBorrowed) {
         showNeedBorrowMessage.value = true;
-        // 3秒后自动关闭窗口
+        // Close window after 3 seconds
         setTimeout(() => {
           showNeedBorrowMessage.value = false;
         }, 3000);
         return;
       }
 
-      // 获取书籍内容
+      // Get book content
       const { data } = await axios.post('https://api.borrowbee.wcy.one:61700/api/books/content', {
         bookId: route.params.id,
       });
@@ -475,32 +476,32 @@ async function readBook() {
   }
 }
 
-// 关闭借阅成功模态框
+// Close borrow success modal
 const closeBorrowSuccessModal = () => {
   showBorrowSuccess.value = false;
 };
 
-// 关闭需要先借阅模态框
+// Close need to borrow first modal
 const closeNeedBorrowModal = () => {
   showNeedBorrowMessage.value = false;
 };
 
-// 关闭登录模态框
+// Close login modal
 const closeLoginModal = () => {
   showLoginMessage.value = false;
 };
 
-// 跳转到登录页面
+// Navigate to login page
 const goToLogin = () => {
   router.push({ name: 'Login' });
   closeLoginModal();
 };
 
-// 显示错误信息模态框
+// Show error message modal
 const showErrorMessage = (message) => {
   errorMessage.value = message;
   showErrorModal.value = true;
-  // 5秒后自动关闭
+  // Close after 5 seconds
   setTimeout(() => {
     showErrorModal.value = false;
   }, 5000);
@@ -510,7 +511,7 @@ const closeErrorModal = () => {
   showErrorModal.value = false;
 };
 
-// 处理登录需要事件
+// Handle login required event
 const handleLoginRequired = (action) => {
   loginAction.value = action;
   showLoginMessage.value = true;
@@ -690,7 +691,7 @@ const bookId = computed(() => {
   font-size: 14px;
 }
 
-/* 模态框样式 */
+/* Modal styles */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -804,7 +805,7 @@ const bookId = computed(() => {
   margin-bottom: 10px;
 }
 
-/* 登录提示框样式更新 */
+/* Login required dialog styles update */
 .login-modal-content {
   background: white;
   text-align: center;
