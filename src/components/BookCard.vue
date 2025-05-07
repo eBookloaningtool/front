@@ -36,12 +36,13 @@
     <div class="book-actions">
       <button
         class="borrow-btn"
-        :class="{ 'not-available': !isAvailable, 'loading': isBorrowing }"
-        :disabled="!isAvailable || isBorrowing"
+        :class="{ 'not-available': !isAvailable || isAlreadyBorrowed, 'already-borrowed': isAlreadyBorrowed, 'loading': isBorrowing }"
+        :disabled="!isAvailable || isBorrowing || isAlreadyBorrowed"
         @click.stop="handleBorrow"
       >
         <i v-if="isBorrowing" class="ri-loader-4-line loading-icon"></i>
-        {{ isAvailable ? (isBorrowing ? 'Borrowing...' : 'Borrow') : 'Not Available' }}
+        <i v-else-if="isAlreadyBorrowed" class="ri-book-mark-fill"></i>
+        {{ isAlreadyBorrowed ? 'Already Borrowed' : isAvailable ? (isBorrowing ? 'Borrowing...' : 'Borrow') : 'Not Available' }}
       </button>
 
       <AddToCartButton
@@ -73,6 +74,24 @@
         </div>
       </div>
     </div>
+
+    <!-- 已借阅提示框 -->
+    <div v-if="showAlreadyBorrowedDialog" class="modal-overlay" @click="showAlreadyBorrowedDialog = false">
+      <div class="modal-content" @click.stop>
+        <button class="close-btn" @click="showAlreadyBorrowedDialog = false">&times;</button>
+        <div class="info-message">
+          <div class="info-icon">
+            <i class="ri-information-line"></i>
+          </div>
+          <h3>Already Borrowed</h3>
+          <p>You have already borrowed this book. You can access it from your borrowing list.</p>
+          <div class="modal-actions">
+            <button class="cancel-btn" @click="showAlreadyBorrowedDialog = false">Close</button>
+            <button class="view-btn" @click="goToMyBooks">View My Books</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </Teleport>
 </template>
 
@@ -81,7 +100,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import AddToCartButton from './AddToCartButton.vue';
 import BookCover from './BookCover.vue';
-import { borrowBook } from '../api/borrowApi.ts';
+import { borrowBook, getBorrowList } from '../api/borrowApi.ts';
 import { useToast } from '../composables/useToast';
 import { getWishlist, addToWishlist, removeFromWishlist } from '../api/wishlist';
 
@@ -101,9 +120,11 @@ const fallbackCover = 'https://source.unsplash.com/collection/1320303/300x450?si
 const isBorrowing = ref(false);
 const loading = ref(false);
 const isInWishlist = ref(false);
+const isAlreadyBorrowed = ref(false); // 是否已经借阅过该书
 
 // 余额不足模态框相关
 const showBalanceDialog = ref(false);
+const showAlreadyBorrowedDialog = ref(false);
 const requiredAmount = ref('£0.00');
 
 // 监听登录状态变化
@@ -117,9 +138,11 @@ const checkLoginStatus = () => {
 // 在组件挂载时添加登录状态监听
 onMounted(() => {
   checkLoginStatus();
+  checkBorrowStatus(); // 检查借阅状态
   window.addEventListener('storage', (e) => {
     if (e.key === 'token') {
       checkLoginStatus();
+      checkBorrowStatus(); // 登录状态改变时也检查借阅状态
     }
   });
 });
@@ -130,8 +153,42 @@ onUnmounted(() => {
 });
 
 const isAvailable = computed(() => {
+  // 如果已经借阅，则显示不可用
+  if (isAlreadyBorrowed.value) return false;
   return true; // 默认视为可用（如果有库存字段可以做判断）
 });
+
+// 检查用户是否已借阅该书籍
+const checkBorrowStatus = async () => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    isAlreadyBorrowed.value = false;
+    return;
+  }
+
+  // 检查本地存储中的借阅记录
+  try {
+    // 首先检查本地存储
+    const borrowedBooks = JSON.parse(localStorage.getItem('borrowedBooks') || '[]');
+    const borrowed = borrowedBooks.some(item => String(item.bookId) === String(props.book.bookId));
+
+    if (borrowed) {
+      isAlreadyBorrowed.value = true;
+      return;
+    }
+
+    // 如果本地没有记录，则请求API获取借阅列表
+    const response = await getBorrowList();
+    if (response.state === 'success' && Array.isArray(response.data)) {
+      isAlreadyBorrowed.value = response.data.some(
+        item => String(item.bookId) === String(props.book.bookId)
+      );
+    }
+  } catch (error) {
+    console.error('检查借阅状态失败:', error);
+    isAlreadyBorrowed.value = false;
+  }
+};
 
 // 心愿单相关函数
 const toggleWishlist = async (event) => {
@@ -140,6 +197,12 @@ const toggleWishlist = async (event) => {
   const token = localStorage.getItem('token');
   if (!token) {
     showToast('Please login first', 'error');
+    return;
+  }
+
+  // 检查是否已借阅该书籍
+  if (isAlreadyBorrowed.value) {
+    showToast('You have already borrowed this book', 'warning');
     return;
   }
 
@@ -154,7 +217,7 @@ const toggleWishlist = async (event) => {
       if (response.state === 'success') {
         isInWishlist.value = true;
         showToast('Added to wishlist', 'success');
-      } else if (response.state === 'Book already exist.') {
+      } else if (response.state === ' exist.') {
         showToast('This book is already in your wishlist', 'info');
         isInWishlist.value = false; // 保持非激活状态
       } else {
@@ -212,6 +275,12 @@ const navigateToDetail = () => {
   }
 };
 
+// 跳转到我的图书页面
+const goToMyBooks = () => {
+  router.push('/user/books');
+  showAlreadyBorrowedDialog.value = false;
+};
+
 // 读取余额
 const getBalance = () => Number(localStorage.getItem('accountBalance') || 0);
 // 保存余额
@@ -230,6 +299,12 @@ const handleBorrow = async (event) => {
   const token = localStorage.getItem('token');
   if (!token) {
     showToast('Please login first', 'error');
+    return;
+  }
+
+  // 如果已经借阅了，显示对应的提示框
+  if (isAlreadyBorrowed.value) {
+    showAlreadyBorrowedDialog.value = true;
     return;
   }
 
@@ -252,6 +327,7 @@ const handleBorrow = async (event) => {
       saveBorrowedBook(result.dueDate);
       setBalance(result.balance);
       showToast('Borrowed successfully, go to My Books to view', 'success');
+      isAlreadyBorrowed.value = true; // 更新借阅状态
     } else if (result.state === 'Reach borrow limit') {
       showToast('Reached borrowing limit', 'error');
     } else if (result.state === 'Borrow failed.') {
@@ -261,7 +337,10 @@ const handleBorrow = async (event) => {
       } else if (result.LowStockBookIds?.includes(props.book.bookId)) {
         errorMessage += 'Out of stock';
       } else if (result.BorrowedBookIds?.includes(props.book.bookId)) {
-        errorMessage += 'Already borrowed';
+        errorMessage += 'You have already borrowed this book';
+        isAlreadyBorrowed.value = true; // 更新借阅状态
+        showAlreadyBorrowedDialog.value = true; // 显示已借阅提示框
+        return;
       }
       showToast(errorMessage, 'error');
     } else {
@@ -450,6 +529,11 @@ onMounted(() => {
   cursor: not-allowed;
 }
 
+.borrow-btn.already-borrowed {
+  background: #6c757d;
+  cursor: pointer;
+}
+
 .borrow-btn.loading {
   background: #f0b561;
 }
@@ -515,7 +599,7 @@ onMounted(() => {
   gap: 10px;
 }
 
-.cancel-btn, .topup-btn {
+.cancel-btn, .topup-btn, .view-btn {
   padding: 8px 20px;
   border-radius: 4px;
   cursor: pointer;
@@ -533,7 +617,12 @@ onMounted(() => {
   color: white;
 }
 
-.error-message {
+.view-btn {
+  background: #28a745;
+  color: white;
+}
+
+.error-message, .info-message {
   text-align: center;
   padding: 20px 0;
 }
@@ -543,6 +632,19 @@ onMounted(() => {
   height: 50px;
   background: #fff0f0;
   color: #ff4d4d;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 15px;
+  font-size: 24px;
+}
+
+.info-icon {
+  width: 50px;
+  height: 50px;
+  background: #e1f5fe;
+  color: #4c9fe9;
   border-radius: 50%;
   display: flex;
   align-items: center;
