@@ -93,11 +93,11 @@ const search = async () => {
       }
     } else {
       books.value = [];
-      error.value = result.message || '搜索失败，请稍后再试';
+      error.value = result.message || 'Search failed, please try again later';
     }
   } catch (err) {
     console.error('搜索出错', err);
-    error.value = '搜索失败，请稍后再试';
+    error.value = 'Search failed, please try again later';
     books.value = [];
   } finally {
     loading.value = false;

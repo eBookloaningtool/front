@@ -41,7 +41,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['borrow']);
+const emit = defineEmits(['borrow', 'login-required']);
 const userStore = useUserStore();
 const router = useRouter();
 
@@ -75,8 +75,8 @@ async function handleBorrow() {
 
   // 检查用户是否已登录
   if (!userStore.isAuthenticated) {
-    alert('Please login to borrow the book');
-    router.push({ name: 'Login' });
+    // 触发登录需要事件，让父组件显示登录模态框
+    emit('login-required', 'borrow');
     return;
   }
 

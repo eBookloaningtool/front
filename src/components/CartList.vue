@@ -125,7 +125,7 @@ const fetchCartItems = async () => {
     calculateTotal();
   } catch (err) {
     console.error('获取购物车失败:', err);
-    error.value = '获取购物车失败，请稍后重试';
+    error.value = 'Failed to retrieve shopping cart, please try again later';
   } finally {
     isLoading.value = false;
   }
@@ -143,7 +143,7 @@ const updateQuantity = async (itemId, newQuantity) => {
     await fetchCartItems();
   } catch (err) {
     console.error('更新购物车失败:', err);
-    error.value = '更新购物车失败，请稍后重试';
+    error.value = 'Update shopping cart failed, please try again later';
   }
 };
 
@@ -156,7 +156,7 @@ const removeItem = async (itemId) => {
     console.log('重新获取购物车数据完成');
   } catch (err) {
     console.error('删除购物车项失败:', err);
-    error.value = '删除购物车项失败，请稍后重试';
+    error.value = 'Failed to remove shopping cart item, please try again later';
     throw err; // 抛出错误以便上层处理
   }
 };

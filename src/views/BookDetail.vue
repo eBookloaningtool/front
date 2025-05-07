@@ -45,7 +45,7 @@
 
           <div class="book-actions">
             <AddToCartButton :book-id="bookId" buttonText="Add to cart" class="action-button" />
-            <BorrowButton :book="book" @borrow="handleBorrow" :is-borrowing="isBorrowing" class="action-button" />
+            <BorrowButton :book="book" @borrow="handleBorrow" @login-required="handleLoginRequired" :is-borrowing="isBorrowing" class="action-button" />
             <button @click="readBook" class="action-button" style="background-color: #3498db; color: white; border: none;">
               Read
             </button>
@@ -107,17 +107,17 @@
 
       <!-- 登录提示框 -->
       <div v-if="showLoginMessage" class="modal-overlay">
-        <div class="modal-content">
+        <div class="modal-content login-modal-content">
           <button class="close-btn" @click="closeLoginModal">&times;</button>
-          <div class="error-message">
-            <div class="error-icon">
+          <div class="login-required">
+            <div class="user-icon">
               <i class="ri-user-line"></i>
             </div>
             <h3>Login Required</h3>
             <p>Please login to {{ loginAction }} the book</p>
-            <div class="modal-actions">
+            <div class="login-modal-actions">
               <button class="cancel-btn" @click="closeLoginModal">Cancel</button>
-              <button class="confirm-btn" @click="goToLogin">Login</button>
+              <button class="login-btn" @click="goToLogin">Login</button>
             </div>
           </div>
         </div>
@@ -498,6 +498,12 @@ const closeErrorModal = () => {
   showErrorModal.value = false;
 };
 
+// 处理登录需要事件
+const handleLoginRequired = (action) => {
+  loginAction.value = action;
+  showLoginMessage.value = true;
+};
+
 const bookId = computed(() => {
   return route.params.id;
 });
@@ -784,5 +790,70 @@ const bookId = computed(() => {
 .success-message h3 {
   color: #4caf50;
   margin-bottom: 10px;
+}
+
+/* 登录提示框样式更新 */
+.login-modal-content {
+  background: white;
+  text-align: center;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+}
+
+.login-required {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.user-icon {
+  width: 60px;
+  height: 60px;
+  background: #f4f5f7;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.user-icon i {
+  font-size: 30px;
+  color: #ff6c00;
+}
+
+.login-required h3 {
+  font-size: 22px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.login-required p {
+  color: #666;
+  margin-bottom: 25px;
+}
+
+.login-modal-actions {
+  display: flex;
+  gap: 15px;
+  width: 100%;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.login-btn {
+  padding: 10px 30px;
+  background: #ff6c00;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.login-btn:hover {
+  background: #e65c00;
 }
 </style>

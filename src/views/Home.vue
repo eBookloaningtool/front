@@ -130,7 +130,7 @@ const loadMorePopularBooks = async () => {
     }
   } catch (err) {
     console.error('加载更多热门书籍失败:', err)
-    error.value = '加载更多书籍失败，请稍后再试'
+    error.value = 'Failed to load more books, please try again later'
   } finally {
     loadingMore.value = false
     loading.value = false
@@ -180,7 +180,7 @@ onMounted(async () => {
     historyBooks.value = getRandomItems(historyBooksAll.length > 0 ? historyBooksAll : allBooks, 10)
   } catch (error) {
     console.error('获取书籍数据失败:', error)
-    error.value = '获取书籍数据失败，请稍后再试'
+    error.value = 'Failed to get book data, please try again later'
     loading.value = false
 
     // 加载失败时使用空数组

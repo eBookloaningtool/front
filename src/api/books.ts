@@ -112,16 +112,16 @@ export const searchBooks = async (params: SearchBooksParams): Promise<SearchBook
     if (params.title) queryParams.append('title', params.title);
     if (params.author) queryParams.append('author', params.author);
     if (params.category) queryParams.append('category', params.category);
-    
+
     // 确保至少有一个搜索参数
     if (queryParams.toString() === '') {
       return { state: 'error', bookId: [], message: '至少需要一个搜索参数' };
     }
-    
+
     const response = await axios.get<SearchBooksResponse>(`/api/books/search?${queryParams.toString()}`);
     return response.data;
   } catch (error) {
     console.error('搜索书籍失败:', error);
-    return { state: 'error', bookId: [], message: '搜索失败，请稍后再试' };
+    return { state: 'error', bookId: [], message: 'Search failed, please try again later' };
   }
 };
