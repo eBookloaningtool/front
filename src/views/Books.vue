@@ -3,10 +3,10 @@
   <div class="books-page">
     <Header />
     <main class="container mx-auto px-4 py-8">
-      <h1 class="text-3xl font-bold text-center mb-8">图书馆藏</h1>
-      <BookList 
-        :books="books" 
-        :loading="loading" 
+      <h1 class="text-3xl font-bold text-center mb-8">Library Collection</h1>
+      <BookList
+        :books="books"
+        :loading="loading"
         :error="error"
         layout="grid"
         :showHeader="false"
@@ -31,13 +31,13 @@ const error = ref(null)
 const fetchBooks = async () => {
   loading.value = true
   error.value = null
-  
+
   try {
     const response = await bookAPI.getAllBooks()
     books.value = response.data.books || []
   } catch (err) {
-    console.error('获取书籍列表失败:', err)
-    error.value = '获取书籍列表失败，请稍后再试'
+    console.error('Failed to get book list:', err)
+    error.value = 'Failed to get book list, please try again later'
     books.value = []
   } finally {
     loading.value = false
@@ -66,4 +66,4 @@ main {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-</style> 
+</style>

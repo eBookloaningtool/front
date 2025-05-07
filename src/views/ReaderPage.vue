@@ -2,11 +2,11 @@
   <div class="reader-container">
     <div class="reader-header">
       <button @click="goBack" class="back-button">
-        <span class="icon">←</span> 返回
+        <span class="icon">←</span> Back
       </button>
       <h1 class="book-title">{{ bookTitle }}</h1>
       <div class="book-info">
-        <span v-if="author">作者: {{ author }}</span>
+        <span v-if="author">Author: {{ author }}</span>
       </div>
     </div>
 
@@ -24,13 +24,13 @@
 
     <div v-else class="loading-container">
       <div class="loading-spinner"></div>
-      <p>加载中...</p>
+      <p>Loading...</p>
     </div>
 
     <div class="pagination-controls" v-if="content">
-      <button @click="prevPage" :disabled="currentPage <= 1" class="pagination-button">上一页</button>
+      <button @click="prevPage" :disabled="currentPage <= 1" class="pagination-button">Previous</button>
       <span class="page-indicator">{{ currentPage }} / {{ totalPages }}</span>
-      <button @click="nextPage" :disabled="currentPage >= totalPages" class="pagination-button">下一页</button>
+      <button @click="nextPage" :disabled="currentPage >= totalPages" class="pagination-button">Next</button>
     </div>
   </div>
 </template>
@@ -51,12 +51,12 @@ export default defineComponent({
     const author = ref<string>('');
     const isLoading = ref<boolean>(true);
     const error = ref<string | null>(null);
-    const fontSize = ref<number>(18); // 默认字体大小
+    const fontSize = ref<number>(18); // Default font size
     const currentPage = ref<number>(1);
-    const wordsPerPage = ref<number>(500); // 根据字体大小和容器大小调整
+    const wordsPerPage = ref<number>(500); // Adjust based on font size and container size
     const contentPages = ref<string[]>([]);
 
-    // 调整字体大小
+    // Adjust font size
     const increaseFontSize = () => {
       if (fontSize.value < 24) {
         fontSize.value += 2;
@@ -71,17 +71,17 @@ export default defineComponent({
       }
     };
 
-    // 分页计算
+    // Pagination calculation
     const updatePagination = () => {
       if (!content.value) return;
 
-      // 根据字体大小调整每页字数
+      // Adjust words per page based on font size
       const adjustedWordsPerPage = Math.floor(wordsPerPage.value * (18 / fontSize.value));
 
-      // 去除HTML标签，只保留文本内容进行分页
+      // Remove HTML tags, keep only text content for pagination
       const plainText = content.value.replace(/<[^>]*>/g, '');
 
-      // 按照调整后的每页字数分页
+      // Split into pages based on adjusted words per page
       const pages = [];
       let currentPosition = 0;
 
@@ -93,22 +93,22 @@ export default defineComponent({
 
       contentPages.value = pages;
 
-      // 确保当前页在有效范围内
+      // Ensure current page is within valid range
       if (currentPage.value > contentPages.value.length) {
         currentPage.value = contentPages.value.length;
       }
     };
 
-    // 计算总页数
+    // Calculate total pages
     const totalPages = computed(() => contentPages.value.length);
 
-    // 获取当前页内容
+    // Get current page content
     const currentPageContent = computed(() => {
       if (contentPages.value.length === 0) return '';
       return contentPages.value[currentPage.value - 1] || '';
     });
 
-    // 翻页功能
+    // Page turning functionality
     const nextPage = () => {
       if (currentPage.value < totalPages.value) {
         currentPage.value++;
@@ -123,7 +123,7 @@ export default defineComponent({
       }
     };
 
-    // 保存阅读进度
+    // Save reading progress
     const saveReadingProgress = () => {
       const bookId = route.params.id as string;
       if (!bookId) return;
@@ -136,7 +136,7 @@ export default defineComponent({
       localStorage.setItem(`reading_progress_${bookId}`, JSON.stringify(readingProgress));
     };
 
-    // 加载阅读进度
+    // Load reading progress
     const loadReadingProgress = () => {
       const bookId = route.params.id as string;
       if (!bookId) return;
@@ -148,7 +148,7 @@ export default defineComponent({
           currentPage.value = progress.page || 1;
           fontSize.value = progress.fontSize || 18;
         } catch (e) {
-          console.error('无法解析保存的阅读进度', e);
+          console.error('Unable to parse saved reading progress', e);
         }
       }
     };
@@ -160,36 +160,36 @@ export default defineComponent({
     const loadBookContent = async () => {
       const bookId = route.params.id as string;
       if (!bookId) {
-        error.value = '无效的图书ID';
+        error.value = 'Invalid book ID';
         return;
       }
 
       try {
-        // 加载书籍信息
+        // Load book information
         const bookInfo = await getBookDetail(bookId);
         if (bookInfo) {
-          bookTitle.value = bookInfo.title || '未知标题';
-          author.value = bookInfo.author || '未知作者';
+          bookTitle.value = bookInfo.title || 'Unknown Title';
+          author.value = bookInfo.author || 'Unknown Author';
         }
 
-        // 加载书籍内容
+        // Load book content
         const response = await getBookContent(bookId);
         if (response && response.content) {
           content.value = response.content;
           updatePagination();
           loadReadingProgress();
         } else {
-          error.value = '无法加载图书内容';
+          error.value = 'Unable to load book content';
         }
       } catch (err) {
-        console.error('加载图书内容失败:', err);
-        error.value = '加载图书内容时出错';
+        console.error('Failed to load book content:', err);
+        error.value = 'Error loading book content';
       } finally {
         isLoading.value = false;
       }
     };
 
-    // 监听字体大小变化，更新分页
+    // Watch for font size changes, update pagination
     watch(fontSize, () => {
       updatePagination();
       saveReadingProgress();

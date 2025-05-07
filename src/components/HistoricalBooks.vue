@@ -65,10 +65,10 @@ const books = ref([]);
 const loading = ref(false);
 const error = ref(null);
 
-// 路由实例
+// Router instance
 const router = useRouter();
 
-// 监听 bookIds 变化
+// Watch for bookIds changes
 watch(() => props.bookIds, () => {
   if (props.bookIds && props.bookIds.length > 0) {
     fetchBooks();
@@ -77,15 +77,15 @@ watch(() => props.bookIds, () => {
   }
 }, { immediate: true });
 
-// 按月份分组显示
+// Group by month for display
 const groupedBooks = computed(() => {
   const grouped = {};
 
-  // 模拟时间数据，实际应该从API获取
+  // Mock time data, should actually be from API
   books.value.forEach((book, index) => {
-    // 这里应该使用实际的借阅日期，这里只是模拟
+    // Should use actual borrowing date, this is just a mock
     const date = new Date();
-    date.setMonth(date.getMonth() - (index % 3)); // 随机分配到最近3个月
+    date.setMonth(date.getMonth() - (index % 3)); // Randomly assign to the last 3 months
 
     const monthKey = date.toLocaleDateString('zh-CN', {
       year: 'numeric',
@@ -102,7 +102,7 @@ const groupedBooks = computed(() => {
   return grouped;
 });
 
-// 获取书籍详情
+// Get book details
 const fetchBooks = async () => {
   if (!props.bookIds || props.bookIds.length === 0) return;
 
@@ -111,11 +111,11 @@ const fetchBooks = async () => {
   books.value = [];
 
   try {
-    // 并行获取所有书籍信息
+    // Fetch all book information in parallel
     const bookPromises = props.bookIds.map(bookId =>
       fetch(`/api/books/get?bookId=${bookId}`)
         .then(response => {
-          if (!response.ok) throw new Error(`获取书籍 ${bookId} 失败`);
+          if (!response.ok) throw new Error(`Failed to get book ${bookId}`);
           return response.json();
         })
     );
@@ -123,37 +123,37 @@ const fetchBooks = async () => {
     const booksData = await Promise.all(bookPromises);
     books.value = booksData;
   } catch (err) {
-    console.error('获取历史书籍信息出错:', err);
-    error.value = '获取书籍信息失败，请稍后重试';
+    console.error('Error getting historical books:', err);
+    error.value = 'Failed to get book information, please try again later';
   } finally {
     loading.value = false;
   }
 };
 
-// 添加到愿望清单
+// Add to wishlist
 const addToWishlist = async (bookId) => {
   try {
     const token = localStorage.getItem('token');
     if (!token) {
-      // 未登录情况下处理
+      // Handle not logged in case
       alert('Please log in first');
       return;
     }
 
-    // 调用API添加到愿望清单
+    // Call API to add to wishlist
     const response = await wishlistAPI.addToWishlist(bookId);
 
     if (response && response.data && response.data.state === 'success') {
-      // 成功添加
-      console.log(`添加到愿望清单成功: ${bookId}`);
+      // Successfully added
+      console.log(`Successfully added to wishlist: ${bookId}`);
 
-      // 触发自定义事件，通知Header组件更新心愿单数量
+      // Trigger custom event to notify Header component to update wishlist count
       document.dispatchEvent(new CustomEvent('wishlist-updated'));
     } else {
-      console.error('添加到愿望清单失败:', response);
+      console.error('Failed to add to wishlist:', response);
     }
   } catch (error) {
-    console.error('添加到愿望清单出错:', error);
+    console.error('Error adding to wishlist:', error);
   }
 };
 </script>

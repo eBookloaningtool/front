@@ -64,7 +64,7 @@
       </div>
     </div>
 
-    <!-- 续借确认模态框 -->
+    <!-- Renewal confirmation modal box -->
     <div class="modal-overlay" v-if="showRenewModal" @click.self="closeRenewModal">
       <div class="modal-content">
         <button class="close-btn" @click="closeRenewModal">&times;</button>
@@ -108,7 +108,7 @@
       </div>
     </div>
 
-    <!-- 归还确认模态框 -->
+    <!-- Return confirmation modal -->
     <div class="modal-overlay" v-if="showReturnModal" @click.self="closeReturnModal">
       <div class="modal-content">
         <button class="close-btn" @click="closeReturnModal">&times;</button>
@@ -162,7 +162,7 @@ const userBalance = ref(0);
 const showRenewModal = ref(false);
 const showReturnModal = ref(false);
 const currentBookId = ref(null);
-const renewFee = ref(5); // 续借费用
+const renewFee = ref(5); // Renewal fee
 const renewError = ref('');
 const renewSuccess = ref(false);
 const returnError = ref('');
@@ -170,23 +170,23 @@ const returnSuccess = ref(false);
 const isReturning = ref(false);
 const isRenewing = ref(false);
 
-// 借阅的书籍和历史记录
+// Borrowed books and history records
 const borrowedBooks = ref([]);
 const historyBooks = ref([]);
 
-// 监听标签切换
+// Watch tab changes
 watch(activeTab, (newTab) => {
   if (newTab === 'history') {
     fetchBorrowHistory();
   }
 });
 
-// 获取借阅列表
+// Get borrowed list
 const fetchBorrowedBooks = async () => {
   try {
     const response = await getBorrowList();
     if (response.state === 'success' && response.data) {
-      // 获取每本书的详细信息
+      // Get detailed information for each book
       const bookDetails = await Promise.all(
         response.data.map(async (borrow) => {
           try {
@@ -203,46 +203,46 @@ const fetchBorrowedBooks = async () => {
             }
             return null;
           } catch (err) {
-            console.error('获取书籍详情失败:', err);
+            console.error('Failed to get book details:', err);
             return null;
           }
         })
       );
 
-      // 过滤掉获取失败的书籍
+      // Filter out books that failed to retrieve
       borrowedBooks.value = bookDetails.filter(book => book !== null);
     } else {
       borrowedBooks.value = [];
     }
   } catch (error) {
-    console.error('获取借阅书籍失败:', error);
+    console.error('Failed to get borrowed books:', error);
     borrowedBooks.value = [];
   }
 };
 
-// 获取借阅历史
+// Get borrowing history
 const fetchBorrowHistory = async () => {
   try {
-    console.log('开始获取借阅历史数据...');
+    console.log('Starting to fetch borrowing history data...');
 
-    // 调用API获取借阅历史
+    // Call API to get borrowing history
     const response = await getBorrowHistory();
-    console.log('getBorrowHistory API 响应:', {
+    console.log('getBorrowHistory API response:', {
       state: response.state,
       dataLength: response.data?.length,
       data: response.data
     });
 
     if (response.state === 'success' && response.data) {
-      console.log('开始处理借阅历史数据，共', response.data.length, '条记录');
+      console.log('Starting to process borrowing history data, total', response.data.length, 'records');
 
-      // 获取每本书的详细信息
+      // Get detailed information for each book
       const bookDetails = await Promise.all(
         response.data.map(async (borrow, index) => {
           try {
-            console.log(`正在获取第 ${index + 1} 本书的详情，bookId:`, borrow.bookId);
+            console.log(`Getting details for book ${index + 1}, bookId:`, borrow.bookId);
             const bookDetail = await getBookDetail(borrow.bookId);
-            console.log(`第 ${index + 1} 本书的详情:`, {
+            console.log(`Book ${index + 1} details:`, {
               bookId: borrow.bookId,
               title: bookDetail?.title,
               author: bookDetail?.author,
@@ -260,118 +260,118 @@ const fetchBorrowHistory = async () => {
                 status: borrow.status
               };
             }
-            console.warn(`第 ${index + 1} 本书获取详情失败，bookId:`, borrow.bookId);
+            console.warn(`Failed to get details for book ${index + 1}, bookId:`, borrow.bookId);
             return null;
           } catch (err) {
-            console.error(`获取第 ${index + 1} 本书详情时出错:`, err);
+            console.error(`Error getting details for book ${index + 1}:`, err);
             return null;
           }
         })
       );
 
-      // 过滤掉获取失败的书籍
+      // Filter out books that failed to retrieve
       const validBooks = bookDetails.filter(book => book !== null);
-      console.log('数据处理完成:', {
-        原始数据条数: response.data.length,
-        有效数据条数: validBooks.length,
-        无效数据条数: response.data.length - validBooks.length,
-        最终数据: validBooks
+      console.log('Data processing completed:', {
+        originalDataCount: response.data.length,
+        validDataCount: validBooks.length,
+        invalidDataCount: response.data.length - validBooks.length,
+        finalData: validBooks
       });
 
       historyBooks.value = validBooks;
     } else {
-      console.warn('API返回状态不是success或数据为空:', {
+      console.warn('API returned status is not success or data is empty:', {
         state: response.state,
         hasData: !!response.data
       });
       historyBooks.value = [];
     }
   } catch (error) {
-    console.error('获取借阅历史失败:', error);
+    console.error('Failed to get borrowing history:', error);
     historyBooks.value = [];
   }
 };
 
-// 组件挂载时获取数据
+// Fetch data when component is mounted
 onMounted(async () => {
   fetchBorrowedBooks();
-  // 如果初始标签是history，则获取历史记录
+  // If initial tab is history, get history records
   if (activeTab.value === 'history') {
     fetchBorrowHistory();
   }
 });
 
-// 跳转到书籍详情页
+// Navigate to book detail page
 const viewBookDetail = (bookId) => {
   router.push(`/book/${bookId}`);
 };
 
-// 跳转到作者页面
+// Navigate to author page
 const viewAuthorBooks = (author) => {
   router.push({ path: '/search', query: { author } });
 };
 
-// 打开续借确认窗口
+// Open renewal confirmation window
 const openRenewModal = async (bookId) => {
-  console.log('打开续借确认窗口，bookId:', bookId);
+  console.log('Opening renewal confirmation window, bookId:', bookId);
   isRenewing.value = true;
   try {
     currentBookId.value = bookId;
     renewError.value = '';
     renewSuccess.value = false;
 
-    console.log('开始获取用户余额...');
+    console.log('Starting to get user balance...');
     try {
       const response = await getUserInfo();
-      console.log('getUserInfo API响应:', response);
+      console.log('getUserInfo API response:', response);
       if (response.balance) {
         userBalance.value = response.balance || 0;
-        console.log('更新用户余额:', userBalance.value);
+        console.log('Updated user balance:', userBalance.value);
       }
     } catch (error) {
-      console.error('获取用户余额失败:', error);
+      console.error('Failed to get user balance:', error);
     }
 
-    // 获取书籍详情以获取价格
-    console.log('获取书籍详情...');
+    // Get book details to get price
+    console.log('Getting book details...');
     const bookDetail = await getBookDetail(bookId);
-    console.log('书籍详情:', bookDetail);
+    console.log('Book details:', bookDetail);
 
     if (bookDetail) {
       renewFee.value = bookDetail.price;
-      console.log('设置续借费用:', renewFee.value);
+      console.log('Set renewal fee:', renewFee.value);
     } else {
-      console.error('获取书籍信息失败');
+      console.error('Failed to get book information');
       renewError.value = 'Failed to get book information, please try again later';
       showRenewModal.value = true;
       return;
     }
 
-    // 调用续借API检查状态
-    console.log('调用续借API检查状态...');
+    // Call renewal API to check status
+    console.log('Calling renewal API to check status...');
     const result = await renewBook(bookId);
-    console.log('续借API响应:', result);
+    console.log('Renewal API response:', result);
 
     if (result.state === 'success') {
-      console.log('续借检查成功');
+      console.log('Renewal check successful');
       renewSuccess.value = true;
-      // 更新借阅列表中的到期日期
+      // Update due date in borrowed list
       const book = borrowedBooks.value.find(b => b.bookId === bookId);
       if (book) {
         book.dueDate = result.newDueDate;
-        console.log('更新到期日期:', result.newDueDate);
+        console.log('Updated due date:', result.newDueDate);
       }
     } else if (result.state === 'insufficient balance') {
-      console.log('余额不足:', result.newPayment);
+      console.log('Insufficient balance:', result.newPayment);
       renewError.value = `Insufficient balance, you need £${result.newPayment}`;
     } else {
-      console.error('续借失败:', result.message);
+      console.error('Renewal failed:', result.message);
       renewError.value = result.message || 'Renewal failed, please try again later';
     }
 
     showRenewModal.value = true;
   } catch (error) {
-    console.error('检查续借状态失败:', error);
+    console.error('Failed to check renewal status:', error);
     renewError.value = 'Failed to check renewal status, please try again later';
     showRenewModal.value = true;
   } finally {
@@ -379,7 +379,7 @@ const openRenewModal = async (bookId) => {
   }
 };
 
-// 关闭续借确认窗口
+// Close renewal confirmation window
 const closeRenewModal = () => {
   showRenewModal.value = false;
   setTimeout(() => {
@@ -388,19 +388,19 @@ const closeRenewModal = () => {
   }, 300);
 };
 
-// 续借书籍
+// Renew book
 const handleRenewBook = async () => {
   isRenewing.value = true;
   try {
     const result = await renewBook(currentBookId.value);
     if (result.state === 'success') {
       renewSuccess.value = true;
-      // 更新借阅列表中的到期日期
+      // Update due date in borrowed list
       const book = borrowedBooks.value.find(b => b.bookId === currentBookId.value);
       if (book) {
         book.dueDate = result.newDueDate;
       }
-      // 3秒后自动关闭窗口
+      // Auto close window after 3 seconds
       setTimeout(() => {
         closeRenewModal();
       }, 3000);
@@ -408,20 +408,20 @@ const handleRenewBook = async () => {
       renewError.value = result.message || 'Renewal failed, please try again later';
     }
   } catch (error) {
-    console.error('续借失败:', error);
+    console.error('Renewal failed:', error);
     renewError.value = 'Renewal failed, please try again later';
   } finally {
     isRenewing.value = false;
   }
 };
 
-// 跳转到充值页面
+// Navigate to top-up page
 const goToTopUp = () => {
   router.push('/user/topup');
   closeRenewModal();
 };
 
-// 打开归还确认窗口
+// Open return confirmation window
 const openReturnModal = (bookId) => {
   currentBookId.value = bookId;
   returnError.value = '';
@@ -429,7 +429,7 @@ const openReturnModal = (bookId) => {
   showReturnModal.value = true;
 };
 
-// 关闭归还确认窗口
+// Close return confirmation window
 const closeReturnModal = () => {
   showReturnModal.value = false;
   setTimeout(() => {
@@ -438,22 +438,22 @@ const closeReturnModal = () => {
   }, 300);
 };
 
-// 归还书籍
+// Return book
 const handleReturnBook = async () => {
   isReturning.value = true;
   try {
     const result = await returnBook(currentBookId.value);
     if (result.state === 'success') {
-      // 找到当前借阅的书籍
+      // Find the current borrowed book
       const bookIndex = borrowedBooks.value.findIndex(b => b.bookId === currentBookId.value);
       if (bookIndex !== -1) {
-        // 从借阅列表中移除
+        // Remove from borrowed list
         borrowedBooks.value.splice(bookIndex, 1);
       }
-      // 显示成功信息
+      // Show success message
       returnSuccess.value = true;
       returnError.value = '';
-      // 3秒后自动关闭窗口
+      // Auto close window after 3 seconds
       setTimeout(() => {
         closeReturnModal();
       }, 3000);
@@ -461,7 +461,7 @@ const handleReturnBook = async () => {
       returnError.value = result.message || 'Return failed, please try again later';
     }
   } catch (error) {
-    console.error('归还失败:', error);
+    console.error('Return failed:', error);
     returnError.value = 'Return failed, please try again later';
   } finally {
     isReturning.value = false;
@@ -635,7 +635,7 @@ const handleReturnBook = async () => {
   text-decoration: none;
 }
 
-/* 模态框样式 */
+/* Modal styles */
 .modal-overlay {
   position: fixed;
   top: 0;

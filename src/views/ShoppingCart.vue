@@ -4,7 +4,7 @@
     <h1 class="cart-title">My Cart</h1>
 
     <CartList ref="cartListRef" v-model:cartItems="cartItems" @cart-updated="handleCartUpdated" @remove-item="removeFromCart">
-      <!-- 空购物车时的操作按钮 -->
+      <!-- Empty cart action button -->
       <template #empty-action>
         <router-link to="/" class="browse-books-btn">
           <i class="ri-book-open-line"></i>
@@ -12,7 +12,7 @@
         </router-link>
       </template>
 
-      <!-- 购物车操作按钮 -->
+      <!-- Cart action buttons -->
       <template #cart-actions>
         <div class="cart-actions">
           <button class="checkout-btn" @click="checkout" :disabled="isProcessing">
@@ -64,74 +64,74 @@ const { showToast } = useToast();
 const isProcessing = ref(false);
 const showClearCartConfirm = ref(false);
 
-// 在组件挂载时加载购物车数据
+// Load cart items when component is mounted
 onMounted(() => {
   loadCartItems();
 });
 
-// 从localStorage加载购物车数据
+// Load cart data from localStorage
 const loadCartItems = () => {
   try {
     const savedCart = localStorage.getItem('cartItems');
     if (savedCart) {
       cartItems.value = JSON.parse(savedCart);
-      console.log('已加载购物车数据:', cartItems.value);
+      console.log('Cart data loaded:', cartItems.value);
     } else {
-      console.log('购物车为空');
+      console.log('Cart is empty');
     }
   } catch (err) {
-    console.error('加载购物车数据失败:', err);
-    showToast('加载购物车数据失败', 'error');
+    console.error('Failed to load cart data:', err);
+    showToast('Failed to load cart data', 'error');
   }
 };
 
-// 保存购物车数据到localStorage
+// Save cart data to localStorage
 const saveCartItems = () => {
   try {
     localStorage.setItem('cartItems', JSON.stringify(cartItems.value));
-    console.log('购物车数据已保存');
+    console.log('Cart data saved');
   } catch (err) {
-    console.error('保存购物车数据失败:', err);
-    showToast('保存购物车数据失败', 'error');
+    console.error('Failed to save cart data:', err);
+    showToast('Failed to save cart data', 'error');
   }
 };
 
-// 从购物车中删除商品
+// Remove item from cart
 const removeFromCart = async (bookId) => {
   try {
-    console.log('删除购物车商品:', bookId);
+    console.log('Removing item from cart:', bookId);
 
-    // 调用API从服务器购物车中移除
+    // Call API to remove from server cart
     await apiRemoveFromCart(bookId);
 
-    // 使用filter更新本地购物车
+    // Update local cart using filter
     cartItems.value = cartItems.value.filter(item => item.bookId !== bookId);
-    // 保存更新后的购物车
+    // Save updated cart
     saveCartItems();
-    showToast('商品已从购物车中移除', 'success');
+    showToast('Item removed from cart', 'success');
 
-    // 触发自定义事件通知Header组件更新购物车图标
+    // Trigger custom event to notify Header component to update cart icon
     document.dispatchEvent(new CustomEvent('cart-updated'));
   } catch (err) {
-    console.error('从购物车移除失败:', err);
-    showToast('从购物车移除失败', 'error');
+    console.error('Failed to remove from cart:', err);
+    showToast('Failed to remove from cart', 'error');
   }
 };
 
-// 处理购物车更新事件
+// Handle cart update event
 const handleCartUpdated = (items) => {
-  console.log('购物车已更新:', items);
+  console.log('Cart updated:', items);
   cartItems.value = items;
   saveCartItems();
 
-  // 触发自定义事件通知Header组件更新购物车图标
+  // Trigger custom event to notify Header component to update cart icon
   document.dispatchEvent(new CustomEvent('cart-updated'));
 };
 
-// 结账功能
+// Checkout functionality
 const checkout = async () => {
   if (cartItems.value.length === 0) {
-    showToast('购物车为空，无法借阅', 'warning');
+    showToast('Cart is empty, cannot borrow', 'warning');
     return;
   }
 
@@ -139,18 +139,18 @@ const checkout = async () => {
   isProcessing.value = true;
 
   try {
-    // 获取所有书籍ID
+    // Get all book IDs
     const bookIds = cartItems.value.map(item => item.bookId);
 
-    // 调用借阅API批量借阅
+    // Call borrow API to batch borrow
     const result = await borrowBook(bookIds);
 
     if (result?.state === 'success') {
-      // 借阅成功
-      // 保存借阅信息到localStorage
+      // Borrowing successful
+      // Save borrow information to localStorage
       const borrowedBooks = JSON.parse(localStorage.getItem('borrowedBooks') || '[]');
 
-      // 为每本书添加借阅信息
+      // Add borrowing information for each book
       cartItems.value.forEach(item => {
         borrowedBooks.push({
           bookId: item.bookId,
@@ -162,37 +162,37 @@ const checkout = async () => {
         });
       });
 
-      // 保存更新后的借阅信息
+      // Save updated borrowing information
       localStorage.setItem('borrowedBooks', JSON.stringify(borrowedBooks));
 
-      // 清空本地购物车
+      // Clear local cart
       cartItems.value = [];
       saveCartItems();
 
-      // 调用API清空服务器购物车
+      // Call API to clear server cart
       const clearResult = await cartAPI.clearCart();
 
-      // 触发自定义事件通知Header组件更新购物车图标
+      // Trigger custom event to notify Header component to update cart icon
       document.dispatchEvent(new CustomEvent('cart-updated'));
 
-      // 显示成功消息
+      // Show success message
       showToast(`Borrowed successfully! Due date: ${result.dueDate}, Balance: £${result.balance}`, 'success');
 
-      // 跳转到我的借阅页面
+      // Navigate to my borrowings page
       setTimeout(() => {
         router.push('/user/books');
       }, 1500);
     } else if (result?.state === 'insufficient balance') {
-      // 余额不足
+      // Insufficient balance
       showToast(`Insufficient balance, need to recharge £${result.newPayment}`, 'error');
       setTimeout(() => {
         router.push('/user/profile?view=TopUp');
       }, 1500);
     } else if (result?.state === 'Reach borrow limit') {
-      // 达到借阅上限
+      // Reached borrowing limit
       showToast('You have reached the borrow limit', 'error');
     } else if (result?.state === 'Borrow failed.') {
-      // 部分书籍借阅失败
+      // Some books failed to borrow
       let message = 'Some books borrow failed: ';
       let failedBookIds = [];
 
@@ -211,12 +211,12 @@ const checkout = async () => {
         failedBookIds = [...failedBookIds, ...result.BorrowedBookIds];
       }
 
-      // 更新购物车，只保留失败的书籍
+      // Update cart, keep only failed books
       if (failedBookIds.length > 0) {
         cartItems.value = cartItems.value.filter(item => failedBookIds.includes(item.bookId));
         saveCartItems();
 
-        // 显示部分成功的消息
+        // Show partial success message
         const successCount = bookIds.length - failedBookIds.length;
         if (successCount > 0) {
           message += `Successfully borrowed ${successCount} books.`;
@@ -225,7 +225,7 @@ const checkout = async () => {
 
       showToast(message, 'warning');
     } else {
-      // 其他错误
+      // Other errors
       showToast('Borrow failed, please try again later', 'error');
     }
   } catch (error) {
@@ -236,7 +236,7 @@ const checkout = async () => {
   }
 };
 
-// 从愿望清单中删除商品
+// Remove item from wishlist
 const removeItemFromWishlist = async (bookId) => {
   try {
     await removeWishlistItem(bookId);
@@ -247,7 +247,7 @@ const removeItemFromWishlist = async (bookId) => {
   }
 };
 
-// 清空购物车方法
+// Clear cart method
 const handleClearCart = async () => {
   if (cartItems.value.length === 0) {
     showToast('Cart is empty', 'info');
@@ -259,21 +259,21 @@ const handleClearCart = async () => {
   isProcessing.value = true;
 
   try {
-    // 使用新的clearCart方法
+    // Use the clearCart method
     const result = await cartAPI.clearCart();
-    console.log('清空购物车响应:', result);
+    console.log('Clear cart response:', result);
 
-    // 清空本地购物车数据
+    // Clear local cart data
     cartItems.value = [];
     localStorage.removeItem('cartItems');
 
-    // 触发自定义事件通知Header组件更新购物车图标
+    // Trigger custom event to notify Header component to update cart icon
     document.dispatchEvent(new CustomEvent('cart-updated'));
 
-    // 显示成功消息
+    // Show success message
     showToast('Cart cleared', 'success');
 
-    // 重新获取购物车数据
+    // Fetch cart data again
     if (cartListRef.value && typeof cartListRef.value.fetchCartItems === 'function') {
       await cartListRef.value.fetchCartItems();
     }

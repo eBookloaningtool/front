@@ -3,46 +3,46 @@
   <div class="dashboard-container">
     <Header />
     <div class="dashboard-content">
-      <h1 class="dashboard-title">个人中心</h1>
-      
+      <h1 class="dashboard-title">User Center</h1>
+
       <div class="dashboard-grid">
         <div class="dashboard-sidebar">
           <UserInfo :userInfo="userInfo" />
         </div>
-        
+
         <div class="dashboard-main">
           <div class="dashboard-section">
-            <h2 class="section-title">已借阅书籍</h2>
-            <BorrowedBooks 
-              :bookIds="userInfo.borrowedBooks" 
-              v-if="userInfo.borrowedBooks && userInfo.borrowedBooks.length > 0" 
+            <h2 class="section-title">Borrowed Books</h2>
+            <BorrowedBooks
+              :bookIds="userInfo.borrowedBooks"
+              v-if="userInfo.borrowedBooks && userInfo.borrowedBooks.length > 0"
             />
             <div class="empty-state" v-else>
-              <p>您还没有借阅任何书籍</p>
-              <router-link to="/" class="btn-primary">浏览图书馆</router-link>
+              <p>You haven't borrowed any books yet</p>
+              <router-link to="/" class="btn-primary">Browse Library</router-link>
             </div>
           </div>
 
           <div class="dashboard-section">
-            <h2 class="section-title">愿望清单</h2>
-            <Wishlist 
-              :bookIds="userInfo.wishlist" 
-              v-if="userInfo.wishlist && userInfo.wishlist.length > 0" 
+            <h2 class="section-title">Wishlist</h2>
+            <Wishlist
+              :bookIds="userInfo.wishlist"
+              v-if="userInfo.wishlist && userInfo.wishlist.length > 0"
             />
             <div class="empty-state" v-else>
-              <p>您的愿望清单为空</p>
-              <router-link to="/" class="btn-primary">添加书籍</router-link>
+              <p>Your wishlist is empty</p>
+              <router-link to="/" class="btn-primary">Add Books</router-link>
             </div>
           </div>
 
           <div class="dashboard-section">
-            <h2 class="section-title">历史阅读</h2>
-            <HistoricalBooks 
-              :bookIds="userInfo.historicalBooks" 
-              v-if="userInfo.historicalBooks && userInfo.historicalBooks.length > 0" 
+            <h2 class="section-title">Reading History</h2>
+            <HistoricalBooks
+              :bookIds="userInfo.historicalBooks"
+              v-if="userInfo.historicalBooks && userInfo.historicalBooks.length > 0"
             />
             <div class="empty-state" v-else>
-              <p>您还没有阅读记录</p>
+              <p>You don't have any reading records yet</p>
             </div>
           </div>
         </div>
@@ -68,7 +68,7 @@ const loading = ref(true);
 const error = ref(null);
 
 onMounted(async () => {
-  // 检查用户是否已登录
+  // Check if user is logged in
   const token = localStorage.getItem('token');
   if (!token) {
     router.push('/login');
@@ -77,7 +77,7 @@ onMounted(async () => {
 
   try {
     loading.value = true;
-    // 获取用户信息
+    // Get user information
     const response = await fetch('/api/users/info', {
       method: 'POST',
       headers: {
@@ -87,14 +87,14 @@ onMounted(async () => {
     });
 
     if (!response.ok) {
-      throw new Error('获取用户信息失败');
+      throw new Error('Failed to get user information');
     }
 
     const data = await response.json();
     userInfo.value = data;
   } catch (err) {
     error.value = err.message;
-    console.error('获取用户信息出错:', err);
+    console.error('Error getting user information:', err);
   } finally {
     loading.value = false;
   }
@@ -191,13 +191,13 @@ onMounted(async () => {
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .dashboard-sidebar {
     order: 2;
   }
-  
+
   .dashboard-main {
     order: 1;
   }
 }
-</style> 
+</style>

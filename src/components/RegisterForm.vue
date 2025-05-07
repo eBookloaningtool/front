@@ -74,7 +74,7 @@ const handleSubmit = async () => {
       localStorage.setItem('registeredEmail', email.value);
       localStorage.setItem('userName', name.value);
 
-      // Trigger registration success event after delay (1秒后触发跳转)
+      // Trigger redirect after 1 second
       setTimeout(() => {
         emit('registration-success', {
           name: name.value,
@@ -87,7 +87,7 @@ const handleSubmit = async () => {
       // Handle failure
       errorMessage.value = response.data.message || 'Email has already been registered';
 
-      // 检查错误信息是否包含"Email already registered"或"邮箱已注册"
+      // Check if error message contains "Email already registered" or similar
       if (
         response.data.message && (
           response.data.message.includes('Email already registered') ||
@@ -97,9 +97,9 @@ const handleSubmit = async () => {
           response.data.message === 'Email already registered'
         )
       ) {
-        // 显示错误消息1秒后跳转到登录页面
+        // Display error message and redirect to login page after 1 second
         setTimeout(() => {
-          // 保存邮箱方便登录页面自动填充
+          // Save email for auto-fill in login page
           localStorage.setItem('registeredEmail', email.value);
           router.push('/login');
         }, 1500);
@@ -266,21 +266,21 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* 增加样式优先级 */
+/* Increase style priority */
 .register-form-container .create-account-btn {
   border: none;
   position: relative;
   overflow: hidden;
-  background-color: #fb923c !important; /* Orange-300 with !important - 更浅的橙色 */
+  background-color: #fb923c !important; /* Orange-300 with !important - lighter orange */
   color: white !important;
 }
 
 .register-form-container .create-account-btn:hover {
-  background-color: #f97316 !important; /* Orange-400 with !important - 悬停时稍深 */
+  background-color: #f97316 !important; /* Orange-400 with !important - slightly darker on hover */
 }
 
 .register-form-container .create-account-btn:active {
-  background-color: #f59e0b !important; /* Orange-500 with !important - 点击时更深 */
+  background-color: #f59e0b !important; /* Orange-500 with !important - even darker on click */
   transform: scale(0.98);
 }
 

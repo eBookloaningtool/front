@@ -3,22 +3,22 @@
     <Header />
     <main class="container mx-auto px-4 py-8">
       <div class="page-header">
-        <h1 class="text-3xl font-bold">心愿单</h1>
-        <p class="text-gray-600 mt-2">您想要的书籍将在这里显示</p>
+        <h1 class="text-3xl font-bold">Wishlist</h1>
+        <p class="text-gray-600 mt-2">Books you want will be displayed here</p>
       </div>
 
       <div v-if="loading" class="loading-state">
         <div class="loading-spinner"></div>
-        <p class="text-gray-500">加载中...</p>
+        <p class="text-gray-500">Loading...</p>
       </div>
 
       <div v-else-if="favoriteBooks.length === 0" class="empty-state">
         <div class="empty-icon">
           <i class="ri-heart-line"></i>
         </div>
-        <p class="text-gray-500">您的心愿单中还没有书籍</p>
+        <p class="text-gray-500">There are no books in your wishlist yet</p>
         <router-link to="/" class="browse-btn">
-          浏览图书馆
+          Browse Library
         </router-link>
       </div>
 
@@ -38,7 +38,7 @@
             <p class="book-author">{{ book.author }}</p>
             <div class="book-actions">
               <router-link :to="`/book/${book.bookId}`" class="view-btn">
-                查看详情
+                View Details
               </router-link>
             </div>
           </div>
@@ -73,16 +73,16 @@ const loadFavoriteBooks = async () => {
 
     favoriteBooks.value = books
   } catch (error) {
-    console.error('加载收藏书籍失败:', error)
+    console.error('Failed to load favorite books:', error)
   } finally {
     loading.value = false
   }
 }
 
-// 处理收藏状态变化
+// Handle favorite status change
 const handleFavoriteChange = ({ bookId, isFavorite }) => {
   if (!isFavorite) {
-    // 如果取消收藏，从列表中移除该书籍
+    // If unfavorited, remove the book from list
     favoriteBooks.value = favoriteBooks.value.filter(book => book.bookId !== bookId)
   }
 }

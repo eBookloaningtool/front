@@ -8,7 +8,7 @@ const error = ref(null);
 const deletingIds = ref(new Set());
 const deleteSuccess = ref(false);
 
-// 加载用户评论
+// Load user reviews
 const loadUserReviews = async () => {
   loading.value = true;
   error.value = null;
@@ -17,14 +17,14 @@ const loadUserReviews = async () => {
     const response = await getUserReviews();
     reviews.value = response.comments || [];
   } catch (err) {
-    console.error('获取用户评论失败:', err);
-    error.value = '加载评论时出错，请稍后重试';
+    console.error('Failed to get user reviews:', err);
+    error.value = 'Error loading reviews, please try again later';
   } finally {
     loading.value = false;
   }
 };
 
-// 删除评论
+// Delete review
 const handleDeleteReview = async (commentID) => {
   if (!commentID || deletingIds.value.has(commentID)) return;
 
@@ -37,27 +37,27 @@ const handleDeleteReview = async (commentID) => {
       reviews.value = reviews.value.filter(review => review.commentID !== commentID);
       deleteSuccess.value = true;
 
-      // 3秒后隐藏成功提示
+      // Hide success message after 3 seconds
       setTimeout(() => {
         deleteSuccess.value = false;
       }, 3000);
     } else {
-      error.value = '删除评论失败，请稍后重试';
+      error.value = 'Failed to delete review, please try again later';
     }
   } catch (err) {
-    console.error('删除评论失败:', err);
-    error.value = '删除评论时出错，请稍后重试';
+    console.error('Failed to delete review:', err);
+    error.value = 'Error deleting review, please try again later';
   } finally {
     deletingIds.value.delete(commentID);
   }
 };
 
-// 格式化评分展示
+// Format rating display
 const formatRating = (rating) => {
   return '★'.repeat(rating) + '☆'.repeat(5 - rating);
 };
 
-// 组件挂载时加载用户评论
+// Load user reviews when component mounts
 onMounted(() => {
   loadUserReviews();
 });
@@ -67,7 +67,7 @@ onMounted(() => {
   <div class="user-reviews-container">
     <h2 class="text-xl font-semibold text-gray-800 mb-4">My Reviews</h2>
 
-    <!-- 成功提示 -->
+    <!-- Success message -->
     <div v-if="deleteSuccess" class="mb-4 p-3 bg-green-50 text-green-700 rounded-md flex items-center">
       <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
@@ -75,28 +75,28 @@ onMounted(() => {
       Review deleted successfully!
     </div>
 
-    <!-- 加载状态 -->
+    <!-- Loading state -->
     <div v-if="loading" class="flex justify-center py-8">
       <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
     </div>
 
-    <!-- 错误提示 -->
+    <!-- Error message -->
     <div v-else-if="error" class="bg-red-50 text-red-600 p-4 rounded-lg text-center">
       {{ error }}
     </div>
 
-    <!-- 无评论提示 -->
+    <!-- No reviews message -->
     <div v-else-if="reviews.length === 0" class="text-center py-8 text-gray-500">
       You have not published any reviews yet
     </div>
 
-    <!-- 评论列表 -->
+    <!-- Reviews list -->
     <div v-else class="space-y-4">
       <div v-for="review in reviews"
            :key="review.commentID"
            class="bg-white p-4 rounded-lg shadow-sm transition-all hover:shadow-md relative">
         <div class="flex justify-between">
-          <!-- 评论内容 -->
+          <!-- Review content -->
           <div class="flex-1">
             <div class="flex items-center">
               <span class="text-yellow-500 text-sm mr-2">
@@ -112,7 +112,7 @@ onMounted(() => {
             </div>
           </div>
 
-          <!-- 删除按钮 -->
+          <!-- Delete button -->
           <button
             @click="handleDeleteReview(review.commentID)"
             :disabled="deletingIds.has(review.commentID)"
@@ -134,7 +134,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- 刷新按钮 -->
+    <!-- Refresh button -->
     <div class="flex justify-center mt-6">
       <button
         @click="loadUserReviews"

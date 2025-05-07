@@ -3,24 +3,24 @@
   <div class="categories-page">
     <Header />
     <main class="container mx-auto px-6 py-10">
-      <!-- 加载状态 -->
+      <!-- Loading state -->
       <div v-if="loading" class="flex justify-center items-center py-12">
         <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
       </div>
 
-      <!-- 错误信息 -->
+      <!-- Error message -->
       <div v-else-if="error" class="text-center py-12">
         <p class="text-red-500">{{ error }}</p>
         <button
           @click="fetchCategories"
           class="mt-4 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg transition-colors"
         >
-          重试
+          Retry
         </button>
       </div>
-      <!-- 分类列表 - 三列布局 -->
+      <!-- Category list - three column layout -->
       <div v-else class="mt-4">
-        <!-- 三列式分类列表 -->
+        <!-- Three-column category list -->
         <div class="category-grid">
           <div
             v-for="category in categories"
@@ -35,7 +35,7 @@
             <div class="category-name">{{ category.name }}</div>
           </div>
         </div>
-        <!-- 选中分类的图书列表 -->
+        <!-- Book list for selected category -->
         <div v-if="selectedCategory" ref="bookSection" class="book-section mt-12">
           <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
             <div>
@@ -46,24 +46,24 @@
             </div>
           </div>
 
-          <!-- 使用BookList组件 -->
+          <!-- Using BookList component -->
           <BookList
             v-if="categorizedBooks[selectedCategory] && categorizedBooks[selectedCategory].length > 0"
             :books="categorizedBooks[selectedCategory]"
             :showHeader="false"
           />
 
-          <!-- 无书籍提示 -->
+          <!-- No books tip -->
           <div v-else class="text-center py-12">
             <div class="inline-block p-6 rounded-full bg-gray-50 mb-4">
               <i class="ri-book-line text-4xl text-gray-400"></i>
             </div>
-            <p class="text-gray-500">该分类暂无图书</p>
+            <p class="text-gray-500">No books in this category</p>
             <router-link
               to="/"
               class="inline-block mt-4 text-amber-600 hover:text-amber-700 transition-colors"
             >
-              浏览其他分类 <i class="ri-arrow-right-line ml-1"></i>
+              Browse other categories <i class="ri-arrow-right-line ml-1"></i>
             </router-link>
           </div>
         </div>
@@ -92,7 +92,7 @@ const error = ref('');
 const selectedCategory = ref('');
 const bookSection = ref(null);
 
-// 滚动到书本内容区域
+// Scroll to books content area
 const scrollToBooks = () => {
   nextTick(() => {
     if (bookSection.value) {
@@ -104,49 +104,49 @@ const scrollToBooks = () => {
   });
 };
 
-// 选择分类的方法
+// Method to select category
 const selectCategory = (categoryName) => {
   selectedCategory.value = categoryName;
-  // 更新 URL 参数
+  // Update URL parameters
   router.push({
     path: '/categories',
     query: { category: categoryName }
   });
 };
 
-// 获取分类列表
+// Get category list
 const fetchCategories = async () => {
   try {
     const response = await axios.get('/api/categories/getAll');
     if (response.data.state === 'Success') {
       categories.value = response.data.categoriesList;
-      // 如果有 URL 参数，设置选中的分类
+      // If URL has parameters, set selected category
       if (route.query.category) {
         selectedCategory.value = route.query.category;
       } else if (categories.value.length > 0) {
-        // 否则默认选中第一个分类
+        // Otherwise select the first category by default
         selectedCategory.value = categories.value[0].name;
       }
     } else {
-      error.value = '获取分类列表失败';
+      error.value = 'Failed to get category list';
     }
   } catch (err) {
-    console.error('获取分类列表失败:', err);
-    error.value = '获取分类列表失败，请稍后重试';
+    console.error('Failed to get category list:', err);
+    error.value = 'Failed to get category list, please try again later';
   }
 };
 
-// 获取特定类别的图书
+// Get books for specific category
 const fetchBooksByCategory = async (categoryName) => {
   try {
     loading.value = true;
     error.value = '';
 
-    // 使用搜索 API 获取特定类别的图书
+    // Use search API to get books for specific category
     const result = await searchBooks({ category: categoryName });
 
     if (result.state === 'success' && result.bookId && result.bookId.length > 0) {
-      // 获取每本书的详细信息
+      // Get detailed information for each book
       const bookDetails = await Promise.all(
         result.bookId.map(async (bookId) => {
           const bookDetail = await getBookDetail(bookId);
@@ -154,37 +154,37 @@ const fetchBooksByCategory = async (categoryName) => {
         })
       );
 
-      // 过滤掉获取失败的书籍（返回 null 的情况）
+      // Filter out failed book retrievals (null returns)
       categorizedBooks.value[categoryName] = bookDetails.filter(book => book !== null);
     } else {
       categorizedBooks.value[categoryName] = [];
     }
   } catch (err) {
-    console.error('获取分类图书失败:', err);
-    error.value = '获取分类图书失败，请稍后重试';
+    console.error('Failed to get category books:', err);
+    error.value = 'Failed to get category books, please try again later';
     categorizedBooks.value[categoryName] = [];
   } finally {
     loading.value = false;
-    // 数据加载完成后，滚动到书本区域
+    // After data is loaded, scroll to book section
     scrollToBooks();
   }
 };
 
-// 监听选中的分类变化
+// Watch for selected category changes
 watch(selectedCategory, (newCategory) => {
   if (newCategory) {
     fetchBooksByCategory(newCategory);
   }
 });
 
-// 监听 URL 参数变化
+// Watch for URL parameter changes
 watch(() => route.query.category, (newCategory) => {
   if (newCategory) {
     selectedCategory.value = newCategory;
   }
 });
 
-// 组件挂载时获取分类列表
+// Get category list when component mounts
 onMounted(() => {
   fetchCategories();
 });
@@ -211,7 +211,7 @@ main {
   animation: fadeIn 0.5s ease-out;
 }
 
-/* 三列分类网格布局 */
+/* Three-column category grid layout */
 .category-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -290,7 +290,7 @@ main {
   }
 }
 
-/* 响应式调整 */
+/* Responsive adjustments */
 @media (max-width: 1024px) {
   .category-grid {
     grid-template-columns: repeat(2, 1fr);

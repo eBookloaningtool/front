@@ -15,11 +15,11 @@ const errorMessage = ref('');
 const isSubmitting = ref(false);
 const loginSuccess = ref(false);
 
-// 忘记密码相关状态
+// Forgot password related states
 const showForgetPasswordModal = ref(false);
 const forgetPasswordEmail = ref('');
 const forgetPasswordSubmitting = ref(false);
-const forgetPasswordMessage = ref({ text: '', type: '' }); // type: 'success' 或 'error'
+const forgetPasswordMessage = ref({ text: '', type: '' }); // type: 'success' or 'error'
 
 // Field status management
 const fieldStatus = reactive({
@@ -81,9 +81,9 @@ const validateField = (field) => {
   }
 };
 
-// 打开忘记密码弹窗
+// Open forgot password modal
 const openForgetPasswordModal = () => {
-  // 如果登录表单中已经填写了邮箱，则自动填入
+  // If email is already filled in the login form, auto-fill it
   if (email.value && fieldStatus.email.valid) {
     forgetPasswordEmail.value = email.value;
   } else {
@@ -94,25 +94,25 @@ const openForgetPasswordModal = () => {
   forgetPasswordMessage.value = { text: '', type: '' };
 };
 
-// 关闭忘记密码弹窗
+// Close forgot password modal
 const closeForgetPasswordModal = () => {
   showForgetPasswordModal.value = false;
   forgetPasswordSubmitting.value = false;
 };
 
-// 验证邮箱格式
+// Validate email format
 const validateEmail = (email) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 };
 
-// 处理忘记密码
+// Handle forgot password
 const handleForgetPassword = async () => {
   try {
     forgetPasswordSubmitting.value = true;
     forgetPasswordMessage.value = { text: '', type: '' };
 
-    // 验证邮箱格式
+    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(forgetPasswordEmail.value)) {
       forgetPasswordMessage.value = {
@@ -122,7 +122,7 @@ const handleForgetPassword = async () => {
       return;
     }
 
-    // 发送忘记密码请求
+    // Send forgot password request
     const response = await userAPI.forgetPassword({
       email: forgetPasswordEmail.value
     });
@@ -132,7 +132,7 @@ const handleForgetPassword = async () => {
         text: 'The password reset link has been sent to your email',
         type: 'success'
       };
-      // 关闭模态框
+      // Close modal
       setTimeout(() => {
         showForgetPasswordModal.value = false;
       }, 2000);
@@ -172,7 +172,7 @@ const handleLogin = async () => {
       password: password.value
     };
 
-    // 使用API服务发送登录请求
+    // Use API service to send login request
     const response = await userStore.login(loginData);
 
     if (response.state === 'success') {
@@ -398,7 +398,7 @@ input:focus {
   box-shadow: none;
 }
 
-/* 登录按钮样式 */
+/* Login button styles */
 .login-form-container .login-btn {
   border: none;
   position: relative;
@@ -566,7 +566,7 @@ button:disabled {
   align-items: center;
   justify-content: center;
   height: auto;
-  background-color: #fb923c !important; /* 与登录按钮一致的颜色 */
+  background-color: #fb923c !important; /* Same color as login button */
 }
 
 .submit-button:hover {

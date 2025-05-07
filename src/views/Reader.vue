@@ -1,16 +1,16 @@
 <template>
   <div class="reader-wrapper">
-    <!-- 返回 -->
+    <!-- Back -->
     <button class="back-btn" @click="router.back()">← Back</button>
 
-    <!-- 只有地址准备好才渲染阅读器 -->
+    <!-- Only render the reader when address is ready -->
     <pdf-app
       v-if="src"
       :pdf="src"
       style="height: 100%; width: 100%"
     />
 
-    <!-- 占位 / 首次等待 -->
+    <!-- Placeholder / Initial loading -->
     <div v-else class="loading-tip">Loading…</div>
   </div>
 </template>
@@ -24,10 +24,10 @@ import 'vue3-pdf-app/dist/icons/main.css'
 const route  = useRoute()
 const router = useRouter()
 
-/* src 持有真正的 PDF 链接 */
+/* src holds the actual PDF link */
 const src = ref('')
 
-/* 监听 url 查询参数，第一次进入也会触发 */
+/* Watch for URL query parameter changes, also triggered on first entry */
 watchEffect(() => {
   const q = route.query.url
   src.value = q ? decodeURIComponent(q) : ''
@@ -37,7 +37,7 @@ watchEffect(() => {
 <style scoped>
 .reader-wrapper {
   position: fixed;
-  inset: 0;                   /* 等价 top:0 right:0 bottom:0 left:0 */
+  inset: 0;                   /* equivalent to top:0 right:0 bottom:0 left:0 */
   width: 100vw;
   height: 100vh;
   background: #fff;
