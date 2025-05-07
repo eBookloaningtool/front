@@ -208,7 +208,7 @@ const navigateToDetail = () => {
     router.push(`/book/${props.book.bookId}`);
   } catch (error) {
     console.error('跳转书籍详情失败:', error);
-    showToast('页面跳转失败，请稍后重试', 'error');
+    showToast('Page navigation failed, please try again later', 'error');
   }
 };
 

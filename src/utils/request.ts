@@ -12,16 +12,16 @@ export const post = async ({ url, data = {}, headers = {} }: {
 }): Promise<any> => {
   try {
     console.log(`[API] 发送POST请求: ${url}`, { data, headers: { ...headers, Authorization: headers.Authorization ? 'Bearer ***' : undefined } });
-    
+
     // 发送请求
     const response = await axios.post(url, data, { headers });
-    
+
     // 记录响应（不含敏感数据）
-    console.log(`[API] 收到响应: ${url}`, { 
+    console.log(`[API] 收到响应: ${url}`, {
       status: response.status,
       data: response.data
     });
-    
+
     return response.data;
   } catch (error) {
     // 详细错误日志
@@ -32,7 +32,7 @@ export const post = async ({ url, data = {}, headers = {} }: {
         data: error.response?.data,
         message: error.message
       });
-      
+
       // 如果服务器返回了错误响应，使用其数据
       if (error.response?.data) {
         return error.response.data;
@@ -40,7 +40,7 @@ export const post = async ({ url, data = {}, headers = {} }: {
     } else {
       console.error(`[API] 非Axios错误: ${url}`, error);
     }
-    
+
     // 抛出错误
     throw error;
   }
@@ -56,14 +56,14 @@ export const get = async ({ url, params = {}, headers = {} }: {
   headers?: Record<string, string>;
 }): Promise<any> => {
   try {
-    console.log(`[API] 发送GET请求: ${url}`, { 
-      params, 
-      headers: { 
-        ...headers, 
-        Authorization: headers.Authorization ? 'Bearer ***' : undefined 
+    console.log(`[API] 发送GET请求: ${url}`, {
+      params,
+      headers: {
+        ...headers,
+        Authorization: headers.Authorization ? 'Bearer ***' : undefined
       }
     });
-    
+
     // 获取token并添加到headers
     const token = localStorage.getItem('token');
     if (token) {
@@ -72,17 +72,17 @@ export const get = async ({ url, params = {}, headers = {} }: {
     } else {
       console.warn('[API] 未找到认证token');
     }
-    
+
     // 发送请求
     const response = await axios.get(url, { params, headers });
-    
+
     // 记录响应（不含敏感数据）
-    console.log(`[API] 收到响应: ${url}`, { 
+    console.log(`[API] 收到响应: ${url}`, {
       status: response.status,
       statusText: response.statusText,
       data: response.data
     });
-    
+
     return response.data;
   } catch (error) {
     // 详细错误日志
@@ -94,7 +94,7 @@ export const get = async ({ url, params = {}, headers = {} }: {
         message: error.message,
         headers: error.response?.headers
       });
-      
+
       // 如果服务器返回了错误响应，使用其数据
       if (error.response?.data) {
         return error.response.data;
@@ -102,7 +102,7 @@ export const get = async ({ url, params = {}, headers = {} }: {
     } else {
       console.error(`[API] 非Axios错误: ${url}`, error);
     }
-    
+
     // 抛出错误
     throw error;
   }

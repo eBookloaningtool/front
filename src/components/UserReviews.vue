@@ -12,7 +12,7 @@ const deleteSuccess = ref(false);
 const loadUserReviews = async () => {
   loading.value = true;
   error.value = null;
-  
+
   try {
     const response = await getUserReviews();
     reviews.value = response.comments || [];
@@ -27,16 +27,16 @@ const loadUserReviews = async () => {
 // 删除评论
 const handleDeleteReview = async (commentID) => {
   if (!commentID || deletingIds.value.has(commentID)) return;
-  
+
   deletingIds.value.add(commentID);
-  
+
   try {
     const response = await deleteReview(commentID);
-    
+
     if (response.state === 'success') {
       reviews.value = reviews.value.filter(review => review.commentID !== commentID);
       deleteSuccess.value = true;
-      
+
       // 3秒后隐藏成功提示
       setTimeout(() => {
         deleteSuccess.value = false;
@@ -65,35 +65,35 @@ onMounted(() => {
 
 <template>
   <div class="user-reviews-container">
-    <h2 class="text-xl font-semibold text-gray-800 mb-4">我的评论</h2>
-    
+    <h2 class="text-xl font-semibold text-gray-800 mb-4">My Reviews</h2>
+
     <!-- 成功提示 -->
     <div v-if="deleteSuccess" class="mb-4 p-3 bg-green-50 text-green-700 rounded-md flex items-center">
       <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
       </svg>
-      评论已成功删除！
+      Review deleted successfully!
     </div>
-    
+
     <!-- 加载状态 -->
     <div v-if="loading" class="flex justify-center py-8">
       <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
     </div>
-    
+
     <!-- 错误提示 -->
     <div v-else-if="error" class="bg-red-50 text-red-600 p-4 rounded-lg text-center">
       {{ error }}
     </div>
-    
+
     <!-- 无评论提示 -->
     <div v-else-if="reviews.length === 0" class="text-center py-8 text-gray-500">
-      您尚未发表任何评论
+      You have not published any reviews yet
     </div>
-    
+
     <!-- 评论列表 -->
     <div v-else class="space-y-4">
-      <div v-for="review in reviews" 
-           :key="review.commentID" 
+      <div v-for="review in reviews"
+           :key="review.commentID"
            class="bg-white p-4 rounded-lg shadow-sm transition-all hover:shadow-md relative">
         <div class="flex justify-between">
           <!-- 评论内容 -->
@@ -103,18 +103,18 @@ onMounted(() => {
                 {{ formatRating(review.rating) }}
               </span>
               <span class="text-sm text-gray-500">
-                {{ review.bookTitle || '未知书籍' }}
+                {{ review.bookTitle || 'Unknown book' }}
               </span>
             </div>
             <div class="mt-2 text-gray-900">{{ review.comment }}</div>
             <div class="mt-2 text-xs text-gray-500">
-              评论日期: {{ review.date || '未知日期' }}
+              Review date: {{ review.date || 'Unknown date' }}
             </div>
           </div>
-          
+
           <!-- 删除按钮 -->
-          <button 
-            @click="handleDeleteReview(review.commentID)" 
+          <button
+            @click="handleDeleteReview(review.commentID)"
             :disabled="deletingIds.has(review.commentID)"
             class="text-red-500 hover:text-red-700 focus:outline-none transition-colors ml-4"
           >
@@ -133,17 +133,17 @@ onMounted(() => {
         </div>
       </div>
     </div>
-    
+
     <!-- 刷新按钮 -->
     <div class="flex justify-center mt-6">
-      <button 
-        @click="loadUserReviews" 
+      <button
+        @click="loadUserReviews"
         class="flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
       >
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
         </svg>
-        刷新列表
+        Refresh list
       </button>
     </div>
   </div>
@@ -162,4 +162,4 @@ onMounted(() => {
 button {
   transition: all 0.2s ease;
 }
-</style> 
+</style>

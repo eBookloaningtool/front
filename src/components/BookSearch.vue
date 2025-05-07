@@ -2,14 +2,14 @@
   <div>
     <input
       v-model="query"
-      placeholder="请输入书名或作者关键词"
+      placeholder="Please enter the book name or author keyword"
       @input="searchLocalBooks"
     />
     <ul>
       <li v-for="book in searchResults" :key="book.id">
         {{ book.title }} — {{ book.author }}
       </li>
-      <li v-if="searchResults.length === 0">没有匹配到书籍</li>
+      <li v-if="searchResults.length === 0">No matching books</li>
     </ul>
   </div>
 </template>

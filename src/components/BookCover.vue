@@ -8,7 +8,7 @@
       @error="handleImageError"
     />
     <div v-else class="default-cover-placeholder">
-      <span>暂无封面</span>
+      <span>No cover</span>
     </div>
   </div>
 </template>
@@ -23,7 +23,7 @@ const props = defineProps({
   },
   alt: {
     type: String,
-    default: '书籍封面'
+    default: 'Book cover'
   },
   fallback: {
     type: String,
@@ -43,7 +43,7 @@ watch(() => props.src, (newSrc) => {
 // 图片加载失败时处理
 const handleImageError = () => {
   if (process.env.NODE_ENV === 'development') {
-    console.warn(`封面图片加载失败: ${imgSrc.value}，使用默认封面`)
+    console.warn(`Failed to load cover image: ${imgSrc.value}, using default cover`)
   }
   imgSrc.value = props.fallback
   hasError.value = true
