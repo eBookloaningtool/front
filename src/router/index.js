@@ -13,9 +13,6 @@ import SearchResults from '../views/SearchResults.vue'
 import CategoryDetail from '../views/CategoryDetail.vue'
 import { useUserStore } from '../stores/userStore'
 import ReaderPage from '../views/ReaderPage.vue'
-import HelpPage from '../views/HelpPage.vue'
-import TermsPage from '../views/TermsPage.vue'
-import PrivacyPage from '../views/PrivacyPage.vue'
 
 const routes = [
   {
@@ -119,22 +116,6 @@ const routes = [
     name: 'Settings',
     component: () => import('../views/user/SettingsPage.vue'),
     meta: { requiresAuth: true }
-  },
-
-  {
-    path: '/help',
-    name: 'Help',
-    component: HelpPage
-  },
-  {
-    path: '/terms',
-    name: 'Terms',
-    component: TermsPage
-  },
-  {
-    path: '/privacy',
-    name: 'Privacy',
-    component: PrivacyPage
   },
   {
     path: '/reader',

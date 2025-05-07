@@ -96,7 +96,7 @@ app.get('/api/categories/:id/books', (req, res) => {
 app.get('/api/cover-proxy', async (req, res) => {
   const imageUrl = req.query.url;
   if (!imageUrl) {
-    return res.status(400).json({ error: '缺少图片URL参数' });
+    return res.status(400).json({ error: 'Missing image URL parameter' });
   }
 
   try {
@@ -107,7 +107,7 @@ app.get('/api/cover-proxy', async (req, res) => {
     res.send(response.data);
   } catch (error) {
     console.error('获取封面图片失败:', error.message);
-    res.status(500).json({ error: '获取封面图片失败' });
+    res.status(500).json({ error: 'Failed to obtain cover image' });
   }
 });
 
@@ -124,7 +124,7 @@ app.post('/api/borrow/borrow', (req, res) => {
     state: 'success',
     dueDate: '2023-12-31',
     balance: 100,
-    message: '借阅成功'
+    message: 'Borrowing successful'
   });
 });
 
@@ -134,7 +134,7 @@ app.post('/api/cart/add', (req, res) => {
 
   res.json({
     state: 'success',
-    message: '成功添加到购物车'
+    message: 'Successfully added to cart'
   });
 });
 

@@ -12,7 +12,6 @@
         <ul>
           <li><router-link to="/">Home</router-link></li>
           <li><router-link to="/categories">Categories</router-link></li>
-          <li><router-link to="/help">Help Center</router-link></li>
         </ul>
       </div>
 
@@ -20,8 +19,8 @@
         <h3>Contact Us</h3>
         <ul>
           <li><i class="ri-mail-line"></i> contact@borrowbee.wcy.one</li>
-          <li><i class="ri-phone-line"></i> 400-123-4567</li>
-          <li><i class="ri-map-pin-line"></i> Urban Science Building, Newcastle University, Pitt Street, Newcastle Upon Tyne, NE4 5TH</li>
+          <li><i class="ri-phone-line"></i> 742-107-3781</li>
+          <li><i class="ri-map-pin-line"></i> Urban Sciences Building, 1 Science Square, Newcastle upon Tyne, NE4 5TG</li>
         </ul>
       </div>
 
@@ -35,10 +34,6 @@
 
     <div class="footer-bottom">
       <p>&copy; {{ currentYear }} Electronic Book Borrowing System | All Rights Reserved</p>
-      <p>
-        <router-link to="/terms">Service Terms</router-link> |
-        <router-link to="/privacy">Privacy Policy</router-link>
-      </p>
     </div>
   </footer>
 </template>
