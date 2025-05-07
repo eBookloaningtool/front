@@ -1,7 +1,7 @@
 <!-- BookList.vue -->
 <template>
   <div class="book-list-section">
-    <!-- 标题部分 -->
+    <!-- Title section -->
     <div class="book-list-header" v-if="showHeader">
       <h2 class="title">{{ title }}</h2>
       <router-link v-if="moreLink" :to="moreLink" class="view-more">
@@ -9,19 +9,19 @@
       </router-link>
     </div>
 
-    <!-- 加载中状态 -->
+    <!-- Loading state -->
     <div v-if="isLoading" class="loading">
       <div class="simple-spinner"></div>
       <p>Loading...</p>
     </div>
 
-    <!-- 错误状态 -->
+    <!-- Error state -->
     <div v-else-if="errorMessage" class="error">
       <p>{{ errorMessage }}</p>
       <button @click="$emit('retry')" class="retry-btn">Retry</button>
     </div>
 
-    <!-- 正常显示书籍 -->
+    <!-- Normal display of books -->
     <div v-else-if="displayBooks.length > 0" :class="['book-container', layoutClass]">
       <template v-if="useSimpleLayout">
         <div v-for="book in displayBooks" :key="book.id" class="book-item">
@@ -50,19 +50,19 @@
         />
       </template>
 
-      <!-- 加载更多提示 -->
+      <!-- Load more prompt -->
       <div v-if="loadingMore" class="loading-more">
         <div class="simple-spinner"></div>
         <p>Loading more...</p>
       </div>
 
-      <!-- 没有更多数据提示 -->
+      <!-- No more data prompt -->
       <div v-else-if="!hasMore" class="no-more">
         <p>No more books</p>
       </div>
     </div>
 
-    <!-- 没有数据 -->
+    <!-- No data -->
     <div v-else class="empty-state">
       <p>No data available</p>
     </div>
@@ -134,7 +134,7 @@ onMounted(async () => {
   min-height: 200px;
 }
 
-/* Header 样式 */
+/* Header styles */
 .book-list-header {
   display: flex;
   justify-content: space-between;
@@ -160,7 +160,7 @@ onMounted(async () => {
   color: #d89638;
 }
 
-/* Loading 样式 */
+/* Loading styles */
 .loading,
 .loading-more {
   position: fixed;
@@ -191,7 +191,7 @@ onMounted(async () => {
   to { transform: rotate(360deg); }
 }
 
-/* 错误、重试 */
+/* Error, retry */
 .error {
   text-align: center;
   color: #e74c3c;
@@ -212,7 +212,7 @@ onMounted(async () => {
   background: #d89638;
 }
 
-/* 空状态 */
+/* Empty state */
 .empty-state {
   text-align: center;
   padding: 40px;
@@ -220,7 +220,7 @@ onMounted(async () => {
   font-style: italic;
 }
 
-/* 网格布局 */
+/* Grid layout */
 .grid-layout {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -228,21 +228,21 @@ onMounted(async () => {
   margin-top: 30px;
 }
 
-/* 简单布局 */
+/* Simple layout */
 .simple-layout {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 15px;
 }
 
-/* 列表布局 */
+/* List layout */
 .list-layout {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-/* 加载更多提示 */
+/* Load more prompt */
 .loading-more {
   position: fixed;
   top: 50%;
@@ -262,7 +262,7 @@ onMounted(async () => {
   margin: 0 auto 10px;
 }
 
-/* 没有更多数据提示 */
+/* No more data prompt */
 .no-more {
   text-align: center;
   padding: 20px 0;

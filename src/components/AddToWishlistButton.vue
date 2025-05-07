@@ -1,6 +1,6 @@
 <template>
   <div class="relative">
-    <!-- 主按钮 -->
+    <!-- Main button -->
     <button
       @click="toggleWishlist"
       :disabled="loading"
@@ -12,7 +12,7 @@
         loading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'
       ]"
     >
-      <!-- 按钮图标 -->
+      <!-- Button icon -->
       <template v-if="loading">
         <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
@@ -30,11 +30,11 @@
         </svg>
       </template>
 
-      <!-- 按钮文本 -->
+      <!-- Button text -->
       {{ isInWishlist ? 'Remove from wishlist' : 'Add to wishlist' }}
     </button>
 
-    <!-- 通知气泡 -->
+    <!-- Notification bubble -->
     <transition name="fade">
       <div
         v-if="notification.show"
@@ -50,14 +50,14 @@
 </template>
 
 <script setup>
-// 引入Vue相关API
+// Import Vue APIs
 import { ref, onMounted } from 'vue';
-// 引入API接口
+// Import API interfaces
 import { getWishlist, addToWishlist, removeFromWishlist } from '../api/wishlist';
-// 引入开发环境mock
+// Import development mock
 import { mockWishlistAPI } from '../mock-api.js';
 
-// 接收父组件传入的参数
+// Receive props from parent component
 const props = defineProps({
   bookId: {
     type: [String, Number],
@@ -69,10 +69,10 @@ const props = defineProps({
   }
 });
 
-// 向父组件触发事件
+// Emit events to parent component
 const emit = defineEmits(['update:wishlist']);
 
-// 组件内部状态
+// Component internal state
 const loading = ref(false);
 const isInWishlist = ref(false);
 const notification = ref({
@@ -81,20 +81,20 @@ const notification = ref({
   type: 'success'
 });
 
-// 判断是否处于mock开发环境
+// Determine if in mock development environment
 const isMockMode = () => import.meta.env.MODE === 'development' && window.mockMode;
 
-// 页面挂载时执行初始化
+// Initialize on component mount
 onMounted(() => {
   checkWishlistStatus();
 });
 
 /**
- * 检查当前书籍是否在愿望清单中
+ * Check if current book is in wishlist
  */
 const checkWishlistStatus = async () => {
   if (props.initialState !== undefined) {
-    // 有初始状态则直接用
+    // Use initial state if provided
     isInWishlist.value = props.initialState;
     return;
   }
@@ -108,7 +108,7 @@ const checkWishlistStatus = async () => {
     const bookIds = response?.bookId?.map(id => String(id)) || [];
     isInWishlist.value = bookIds.includes(String(props.bookId));
   } catch (error) {
-    console.error('检查愿望清单状态失败:', error);
+    console.error('Failed to check wishlist status:', error);
     showNotification('Failed to load wishlist', 'error');
   } finally {
     loading.value = false;
@@ -116,7 +116,7 @@ const checkWishlistStatus = async () => {
 };
 
 /**
- * 切换愿望清单状态（添加或移除）
+ * Toggle wishlist status (add or remove)
  */
 const toggleWishlist = async () => {
   if (loading.value) return;
@@ -130,31 +130,31 @@ const toggleWishlist = async () => {
   loading.value = true;
   try {
     if (isMockMode()) {
-      // Mock模式
+      // Mock mode
       isInWishlist.value
         ? mockWishlistAPI.removeFromWishlist([props.bookId])
         : mockWishlistAPI.addToWishlist(props.bookId);
     } else {
-      // 正式接口
+      // Official API
       isInWishlist.value
         ? await removeFromWishlist(props.bookId)
         : await addToWishlist(props.bookId);
     }
 
-    // 更新状态
+    // Update state
     isInWishlist.value = !isInWishlist.value;
     showNotification(isInWishlist.value ? 'Added to wishlist' : 'Removed from wishlist', 'success');
 
-    // 触发自定义事件，通知Header组件更新心愿单数量
+    // Trigger custom event to notify Header component to update wishlist count
     document.dispatchEvent(new CustomEvent('wishlist-updated'));
 
-    // 通知父组件
+    // Notify parent component
     emit('update:wishlist', {
       bookId: props.bookId,
       inWishlist: isInWishlist.value
     });
   } catch (error) {
-    console.error('操作愿望清单失败:', error);
+    console.error('Failed to operate wishlist:', error);
     showNotification('Operation failed, please try again later', 'error');
   } finally {
     loading.value = false;
@@ -162,7 +162,7 @@ const toggleWishlist = async () => {
 };
 
 /**
- * 显示通知气泡
+ * Show notification bubble
  */
 const showNotification = (message, type = 'success') => {
   notification.value = { show: true, message, type };
@@ -173,7 +173,7 @@ const showNotification = (message, type = 'success') => {
 </script>
 
 <style scoped>
-/* 进入/离开动画 */
+/* Enter/leave animation */
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.3s;
 }

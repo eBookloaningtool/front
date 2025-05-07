@@ -42,12 +42,12 @@ import { ref, onMounted, defineProps, watch } from 'vue';
 import { getBorrowList, returnBook as apiReturnBook } from '@/api/borrowApi.ts';
 
 const props = defineProps({
-  // 可以接受外部传入的 bookIds，也可以自行通过 API 获取
+  // Can accept bookIds passed from outside, or fetch via API
   bookIds: {
     type: Array,
     default: () => []
   },
-  // 是否使用 API 获取借阅列表
+  // Whether to use API to get the borrowing list
   useApi: {
     type: Boolean,
     default: true
@@ -58,12 +58,12 @@ const books = ref([]);
 const loading = ref(false);
 const error = ref(null);
 
-// 监听 props 变化
+// Watch for props changes
 watch(() => [props.bookIds, props.useApi], () => {
   fetchBooks();
 }, { immediate: true });
 
-// 获取书籍详情
+// Get book details
 const fetchBooks = async () => {
   loading.value = true;
   error.value = null;
@@ -107,15 +107,15 @@ const fetchBooks = async () => {
 };
 
 
-// 归还书籍
+// Return book
 const returnBook = async (bookId) => {
   try {
     const result = await apiReturnBook(bookId);
     if (result.state === 'success') {
-      // 成功提示
+      // Success message
       this.$message.success('Return successful!');
 
-      // 重新拉取借阅列表
+      // Refresh borrowing list
       await fetchBooks();
     } else {
       this.$message.error('Return failed, please try again later');
@@ -126,7 +126,7 @@ const returnBook = async (bookId) => {
   }
 };
 
-// 组件挂载时获取借阅列表
+// Get borrowing list when component is mounted
 onMounted(() => {
   fetchBooks();
 });

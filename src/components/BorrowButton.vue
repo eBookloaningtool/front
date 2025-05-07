@@ -58,9 +58,9 @@ const formattedDueDate = computed(() => {
   return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
 });
 
-// 检查用户是否已经借阅了这本书
+// Check if user has already borrowed this book
 onMounted(() => {
-  // 从localStorage或其他存储中检查是否已借阅
+  // Check from localStorage or other storage if borrowed
   const borrowedBooks = JSON.parse(localStorage.getItem('borrowedBooks') || '[]');
   const found = borrowedBooks.find(item => item.bookId === props.book.id);
 
@@ -73,14 +73,14 @@ onMounted(() => {
 async function handleBorrow() {
   if (isLoading.value || isBorrowed.value) return;
 
-  // 检查用户是否已登录
+  // Check if user is logged in
   if (!userStore.isAuthenticated) {
-    // 触发登录需要事件，让父组件显示登录模态框
+    // Trigger login required event for parent component to show login modal
     emit('login-required', 'borrow');
     return;
   }
 
-  // 调用父组件的借阅处理方法
+  // Call parent component's borrow handling method
   emit('borrow');
 }
 </script>

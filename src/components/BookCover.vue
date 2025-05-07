@@ -34,13 +34,13 @@ const props = defineProps({
 const imgSrc = ref(props.src)
 const hasError = ref(false)
 
-// 监听 src 变化，动态更新图片
+// Watch for src changes, update image dynamically
 watch(() => props.src, (newSrc) => {
   imgSrc.value = newSrc
   hasError.value = false
 })
 
-// 图片加载失败时处理
+// Handle image loading failure
 const handleImageError = () => {
   if (process.env.NODE_ENV === 'development') {
     console.warn(`Failed to load cover image: ${imgSrc.value}, using default cover`)
