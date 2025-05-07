@@ -18,9 +18,9 @@
 export default {
   data() {
     return {
-      allBooks: [],     // 扁平化后的所有书籍
-      query: '',        // 搜索框双向绑定
-      searchResults: [] // 搜索结果
+      allBooks: [],     // All books after flattening
+      query: '',        // Search box two-way binding
+      searchResults: [] // Search results
     };
   },
   methods: {
@@ -30,19 +30,19 @@ export default {
         this.searchResults = [];
         return;
       }
-      
-      this.searchResults = this.allBooks.filter(book => 
-        book.title.toLowerCase().includes(q) || 
+
+      this.searchResults = this.allBooks.filter(book =>
+        book.title.toLowerCase().includes(q) ||
         book.author.toLowerCase().includes(q)
       );
     },
-    
+
     flattenBookData(categorizedBooks) {
-      // 将分类数据扁平化为单一书籍数组
+      // Flatten categorized data into a single book array
       let books = [];
       categorizedBooks.forEach(category => {
         if (category.books && Array.isArray(category.books)) {
-          // 为每本书添加分类信息
+          // Add category information to each book
           const booksWithCategory = category.books.map(book => ({
             ...book,
             category: category.category_name
@@ -60,9 +60,9 @@ export default {
         return res.json();
       })
       .then(data => {
-        this.allBooks = this.flattenBookData(data); 
+        this.allBooks = this.flattenBookData(data);
       })
-      .catch(err => console.error('加载书籍数据失败:', err));
+      .catch(err => console.error('Failed to load book data:', err));
   }
 };
-</script> 
+</script>

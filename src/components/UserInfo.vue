@@ -2,7 +2,7 @@
 <template>
   <div class="user-info">
     <div class="user-avatar">
-      <img :src="userInfo.avatar || '/images/default-avatar.png'" alt="用户头像" class="avatar-img" />
+      <img :src="userInfo.avatar || '/images/default-avatar.png'" alt="User Avatar" class="avatar-img" />
     </div>
 
     <h3 class="user-name">{{ userInfo.name }}</h3>
@@ -10,18 +10,18 @@
 
     <div class="user-meta">
       <div class="meta-item">
-        <span class="meta-label">会员等级</span>
-        <span class="meta-value">{{ userInfo.level || '普通会员' }}</span>
+        <span class="meta-label">Membership Level</span>
+        <span class="meta-value">{{ userInfo.level || 'Regular Member' }}</span>
       </div>
 
       <div class="meta-item">
-        <span class="meta-label">注册时间</span>
-        <span class="meta-value">{{ userInfo.createdat || '未知' }}</span>
+        <span class="meta-label">Registration Time</span>
+        <span class="meta-value">{{ userInfo.createdat || 'Unknown' }}</span>
       </div>
 
       <div class="meta-item">
-        <span class="meta-label">账户余额</span>
-        <span class="meta-value balance-value">{{ userInfo.balance || 0 }} 元</span>
+        <span class="meta-label">Account Balance</span>
+        <span class="meta-value balance-value">{{ userInfo.balance || 0 }} Yuan</span>
       </div>
     </div>
 
@@ -45,7 +45,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V7.414l-5-5H3zm7 2v4H5V5h5z" clip-rule="evenodd" />
         </svg>
-        退出
+        Logout
       </button>
     </div>
   </div>

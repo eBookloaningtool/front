@@ -2,9 +2,9 @@
   <div class="profile-page bg-cream">
     <Header />
 
-    <!-- 主内容区域，添加足够的上边距避免被导航栏遮挡 -->
+    <!-- Main content area, add sufficient top margin to avoid being obscured by the navigation bar -->
     <div class="main-container">
-      <!-- 左侧菜单 -->
+      <!-- Left sidebar menu -->
       <div class="sidebar">
         <div class="menu-item" :class="{ active: currentView === 'Profile' }">
           <a href="#" @click.prevent="switchView('Profile')">
@@ -68,9 +68,9 @@
         </div>
       </div>
 
-      <!-- 右侧内容 -->
+      <!-- Right content -->
       <div class="content">
-        <!-- 用户详情视图 -->
+        <!-- User details view -->
         <div v-if="currentView === 'Profile'" class="user-details">
           <h2 class="page-title">User Details</h2>
 
@@ -103,7 +103,7 @@
           </div>
         </div>
 
-        <!-- 当前借阅视图 -->
+        <!-- Current borrowings view -->
         <div v-if="currentView === 'RecentBorrows'" class="recent-borrows">
           <h2 class="page-title">Current Borrowings</h2>
 
@@ -124,7 +124,7 @@
           <div v-else class="books-list">
             <div v-for="book in recentBooks" :key="book.id" class="book-item">
               <div class="book-cover">
-                <img v-if="book.cover" :src="book.cover" alt="书籍封面" />
+                <img v-if="book.cover" :src="book.cover" alt="Book cover" />
               </div>
               <div class="book-info">
                 <div class="book-header">
@@ -148,7 +148,7 @@
           </div>
         </div>
 
-        <!-- 借阅历史视图 -->
+        <!-- Loan history view -->
         <div v-if="currentView === 'LoanHistory'" class="loan-history">
           <h2 class="page-title">Loan History</h2>
           <p class="subtitle">View all your borrowing records</p>
@@ -158,7 +158,7 @@
           </div>
 
           <div v-else>
-            <!-- 搜索和筛选 -->
+            <!-- Search and filter -->
             <div class="filter-container">
               <div class="search-input">
                 <input
@@ -235,7 +235,7 @@
               </table>
             </div>
 
-            <!-- 分页控件 -->
+            <!-- Pagination controls -->
             <div class="pagination">
               <div class="pagination-mobile">
                 <button
@@ -291,7 +291,7 @@
           </div>
         </div>
 
-        <!-- 愿望清单视图 -->
+        <!-- Wishlist view -->
         <div v-if="currentView === 'Wishlist'" class="wishlist">
           <h2 class="page-title">My Wish List</h2>
           <p class="subtitle">Manage your saved books</p>
@@ -338,7 +338,7 @@
           </div>
         </div>
 
-        <!-- 评论记录视图 -->
+        <!-- Reviews view -->
         <div v-if="currentView === 'MyReviews'" class="reviews">
           <h2 class="page-title">My Reviews</h2>
 
@@ -384,7 +384,7 @@
           </div>
         </div>
 
-        <!-- 支付记录视图 -->
+        <!-- Payment records view -->
         <div v-if="currentView === 'PaymentOrders'" class="payment-orders">
           <h2 class="page-title">Payment Records</h2>
           <p class="subtitle">View your top-up records</p>
@@ -437,18 +437,18 @@
           </div>
         </div>
 
-        <!-- 充值视图 -->
+        <!-- Top up view -->
         <div v-if="currentView === 'TopUp'" class="topup-view">
           <h2 class="page-title">Account Top Up</h2>
           <p class="subtitle">Add funds to your account</p>
 
-          <!-- 当前余额显示 -->
+          <!-- Current balance display -->
           <div class="balance-display">
             <i class="ri-wallet-3-line"></i>
             <span>Current Balance: £{{ accountBalance }}</span>
           </div>
 
-          <!-- 充值金额选项 -->
+          <!-- Top up amount options -->
           <div class="amount-options">
             <h3>Select Amount</h3>
             <div class="amount-grid">
@@ -463,7 +463,7 @@
             </div>
           </div>
 
-          <!-- 自定义金额输入 -->
+          <!-- Custom amount input -->
           <div class="custom-amount">
             <h3>Custom Amount</h3>
             <div class="input-group">
@@ -479,7 +479,7 @@
             </div>
           </div>
 
-          <!-- 确认充值按钮 -->
+          <!-- Confirm top up button -->
           <button
             class="confirm-btn"
             :disabled="!isTopUpAmountValid || processingTopUp"
@@ -489,7 +489,7 @@
             <span v-else>Confirm Top Up</span>
           </button>
 
-          <!-- 充值说明 -->
+          <!-- Top up information -->
           <div class="topup-info">
             <i class="ri-information-line"></i>
             <p>The amount will be credited instantly to your account and can be used for book rentals.</p>
@@ -595,7 +595,7 @@ import { getWishlist, getBookDetail, removeFromWishlist } from '../api/booksApi'
 import { getBorrowHistory, getBorrowList } from '../api/borrowApi';
 import { get, post } from '../utils/request';
 
-// 默认封面图片
+// Default cover image
 const defaultCover = '/images/books/default-cover.jpg';
 
 const router = useRouter();
@@ -608,11 +608,11 @@ const registrationDate = ref('');
 const userId = ref('');
 const accountBalance = ref(0);
 
-// 当前借阅相关状态
+// Current borrowings related states
 const recentBooks = ref([]);
 const loadingBooks = ref(false);
 
-// 借阅历史相关状态
+// Loan history related states
 const loans = ref([]);
 const loadingLoans = ref(false);
 const searchQuery = ref('');
@@ -620,15 +620,15 @@ const statusFilter = ref('all');
 const currentPage = ref(1);
 const pageSize = 5;
 
-// 愿望清单相关状态
+// Wishlist related states
 const wishlistItems = ref([]);
 const loadingWishlist = ref(false);
 
-// 评论记录相关状态
+// Reviews related states
 const reviews = ref([]);
 const loadingReviews = ref(false);
 
-// 支付订单相关状态
+// Payment orders related states
 const orders = ref([]);
 const loadingOrders = ref(false);
 const currentOrderTab = ref('unpaid');
@@ -636,13 +636,13 @@ const showPaymentModal = ref(false);
 const currentOrder = ref({});
 const paymentMethod = ref('alipay');
 
-// 充值相关状态
+// Top-up related states
 const presetTopUpAmounts = [50, 100, 200, 500, 1000];
 const selectedTopUpAmount = ref(null);
 const customTopUpAmount = ref('');
 const processingTopUp = ref(false);
 
-// 用户信息更新相关状态
+// User info update related states
 const updateForm = ref({
   name: '',
   email: '',
@@ -651,42 +651,42 @@ const updateForm = ref({
 const isUpdating = ref(false);
 const updateError = ref('');
 
-// 支付记录标签页选项
+// Payment record tab options
 const orderTabs = [
   { id: 'unpaid', name: 'Unpaid' },
   { id: 'completed', name: 'Completed' },
   { id: 'cancelled', name: 'Cancelled' }
 ];
 
-// 当前视图，默认为Profile
+// Current view, default is Profile
 const currentView = ref('Profile');
 
-// 计算最终充值金额
+// Calculate final top-up amount
 const finalTopUpAmount = computed(() => {
   return selectedTopUpAmount.value || Number(customTopUpAmount.value) || 0;
 });
 
-// 验证金额是否有效
+// Validate if amount is valid
 const isTopUpAmountValid = computed(() => {
   return finalTopUpAmount.value > 0 && finalTopUpAmount.value <= 10000;
 });
 
-// 选择预设金额
+// Select preset amount
 const selectTopUpAmount = (amount) => {
   selectedTopUpAmount.value = amount;
   customTopUpAmount.value = '';
 };
 
-// 处理自定义金额输入
+// Handle custom amount input
 const handleCustomTopUpAmount = () => {
   selectedTopUpAmount.value = null;
-  // 限制最大金额为10000
+  // Limit maximum amount to 10000
   if (Number(customTopUpAmount.value) > 10000) {
     customTopUpAmount.value = '10000';
   }
 };
 
-// 处理充值
+// Handle top-up
 const handleTopUp = async () => {
   if (!isTopUpAmountValid.value || processingTopUp.value) return;
 
@@ -696,36 +696,36 @@ const handleTopUp = async () => {
     const result = await topUpBalance(finalTopUpAmount.value);
 
     if (result.state === 'success') {
-      // 更新账户余额
+      // Update account balance
       accountBalance.value = result.balance;
-      // 更新 UserStore 中的余额
+      // Update balance in UserStore
       const userStore = useUserStore();
       userStore.balance = result.balance;
 
       showToast(`Top up successful! £${finalTopUpAmount.value} has been added to your account`, 'success');
 
-      // 重置表单
+      // Reset form
       selectedTopUpAmount.value = null;
       customTopUpAmount.value = '';
 
-      // 显示支付记录
+      // Show payment records
       switchView('PaymentOrders');
     } else {
       throw new Error('Top up failed');
     }
   } catch (error) {
-    console.error('充值失败:', error);
+    console.error('Top up failed:', error);
     showToast('Top up failed, please try again later', 'error');
   } finally {
     processingTopUp.value = false;
   }
 };
 
-// 切换视图的方法
+// Method to switch views
 const switchView = (view) => {
   currentView.value = view;
 
-  // 根据视图加载相应数据
+  // Load relevant data based on view
   if (view === 'RecentBorrows') {
     fetchRecentBooks();
   } else if (view === 'LoanHistory') {
@@ -737,7 +737,7 @@ const switchView = (view) => {
   } else if (view === 'PaymentOrders') {
     fetchOrders();
   } else if (view === 'TopUp') {
-    // 加载充值页面时获取当前余额
+    // Get current balance when loading top-up page
     fetchUserInfo();
   } else if (view === 'Settings') {
     // Reset form fields
@@ -751,23 +751,23 @@ const switchView = (view) => {
   }
 };
 
-// 头像生成逻辑
+// Avatar generation logic
 const avatarUrl = computed(() => {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(username.value)}&background=random`;
 });
 
-// 格式化日期
+// Format date
 const formatDate = (dateStr) => {
   if (!dateStr) return 'Unknown';
   const d = new Date(dateStr);
   if (isNaN(d)) return 'Unknown';
 
-  // 使用英文格式
+  // Use English format
   const options = { year: 'numeric', month: 'long', day: 'numeric' };
   return d.toLocaleDateString('en-US', options);
 };
 
-// 获取状态文本
+// Get status text
 const getStatusText = (status) => {
   switch (status) {
     case 'borrowed': return 'Borrowed';
@@ -777,19 +777,19 @@ const getStatusText = (status) => {
   }
 };
 
-// 登出方法
+// Logout method
 const logout = async () => {
   try {
     const userStore = useUserStore();
     await userStore.logout();
     router.push('/login');
   } catch (error) {
-    console.error('登出失败:', error);
+    console.error('Logout failed:', error);
     showToast('Logout failed, please try again', 'error');
   }
 };
 
-// 获取用户信息
+// Get user information
 const fetchUserInfo = async () => {
   try {
     const response = await post({
@@ -797,13 +797,13 @@ const fetchUserInfo = async () => {
     });
 
     if (response) {
-      // 更新用户信息
+      // Update user information
       username.value = response.name;
       email.value = response.email;
       registrationDate.value = formatDate(response.createdat);
       accountBalance.value = response.balance;
 
-      // 更新 UserStore 中的信息
+      // Update information in UserStore
       const userStore = useUserStore();
       userStore.userName = response.name;
       userStore.userEmail = response.email;
@@ -811,20 +811,20 @@ const fetchUserInfo = async () => {
       userStore.balance = response.balance;
     }
   } catch (error) {
-    console.error('获取用户信息失败:', error);
+    console.error('Failed to get user information:', error);
     showToast('Failed to get user information, please try again later', 'error');
   }
 };
 
-// 获取最近借阅的图书
+// Get recently borrowed books
 const fetchRecentBooks = async () => {
   loadingBooks.value = true;
   try {
-    // 获取当前借阅列表
+    // Get current borrowing list
     const borrowListResponse = await getBorrowList();
 
     if (borrowListResponse.state === 'success') {
-      // 获取每本书的详细信息
+      // Get detailed information for each book
       const bookDetailsPromises = borrowListResponse.data.map(async (borrow) => {
         try {
           const bookDetail = await get({
@@ -840,11 +840,11 @@ const fetchRecentBooks = async () => {
             dueDate: borrow.dueDate
           };
         } catch (error) {
-          console.error(`获取书籍 ${borrow.bookId} 详情失败:`, error);
+          console.error(`Failed to get book details for ${borrow.bookId}:`, error);
           return {
             id: borrow.bookId,
-            title: '未知书籍',
-            author: '未知作者',
+            title: 'Unknown Book',
+            author: 'Unknown Author',
             cover: '/images/books/default-cover.jpg',
             borrowDate: borrow.borrowDate,
             dueDate: borrow.dueDate
@@ -854,17 +854,17 @@ const fetchRecentBooks = async () => {
 
       recentBooks.value = await Promise.all(bookDetailsPromises);
     } else {
-      throw new Error('获取借阅列表失败');
+      throw new Error('Failed to get borrowing list');
     }
   } catch (error) {
-    console.error('获取最近阅读图书失败:', error);
+    console.error('Failed to get recently read books:', error);
     showToast('Failed to get recently read books, please try again later', 'error');
   } finally {
     loadingBooks.value = false;
   }
 };
 
-// 获取借阅历史
+// Get loan history
 const fetchLoanHistory = async () => {
   try {
     loadingLoans.value = true;
@@ -874,25 +874,25 @@ const fetchLoanHistory = async () => {
       cover: loan.cover || loan.bookCover || '/images/books/default-cover.jpg'
     }));
   } catch (error) {
-    console.error('获取借阅历史失败:', error);
+    console.error('Failed to get borrowing history:', error);
     showToast('Failed to get borrowing history, please try again later', 'error');
   } finally {
     loadingLoans.value = false;
   }
 };
 
-// 获取愿望清单
+// Get wishlist
 const fetchWishlist = async () => {
   loadingWishlist.value = true;
   try {
-    // 获取愿望清单中的书籍ID列表
+    // Get book ID list from wishlist
     const wishlistData = await getWishlist();
 
-    // 获取每本书的详情
+    // Get details for each book
     const bookPromises = wishlistData.bookId.map(bookId => getBookDetail(bookId));
     const bookDetails = await Promise.all(bookPromises);
 
-    // 转换数据格式
+    // Transform data format
     wishlistItems.value = bookDetails.map(book => ({
       id: book.bookId,
       title: book.title,
@@ -901,14 +901,14 @@ const fetchWishlist = async () => {
       price: book.price.toFixed(2)
     }));
   } catch (error) {
-    console.error('获取愿望清单失败:', error);
+    console.error('Failed to get wishlist:', error);
     showToast('Failed to get wishlist, please try again later', 'error');
   } finally {
     loadingWishlist.value = false;
   }
 };
 
-// 从愿望清单中移除书籍
+// Remove book from wishlist
 const handleRemoveFromWishlist = async (bookId) => {
   try {
     const result = await removeFromWishlist(bookId);
@@ -916,28 +916,28 @@ const handleRemoveFromWishlist = async (bookId) => {
       wishlistItems.value = wishlistItems.value.filter(item => item.id !== bookId);
       showToast('Removed from wishlist', 'success');
 
-      // 触发自定义事件，通知Header组件更新心愿单数量
+      // Trigger custom event to notify Header component to update wishlist count
       document.dispatchEvent(new CustomEvent('wishlist-updated'));
     } else {
       throw new Error('Failed to remove');
     }
   } catch (error) {
-    console.error('移除书籍失败:', error);
+    console.error('Failed to remove book:', error);
     showToast('Failed to remove book, please try again later', 'error');
   }
 };
 
-// 获取评论记录
+// Get review records
 const fetchReviews = async () => {
   loadingReviews.value = true;
   try {
-    // 获取用户的评论ID列表
+    // Get user's comment ID list
     const userCommentsResponse = await post({
       url: '/api/reviews/user'
     });
 
     if (userCommentsResponse && userCommentsResponse.state === 'success' && userCommentsResponse.commentIds) {
-      // 获取每个评论的详细内容
+      // Get detailed content for each comment
       const reviewPromises = userCommentsResponse.commentIds.map(async (commentId) => {
         try {
           const response = await get({
@@ -945,7 +945,7 @@ const fetchReviews = async () => {
           });
 
           if (response.state === 'success') {
-            // 获取书籍详情
+            // Get book details
             const bookResponse = await get({
               url: `/api/books/get?bookId=${response.bookId}`
             });
@@ -962,20 +962,20 @@ const fetchReviews = async () => {
           }
           return null;
         } catch (error) {
-          console.error(`获取评论 ${commentId} 详情失败:`, error);
+          console.error(`Failed to get comment details for ${commentId}:`, error);
           return null;
         }
       });
 
-      // 等待所有评论详情获取完成
+      // Wait for all comment details to be retrieved
       const reviewResults = await Promise.all(reviewPromises);
-      // 过滤掉获取失败的评论
+      // Filter out failed comments
       reviews.value = reviewResults.filter(review => review !== null);
     } else {
       reviews.value = [];
     }
   } catch (error) {
-    console.error('获取评论失败:', error);
+    console.error('Failed to get reviews:', error);
     showToast('Failed to get reviews, please try again later', 'error');
     reviews.value = [];
   } finally {
@@ -983,13 +983,13 @@ const fetchReviews = async () => {
   }
 };
 
-// 获取支付订单
+// Get payment orders
 const fetchOrders = async () => {
   loadingOrders.value = true;
   try {
     const result = await getPaymentHistory();
     if (result.state === 'success') {
-      // 将 API 返回的数据转换为页面需要的格式
+      // Convert API return data to the format needed by the page
       orders.value = result.data.map(payment => ({
         id: payment.paymentId,
         orderNumber: payment.paymentId,
@@ -1003,7 +1003,7 @@ const fetchOrders = async () => {
       throw new Error('Failed to get payment history');
     }
   } catch (error) {
-    console.error('获取支付历史失败:', error);
+    console.error('Failed to get payment history:', error);
     showToast('Failed to get payment history, please try again later', 'error');
     orders.value = [];
   } finally {
@@ -1011,7 +1011,7 @@ const fetchOrders = async () => {
   }
 };
 
-// 根据状态筛选订单
+// Filter orders by status
 const completedOrders = computed(() => {
   return orders.value;
 });
@@ -1024,70 +1024,70 @@ const cancelledOrders = computed(() => {
   return [];
 });
 
-// 获取订单状态文本
+// Get order status text
 const getOrderStatusText = (status) => {
   return 'Completed';
 };
 
-// 查看订单详情
+// View order details
 const viewOrderDetail = (orderId) => {
   router.push(`/orders/${orderId}`);
 };
 
-// 取消订单
+// Cancel order
 const cancelOrder = (orderId) => {
   if (confirm('Are you sure you want to cancel this order?')) {
-    // 这里应该调用API取消订单
+    // Here should call API to cancel order
     const orderIndex = orders.value.findIndex(order => order.id === orderId);
     if (orderIndex !== -1) {
       const order = orders.value[orderIndex];
       order.status = 'cancelled';
       order.cancelledAt = new Date().toISOString();
-      orders.value = [...orders.value]; // 触发响应式更新
+      orders.value = [...orders.value]; // Trigger reactive update
     }
   }
 };
 
-// 支付订单
+// Pay for order
 const payOrder = (order) => {
   currentOrder.value = order;
   showPaymentModal.value = true;
-  paymentMethod.value = 'alipay'; // 默认支付方式
+  paymentMethod.value = 'alipay'; // Default payment method
 };
 
-// 关闭支付对话框
+// Close payment dialog
 const closePaymentModal = () => {
   showPaymentModal.value = false;
 };
 
-// 确认支付
+// Confirm payment
 const confirmPayment = () => {
-  // 这里应该调用API进行支付处理
+  // Here should call API to process payment
   const orderIndex = orders.value.findIndex(order => order.id === currentOrder.value.id);
   if (orderIndex !== -1) {
     const order = orders.value[orderIndex];
     order.status = 'completed';
     order.paidAt = new Date().toISOString();
-    orders.value = [...orders.value]; // 触发响应式更新
+    orders.value = [...orders.value]; // Trigger reactive update
   }
   showPaymentModal.value = false;
   alert(`Payment successful using ${paymentMethod.value === 'alipay' ? 'Alipay' : paymentMethod.value === 'wechat' ? 'WeChat Pay' : 'Credit Card'}!`);
 };
 
-// 根据当前路由设置初始视图
+// Set initial view based on current route
 onMounted(() => {
-  // 获取用户信息
+  // Get user information
   fetchUserInfo();
 
-  // 检查URL查询参数中是否有view参数
+  // Check if there's a view parameter in URL query parameters
   const viewParam = route.query.view;
   if (viewParam) {
-    // 如果有view参数，优先使用它来设置视图
+    // If there's a view parameter, prioritize using it to set the view
     switchView(viewParam);
     return;
   }
 
-  // 如果没有view参数，则根据路由路径设置初始视图
+  // If there's no view parameter, set initial view based on route path
   const path = route.path;
   if (path === '/user/profile') {
     currentView.value = 'Profile';
@@ -1109,16 +1109,16 @@ onMounted(() => {
   }
 });
 
-// 借阅历史相关的计算属性和方法
-// 根据搜索和过滤条件筛选借阅记录
+// Loan history related computed properties and methods
+// Filter loan records based on search and filter conditions
 const filteredLoans = computed(() => {
   return loans.value.filter(loan => {
-    // 状态过滤
+    // Status filter
     if (statusFilter.value !== 'all' && loan.status !== statusFilter.value) {
       return false;
     }
 
-    // 搜索过滤
+    // Search filter
     if (searchQuery.value) {
       const query = searchQuery.value.toLowerCase();
       return loan.title.toLowerCase().includes(query) ||
@@ -1129,7 +1129,7 @@ const filteredLoans = computed(() => {
   });
 });
 
-// 分页相关计算属性
+// Pagination related computed properties
 const totalPages = computed(() => Math.ceil(filteredLoans.value.length / pageSize));
 
 const paginatedLoans = computed(() => {
@@ -1148,7 +1148,7 @@ const paginationEnd = computed(() => {
   return Math.min(currentPage.value * pageSize, filteredLoans.value.length);
 });
 
-// 显示的页码范围
+// Range of displayed page numbers
 const displayedPages = computed(() => {
   const total = totalPages.value;
   const current = currentPage.value;
@@ -1168,7 +1168,7 @@ const displayedPages = computed(() => {
   return [1, '...', current - 1, current, current + 1, '...', total];
 });
 
-// 分页导航
+// Pagination navigation
 const prevPage = () => {
   if (currentPage.value > 1) {
     currentPage.value--;
@@ -1187,28 +1187,28 @@ const goToPage = (page) => {
   }
 };
 
-// 查看借阅详情
+// View loan details
 const viewLoanDetail = (loanId) => {
   router.push(`/book/${loanId}`);
 };
 
-// 延长借阅
+// Extend loan
 const extendLoan = (loanId) => {
-  // 这里应该调用API延长借阅
+  // Here should call API to extend loan
   alert(`Loan extension requested for ID: ${loanId}`);
 };
 
-// 继续阅读函数 - 页面跳转
+// Continue reading function - page navigation
 const continueReading = (bookId) => {
   router.push(`/reader/${bookId}`);
 };
 
-// 查看图书详情
+// View book details
 const viewBookDetails = (bookId) => {
   router.push(`/book/${bookId}`);
 };
 
-// 删除评论
+// Delete review
 const deleteReview = async (reviewId) => {
   if (confirm('Are you sure you want to delete this comment?')) {
     try {
@@ -1218,20 +1218,20 @@ const deleteReview = async (reviewId) => {
       });
 
       if (response.state === 'success') {
-        // 从列表中移除已删除的评论
+        // Remove the deleted review from the list
         reviews.value = reviews.value.filter(review => review.id !== reviewId);
         showToast('Review deleted', 'success');
       } else {
         throw new Error('Failed to delete review');
       }
     } catch (error) {
-      console.error('删除评论失败:', error);
+      console.error('Failed to delete review:', error);
       showToast('Failed to delete review, please try again later', 'error');
     }
   }
 };
 
-// 更新用户信息方法
+// Update user information method
 const updateUserInfo = async () => {
   if (isUpdating.value) return;
 
@@ -1320,7 +1320,7 @@ const handleDeleteAccount = async () => {
   display: flex;
   max-width: 1200px;
   margin: 0 auto;
-  padding-top: 80px; /* 为顶部导航栏留出空间 */
+  padding-top: 80px; /* Space for top navigation bar */
   min-height: calc(100vh - 80px);
 }
 
@@ -1414,7 +1414,7 @@ const handleDeleteAccount = async () => {
   color: #333;
 }
 
-/* 当前借阅样式 */
+/* Current borrowings style */
 .loading-state, .empty-state {
   padding: 30px 0;
   text-align: center;
@@ -1522,7 +1522,7 @@ const handleDeleteAccount = async () => {
   background-color: #d89b44;
 }
 
-/* 借阅历史样式 */
+/* Loan history style */
 .subtitle {
   color: #666;
   margin-top: -20px;
@@ -1727,7 +1727,7 @@ const handleDeleteAccount = async () => {
   color: white;
 }
 
-/* 响应式调整 */
+/* Responsive adjustments */
 @media (max-width: 768px) {
   .main-container {
     flex-direction: column;
@@ -1778,7 +1778,7 @@ const handleDeleteAccount = async () => {
   }
 }
 
-/* 愿望清单样式 */
+/* Wishlist style */
 .wishlist-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -1869,7 +1869,7 @@ const handleDeleteAccount = async () => {
   background-color: #e0e0e0;
 }
 
-/* 评论记录样式 */
+/* Comment records style */
 .reviews-list {
   display: flex;
   flex-direction: column;
@@ -1959,7 +1959,7 @@ const handleDeleteAccount = async () => {
   margin: 0;
 }
 
-/* 支付订单样式 */
+/* Payment orders style */
 .tab-container {
   display: flex;
   border-bottom: 1px solid #eee;
@@ -2170,7 +2170,7 @@ const handleDeleteAccount = async () => {
   background-color: #d89b44;
 }
 
-/* 支付弹窗样式 */
+/* Payment modal style */
 .payment-modal-overlay {
   position: fixed;
   top: 0;
@@ -2293,7 +2293,7 @@ const handleDeleteAccount = async () => {
   cursor: not-allowed;
 }
 
-/* 充值视图样式 */
+/* Top up style */
 .topup-view {
   max-width: 100%;
   width: 100%;
@@ -2519,7 +2519,7 @@ const handleDeleteAccount = async () => {
   font-size: 18px;
 }
 
-/* 响应式调整 */
+/* Responsive adjustments */
 @media (max-width: 768px) {
   .amount-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -2534,7 +2534,7 @@ const handleDeleteAccount = async () => {
   }
 }
 
-/* 设置视图样式 */
+/* Settings view style */
 .settings-view {
   max-width: 100%;
   width: 100%;

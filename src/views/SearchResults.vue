@@ -19,7 +19,7 @@
         />
       </div>
 
-      <!-- 单独的提示，当有书籍但没有更多时显示 -->
+      <!-- Separate message shown when there are books but no more to load -->
       <div v-if="!loading && !loadingMore && books.length > 0 && !hasMore" class="no-more-books">
         <p>No more books</p>
       </div>
@@ -51,14 +51,14 @@ const searchParams = computed(() => ({
 
 const title = computed(() => {
   const params = searchParams.value;
-  if (params.title) return `搜索结果: ${params.title}`;
-  if (params.author) return `作者: ${params.author}`;
-  if (params.category) return `分类: ${params.category}`;
-  return '搜索结果';
+  if (params.title) return `Search Results: ${params.title}`;
+  if (params.author) return `Author: ${params.author}`;
+  if (params.category) return `Category: ${params.category}`;
+  return 'Search Results';
 });
 
 const search = async () => {
-  // 检查是否有搜索参数
+  // Check if there are search parameters
   if (!searchParams.value.title && !searchParams.value.author && !searchParams.value.category) {
     books.value = [];
     loading.value = false;
@@ -96,7 +96,7 @@ const search = async () => {
       error.value = result.message || 'Search failed, please try again later';
     }
   } catch (err) {
-    console.error('搜索出错', err);
+    console.error('Search error', err);
     error.value = 'Search failed, please try again later';
     books.value = [];
   } finally {
@@ -104,7 +104,7 @@ const search = async () => {
   }
 };
 
-// 加载更多搜索结果
+// Load more search results
 const loadMore = async () => {
   if (!hasMore.value || loadingMore.value) return;
 
@@ -133,14 +133,14 @@ const loadMore = async () => {
       hasMore.value = false;
     }
   } catch (err) {
-    console.error('加载更多搜索结果失败:', err);
-    error.value = '加载更多结果失败，请稍后再试';
+    console.error('Failed to load more search results:', err);
+    error.value = 'Failed to load more results, please try again later';
   } finally {
     loadingMore.value = false;
   }
 };
 
-// 监听滚动事件
+// Listen for scroll events
 const handleScroll = () => {
   const scrollHeight = document.documentElement.scrollHeight;
   const scrollTop = document.documentElement.scrollTop;
@@ -151,7 +151,7 @@ const handleScroll = () => {
   }
 };
 
-// 监听搜索参数变化
+// Watch for search parameter changes
 watch(() => route.query, () => {
   search();
 }, { deep: true });
@@ -212,7 +212,7 @@ onUnmounted(() => {
   color: #666;
 }
 
-/* 隐藏BookList中的no-more提示 */
+/* Hide the no-more message in BookList */
 .book-list-wrapper :deep(.no-more) {
   display: none;
 }

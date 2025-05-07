@@ -40,7 +40,7 @@
 
 <script setup>
 import { computed } from 'vue'
-// 注意：Remix 图标通过 index.html 中的 CDN 链接引入，不需要在这里导入
+// Note: Remix icons are imported via CDN link in index.html, no need to import here
 
 const currentYear = computed(() => new Date().getFullYear())
 </script>

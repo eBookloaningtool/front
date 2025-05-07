@@ -3,28 +3,28 @@
   <div class="category-detail-page">
     <Header />
     <main class="container mx-auto px-4 py-8">
-      <!-- 加载状态 -->
+      <!-- Loading state -->
       <div v-if="loading" class="flex justify-center items-center py-12">
         <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
       </div>
 
-      <!-- 错误信息 -->
+      <!-- Error message -->
       <div v-else-if="error" class="text-center py-12">
         <p class="text-red-500">{{ error }}</p>
         <button
           @click="fetchCategory"
           class="mt-4 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded"
         >
-          重试
+          Retry
         </button>
         <div class="mt-4">
           <router-link to="/categories" class="text-blue-500 hover:underline">
-            返回所有分类
+            Return to all categories
           </router-link>
         </div>
       </div>
 
-      <!-- 分类内容 -->
+      <!-- Category content -->
       <div v-else>
         <div class="mb-8 flex items-start justify-between">
           <div>
@@ -32,11 +32,11 @@
             <p class="text-gray-600 mt-2">{{ category.description }}</p>
           </div>
           <router-link to="/categories" class="text-amber-500 hover:underline flex items-center">
-            <i class="ri-arrow-left-line mr-1"></i> 所有分类
+            <i class="ri-arrow-left-line mr-1"></i> All categories
           </router-link>
         </div>
 
-        <!-- 书籍列表 -->
+        <!-- Book list -->
         <div v-if="books && books.length > 0">
           <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
             <div
@@ -62,9 +62,9 @@
           </div>
         </div>
 
-        <!-- 无书籍提示 -->
+        <!-- No books tip -->
         <div v-else class="text-center py-12">
-          <p class="text-gray-500">该分类暂无图书</p>
+          <p class="text-gray-500">No books in this category</p>
         </div>
       </div>
     </main>
@@ -87,7 +87,7 @@ const books = ref([]);
 const loading = ref(true);
 const error = ref(null);
 
-// 导航到书籍详情页
+// Navigate to book detail page
 const navigateToBook = (bookId) => {
   router.push(`/book/${bookId}`);
 };
@@ -97,18 +97,18 @@ const fetchCategory = async () => {
   error.value = null;
 
   try {
-    // 获取分类信息
+    // Get category information
     const categoryResponse = await categoryAPI.getCategoryDetail(categoryId.value);
     category.value = categoryResponse.data;
 
-    // 获取该分类下的图书
+    // Get books in this category
     const booksResponse = await bookAPI.getBooksByCategory(categoryId.value);
     books.value = booksResponse.data;
 
     loading.value = false;
   } catch (err) {
-    console.error('获取分类数据失败:', err);
-    error.value = '获取分类数据失败，请稍后再试';
+    console.error('Failed to get category data:', err);
+    error.value = 'Failed to get category data, please try again later';
     loading.value = false;
   }
 };

@@ -2,16 +2,16 @@
   <div class="add-review-container">
     <h3 class="title">Leave a comment</h3>
 
-    <!-- 成功提示 -->
+    <!-- Success message -->
     <p v-if="success" class="alert-success">Comment published successfully!</p>
 
-    <!-- 错误提示 -->
+    <!-- Error message -->
     <p v-if="error" class="alert-error">{{ error }}</p>
 
-    <!-- 评论表单 -->
+    <!-- Comment form -->
     <form @submit.prevent="submitReview" class="space-y-4">
 
-      <!-- 评分选择 -->
+      <!-- Rating selection -->
       <div>
         <label class="label">Rating</label>
         <div class="flex gap-2">
@@ -30,7 +30,7 @@
         </div>
       </div>
 
-      <!-- 评论输入 -->
+      <!-- Comment input -->
       <div>
         <label for="comment" class="label">Comment</label>
         <textarea
@@ -42,7 +42,7 @@
         ></textarea>
       </div>
 
-      <!-- 提交按钮 -->
+      <!-- Submit button -->
       <div>
         <button
           type="submit"
@@ -80,16 +80,16 @@ const submitting = ref(false);
 const error = ref('');
 const success = ref(false);
 
-// 评分选项
+// Rating options
 const ratingOptions = [1, 2, 3, 4, 5];
 
-// 校验
+// Validation
 const isCommentValid = computed(() => comment.value.length > 0);
 
-// 是否可以提交
+// Check if can submit
 const canSubmit = computed(() => rating.value > 0 && isCommentValid.value);
 
-// 提交评论
+// Submit review
 const submitReview = async () => {
   if (!canSubmit.value || submitting.value) return;
 

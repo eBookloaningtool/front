@@ -32,7 +32,7 @@
 
       <div class="user-actions">
         <template v-if="isLoggedIn">
-          <!-- 心愿单按钮 -->
+          <!-- Wishlist Button -->
           <router-link to="/user/profile?view=Wishlist" class="wishlist-btn" :class="{ 'has-items': wishlistItemCount > 0 }" @click="closeUserMenu">
             <i :class="wishlistItemCount > 0 ? 'ri-heart-fill' : 'ri-heart-line'"></i>
             <span v-if="wishlistItemCount > 0" class="wishlist-counter">{{ wishlistItemCount }}</span>
@@ -47,11 +47,11 @@
             <div class="username">{{ username }}</div>
             <i class="ri-arrow-down-s-line"></i>
 
-            <div class="user-menu" v-if="showUserMenu">
+            <div class="user-menu" v-if="showUserMenu" @click.stop>
               <ul>
-                <li><router-link to="/user/profile" @click.prevent="navigateTo('/user/profile')">Profile</router-link></li>
-                <li><router-link to="/user/books" @click.prevent="navigateTo('/user/books')">My Books</router-link></li>
-                <li><a href="#" @click.prevent="logout">Logout</a></li>
+                <li><router-link to="/user/profile" @click.stop.prevent="navigateTo('/user/profile')">Profile</router-link></li>
+                <li><router-link to="/user/books" @click.stop.prevent="navigateTo('/user/books')">My Books</router-link></li>
+                <li><a href="#" @click.stop.prevent="logout">Logout</a></li>
               </ul>
             </div>
           </div>
@@ -82,26 +82,47 @@ const cartItemCount = ref(0)
 const wishlistItemCount = ref(0)
 const userMenuRef = ref(null)
 
-// 使用computed计算属性获取登录状态
+// Using computed properties to get login status
 const isLoggedIn = computed(() => userStore.isAuthenticated)
 const username = computed(() => userStore.userName || 'User')
 
-// 创建一个关闭用户菜单的方法
+// Create a method to close the user menu
 const closeUserMenu = () => {
   showUserMenu.value = false
 }
 
-// 处理菜单外部点击
+// Handle clicks outside the menu
 const handleOutsideClick = (event) => {
-  if (userMenuRef.value && !userMenuRef.value.contains(event.target) && showUserMenu.value) {
-    closeUserMenu()
+  // If the menu is not displayed, do nothing
+  if (!showUserMenu.value) return;
+
+  // Check if the click is outside the user menu area
+  if (userMenuRef.value && !userMenuRef.value.contains(event.target)) {
+    // Add a short delay to ensure other click events are completed
+    setTimeout(() => {
+      closeUserMenu();
+    }, 10);
   }
 }
 
-// 路由导航方法
+// Debounce function to avoid frequent triggering
+const debounce = (fn, delay) => {
+  let timer = null;
+  return function(...args) {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+      fn.apply(this, args);
+    }, delay);
+  };
+};
+
+// Use debounce to wrap handleOutsideClick
+const debouncedHandleOutsideClick = debounce(handleOutsideClick, 100);
+
+// Route navigation method
 const navigateTo = (path) => {
   closeUserMenu()
-  // 即使是相同路径也强制刷新视图
+  // Force refresh view even if it's the same path
   if (router.currentRoute.value.path === path) {
     router.replace({ path: path + '?t=' + Date.now() }).catch(() => {})
   } else {
@@ -109,15 +130,15 @@ const navigateTo = (path) => {
   }
 }
 
-// 监听路由变化，关闭用户菜单
+// Watch for route changes, close user menu
 watch(() => router.currentRoute.value, () => {
   closeUserMenu()
-  // 在路由变化时重新获取购物车和心愿单数量
+  // Get cart and wishlist counts when route changes
   fetchCartItemCount()
   fetchWishlistItemCount()
 }, { deep: true })
 
-// 获取购物车商品数量
+// Get cart item count
 const fetchCartItemCount = async () => {
   if (isLoggedIn.value) {
     try {
@@ -125,23 +146,23 @@ const fetchCartItemCount = async () => {
       if (response.data && response.data.bookId && Array.isArray(response.data.bookId)) {
         cartItemCount.value = response.data.bookId.length
       } else {
-        // 回退到localStorage
+        // Fallback to localStorage
         try {
           const localCart = JSON.parse(localStorage.getItem('cartItems') || '[]')
           cartItemCount.value = localCart.length
         } catch (err) {
-          console.error('读取本地购物车数据失败:', err)
+          console.error('Failed to read local cart data:', err)
           cartItemCount.value = 0
         }
       }
     } catch (err) {
-      console.error('获取购物车数据失败:', err)
-      // 回退到localStorage
+      console.error('Failed to get cart data:', err)
+      // Fallback to localStorage
       try {
         const localCart = JSON.parse(localStorage.getItem('cartItems') || '[]')
         cartItemCount.value = localCart.length
       } catch (err) {
-        console.error('读取本地购物车数据失败:', err)
+        console.error('Failed to read local cart data:', err)
         cartItemCount.value = 0
       }
     }
@@ -150,7 +171,7 @@ const fetchCartItemCount = async () => {
   }
 }
 
-// 获取愿望清单商品数量
+// Get wishlist item count
 const fetchWishlistItemCount = async () => {
   if (isLoggedIn.value) {
     try {
@@ -161,7 +182,7 @@ const fetchWishlistItemCount = async () => {
         wishlistItemCount.value = 0
       }
     } catch (err) {
-      console.error('获取愿望清单数据失败:', err)
+      console.error('Failed to get wishlist data:', err)
       wishlistItemCount.value = 0
     }
   } else {
@@ -170,41 +191,60 @@ const fetchWishlistItemCount = async () => {
 }
 
 onMounted(() => {
-  // 初始化用户状态
+  // Initialize user state
   userStore.initUserState()
-  // 获取购物车数量
+  // Get cart count
   fetchCartItemCount()
-  // 获取愿望清单数量
+  // Get wishlist count
   fetchWishlistItemCount()
 
-  // 监听localStorage变化，更新购物车数量
+  // Listen for localStorage changes, update cart count
   window.addEventListener('storage', event => {
     if (event.key === 'cartItems') {
       fetchCartItemCount()
     }
   })
 
-  // 自定义事件监听购物车变化
+  // Custom event listener for cart changes
   document.addEventListener('cart-updated', () => {
     fetchCartItemCount()
   })
 
-  // 自定义事件监听愿望清单变化
+  // Custom event listener for wishlist changes
   document.addEventListener('wishlist-updated', () => {
     fetchWishlistItemCount()
   })
 
-  // 添加全局点击事件监听器
-  document.addEventListener('click', handleOutsideClick)
+  // Add global click event listener, using debounced version
+  document.addEventListener('click', debouncedHandleOutsideClick)
+
+  // Add extra mousedown event listener in case click events fail
+  document.addEventListener('mousedown', debouncedHandleOutsideClick)
 })
 
 onUnmounted(() => {
-  // 移除全局点击事件监听器
-  document.removeEventListener('click', handleOutsideClick)
+  // Remove global click event listeners
+  document.removeEventListener('click', debouncedHandleOutsideClick)
+  document.removeEventListener('mousedown', debouncedHandleOutsideClick)
 })
 
 const toggleUserMenu = () => {
-  showUserMenu.value = !showUserMenu.value
+  // Toggle display state
+  showUserMenu.value = !showUserMenu.value;
+
+  // If menu is opened, ensure click events are properly handled
+  if (showUserMenu.value) {
+    // Use setTimeout to ensure DOM is updated before adding one-time click listener
+    setTimeout(() => {
+      // Add one-time click listener as backup if handleOutsideClick fails
+      document.addEventListener('click', (e) => {
+        // Ensure click is not inside the menu
+        if (userMenuRef.value && !userMenuRef.value.contains(e.target)) {
+          closeUserMenu();
+        }
+      }, { once: true });
+    }, 0);
+  }
 }
 
 const logout = async () => {
@@ -213,7 +253,7 @@ const logout = async () => {
     showUserMenu.value = false
     router.push('/login')
   } catch (error) {
-    console.error('登出失败:', error)
+    console.error('Logout failed:', error)
   }
 }
 
@@ -470,7 +510,7 @@ const handleSearch = () => {
   background: #f5f5f5;
 }
 
-/* 响应式样式 */
+/* Responsive styles */
 @media (max-width: 768px) {
   .main-nav {
     display: none;
@@ -493,7 +533,7 @@ const handleSearch = () => {
   }
 }
 
-/* 在更小的屏幕上进一步优化 */
+/* Further optimize for smaller screens */
 @media (max-width: 480px) {
   .user-actions {
     gap: 4px;

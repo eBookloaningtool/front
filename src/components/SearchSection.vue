@@ -59,10 +59,10 @@ const searchAuthor = ref('')
 const searchCategory = ref('')
 
 const handleSearch = () => {
-  // 至少需要一个搜索条件
+  // At least one search condition is required
   if (!searchTitle.value.trim() && !searchAuthor.value.trim() && !searchCategory.value.trim()) return
 
-  // 构建查询参数
+  // Build query parameters
   const queryParams = {}
 
   if (searchTitle.value.trim()) {
@@ -77,7 +77,7 @@ const handleSearch = () => {
     queryParams.category = searchCategory.value.trim()
   }
 
-  // 导航到搜索结果页面
+  // Navigate to search results page
   router.push({
     path: '/search',
     query: queryParams

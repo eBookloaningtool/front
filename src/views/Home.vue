@@ -43,11 +43,11 @@ const popularBooks = ref([])
 const loading = ref(true)
 const error = ref(null)
 const currentPage = ref(1)
-const pageSize = 10 // 每页显示10本书
+const pageSize = 10 // 10 books per page
 const hasMore = ref(true)
 const loadingMore = ref(false)
 
-// 路由导航函数
+// Route navigation functions
 const navigateToBooks = (category) => {
   if (category) {
     router.push({ path: '/books', query: { category } })
@@ -76,7 +76,7 @@ const viewAllHistory = () => {
   router.push({ path: '/books', query: { category: 'history' } })
 }
 
-// 随机选择n个元素
+// Randomly select n elements
 const getRandomItems = (array, n) => {
   if (!Array.isArray(array) || array.length === 0) {
     return []
@@ -85,7 +85,7 @@ const getRandomItems = (array, n) => {
   return shuffled.slice(0, Math.min(n, array.length))
 }
 
-// 根据分类筛选书籍
+// Filter books by category
 const filterBooksByCategory = (books, category) => {
   if (!Array.isArray(books)) {
     return []
@@ -97,23 +97,23 @@ const filterBooksByCategory = (books, category) => {
   })
 }
 
-// 加载更多热门书籍
+// Load more popular books
 const loadMorePopularBooks = async () => {
   if (!hasMore.value || loadingMore.value) return
 
   loadingMore.value = true
   try {
-    // 获取热门书籍ID列表
+    // Get popular book ID list
     const popularResponse = await bookAPI.getPopularBooks()
     const allBookIds = popularResponse.data.bookId || []
 
-    // 计算当前页的书籍ID范围
+    // Calculate book ID range for current page
     const startIndex = (currentPage.value - 1) * pageSize
     const endIndex = startIndex + pageSize
     const currentPageBookIds = allBookIds.slice(startIndex, endIndex)
 
     if (currentPageBookIds.length > 0) {
-      // 获取当前页书籍的详细信息
+      // Get detailed info for current page books
       const bookDetails = await Promise.all(
         currentPageBookIds.map(bookId => bookAPI.getBookDetail(bookId))
       )
@@ -129,7 +129,7 @@ const loadMorePopularBooks = async () => {
       hasMore.value = false
     }
   } catch (err) {
-    console.error('加载更多热门书籍失败:', err)
+    console.error('Failed to load more popular books:', err)
     error.value = 'Failed to load more books, please try again later'
   } finally {
     loadingMore.value = false
@@ -137,41 +137,41 @@ const loadMorePopularBooks = async () => {
   }
 }
 
-// 监听滚动事件
+// Listen for scroll events
 const handleScroll = () => {
   const scrollHeight = document.documentElement.scrollHeight
   const scrollTop = document.documentElement.scrollTop
   const clientHeight = document.documentElement.clientHeight
 
-  // 当滚动到距离底部100px时加载更多
+  // Load more when scrolled to within 100px of bottom
   if (scrollHeight - scrollTop - clientHeight < 100) {
     loadMorePopularBooks()
   }
 }
 
 onMounted(async () => {
-  // 检查登录状态
+  // Check login status
   isLoggedIn.value = userStore.isAuthenticated
 
-  // 添加滚动监听
+  // Add scroll listener
   window.addEventListener('scroll', handleScroll)
 
   try {
-    // 初始加载第一页热门书籍
+    // Initially load first page of popular books
     await loadMorePopularBooks()
 
-    // 获取所有书籍数据
+    // Get all book data
     const response = await bookAPI.getAllBooks()
     const allBooks = Array.isArray(response.data) ? response.data : []
 
-    // 随机选择10本作为新书展示
+    // Randomly select 10 books as new books
     newBooks.value = getRandomItems(allBooks, 10)
 
-    // 筛选小说类书籍
+    // Filter fiction books
     const fictionBooksAll = filterBooksByCategory(allBooks, 'fiction')
     fictionBooks.value = getRandomItems(fictionBooksAll.length > 0 ? fictionBooksAll : allBooks, 10)
 
-    // 筛选历史和传记类书籍
+    // Filter history and biography books
     const historyBooksAll = [
       ...filterBooksByCategory(allBooks, 'history'),
       ...filterBooksByCategory(allBooks, 'biography'),
@@ -179,11 +179,11 @@ onMounted(async () => {
     ]
     historyBooks.value = getRandomItems(historyBooksAll.length > 0 ? historyBooksAll : allBooks, 10)
   } catch (error) {
-    console.error('获取书籍数据失败:', error)
+    console.error('Failed to get book data:', error)
     error.value = 'Failed to get book data, please try again later'
     loading.value = false
 
-    // 加载失败时使用空数组
+    // Use empty arrays when loading fails
     popularBooks.value = []
     newBooks.value = []
     fictionBooks.value = []
@@ -191,7 +191,7 @@ onMounted(async () => {
   }
 })
 
-// 组件卸载时移除滚动监听
+// Remove scroll listener when component is unmounted
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
 })

@@ -19,25 +19,25 @@ const router = useRouter()
 const userStore = useUserStore()
 
 onMounted(async () => {
-  // 初始化用户状态
+  // Initialize user state
   await userStore.initUserState()
 
-  // 认证检查
-  const publicPages = ['/login', '/register'] // 白名单路由
+  // Authentication check
+  const publicPages = ['/login', '/register'] // Whitelist routes
   const currentPath = router.currentRoute.value.path
 
-  // 如果用户已登录且尝试访问登录或注册页面，重定向到首页
+  // If user is logged in and trying to access login or register page, redirect to home
   if (userStore.isAuthenticated && publicPages.includes(currentPath)) {
     router.push('/')
   }
 
-  // 检查即将到期的书籍并发送提醒
+  // Check for books nearing due date and send reminders
   if (userStore.isAuthenticated) {
     checkAndSendDueSoonNotifications().catch(err => {
-      console.error('检查到期书籍失败:', err)
+      console.error('Failed to check due books:', err)
     })
 
-    // 设置每日检查
+    // Set up daily check
     const now = new Date()
     const tomorrow = new Date(now)
     tomorrow.setDate(tomorrow.getDate() + 1)
@@ -45,12 +45,12 @@ onMounted(async () => {
 
     const timeUntilMidnight = tomorrow - now
 
-    // 设置定时器在午夜执行检查
+    // Set timer to check at midnight
     setTimeout(() => {
-      // 首次执行
+      // First execution
       checkAndSendDueSoonNotifications()
 
-      // 然后每24小时执行一次
+      // Then execute every 24 hours
       setInterval(() => {
         checkAndSendDueSoonNotifications()
       }, 24 * 60 * 60 * 1000)
@@ -100,7 +100,7 @@ img {
   display: block;
 }
 
-/* 响应式边距 */
+/* Responsive margins */
 @media (max-width: 768px) {
   #app {
     padding: 0 20px;

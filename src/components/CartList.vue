@@ -61,7 +61,7 @@ const removingItems = ref(new Set());
 const { showToast } = useToast();
 const total = ref(0);
 
-// 计算总价
+// Calculate total price
 const totalPrice = computed(() => {
   return total.value;
 });
@@ -71,12 +71,12 @@ const fetchCartItems = async () => {
   error.value = null;
 
   try {
-    // 首先从API获取购物车数据
+    // First get cart data from API
     const response = await cartAPI.getCart();
-    console.log('API购物车数据:', response);
+    console.log('API cart data:', response);
 
     if (response.data && response.data.bookId && response.data.bookId.length > 0) {
-      // 获取每个书籍的详细信息
+      // Get details for each book
       const bookDetails = await Promise.all(
         response.data.bookId.map(async (bookId) => {
           try {
@@ -90,41 +90,41 @@ const fetchCartItems = async () => {
               quantity: 1
             };
           } catch (err) {
-            console.error(`获取书籍 ${bookId} 详情失败:`, err);
+            console.error(`Failed to get book ${bookId} details:`, err);
             return null;
           }
         })
       );
 
-      // 过滤掉获取失败的书籍
+      // Filter out books with failed fetch
       cartItems.value = bookDetails.filter(Boolean);
-      console.log('更新后的cartItems:', cartItems.value);
+      console.log('Updated cartItems:', cartItems.value);
 
-      // 更新本地存储
+      // Update local storage
       const storageData = response.data.bookId.map(id => ({ bookId: id }));
-      console.log('更新localStorage数据:', storageData);
+      console.log('Updating localStorage data:', storageData);
       localStorage.setItem('cartItems', JSON.stringify(storageData));
 
-      // 通知父组件
+      // Notify parent component
       emit('update:cartItems', cartItems.value);
       emit('cart-updated', cartItems.value);
 
-      // 触发自定义事件通知Header组件更新购物车图标
+      // Trigger custom event to notify Header component to update cart icon
       document.dispatchEvent(new CustomEvent('cart-updated'));
     } else {
       cartItems.value = [];
-      // 清空本地存储
+      // Clear local storage
       localStorage.removeItem('cartItems');
-      // 通知父组件
+      // Notify parent component
       emit('update:cartItems', []);
       emit('cart-updated', []);
 
-      // 触发自定义事件通知Header组件更新购物车图标
+      // Trigger custom event to notify Header component to update cart icon
       document.dispatchEvent(new CustomEvent('cart-updated'));
     }
     calculateTotal();
   } catch (err) {
-    console.error('获取购物车失败:', err);
+    console.error('Failed to get cart:', err);
     error.value = 'Failed to retrieve shopping cart, please try again later';
   } finally {
     isLoading.value = false;
@@ -142,59 +142,59 @@ const updateQuantity = async (itemId, newQuantity) => {
     await cartAPI.updateCartItem(itemId, newQuantity);
     await fetchCartItems();
   } catch (err) {
-    console.error('更新购物车失败:', err);
+    console.error('Failed to update cart:', err);
     error.value = 'Update shopping cart failed, please try again later';
   }
 };
 
 const removeItem = async (itemId) => {
-  console.log('开始删除商品，itemId:', itemId);
+  console.log('Starting to remove item, itemId:', itemId);
   try {
     await cartAPI.removeFromCart(itemId);
-    console.log('删除商品API调用成功');
+    console.log('Remove item API call successful');
     await fetchCartItems();
-    console.log('重新获取购物车数据完成');
+    console.log('Cart data refreshed');
   } catch (err) {
-    console.error('删除购物车项失败:', err);
+    console.error('Failed to remove cart item:', err);
     error.value = 'Failed to remove shopping cart item, please try again later';
-    throw err; // 抛出错误以便上层处理
+    throw err; // Throw error for parent handling
   }
 };
 
-// 从购物车移除商品
+// Remove item from cart
 const handleRemoveItem = async (bookId) => {
-  console.log('handleRemoveItem被调用，bookId:', bookId);
+  console.log('handleRemoveItem called, bookId:', bookId);
   if (!bookId || removingItems.value.has(bookId)) {
-    console.log('移除被阻止，原因:', !bookId ? 'bookId为空' : '商品正在移除中');
+    console.log('Removal prevented, reason:', !bookId ? 'bookId is empty' : 'item is being removed');
     return;
   }
 
   removingItems.value.add(bookId);
-  console.log('当前正在移除的商品列表:', Array.from(removingItems.value));
+  console.log('Current items being removed:', Array.from(removingItems.value));
 
   try {
     await removeItem(bookId);
     await fetchCartItems();
     showToast('Item removed from cart', 'success');
-    // 触发自定义事件通知Header组件更新购物车图标
+    // Trigger custom event to notify Header component to update cart icon
     document.dispatchEvent(new CustomEvent('cart-updated'));
   } catch (err) {
-    console.error('移除购物车商品错误:', err);
+    console.error('Error removing cart item:', err);
     showToast('Failed to remove item, please try again', 'error');
   } finally {
     removingItems.value.delete(bookId);
-    console.log('移除完成，当前正在移除的商品列表:', Array.from(removingItems.value));
+    console.log('Removal complete, current items being removed:', Array.from(removingItems.value));
   }
 };
 
-// 自动加载购物车数据
+// Auto-load cart data
 onMounted(() => {
   if (props.autoLoad) {
     fetchCartItems();
   }
 });
 
-// 暴露方法供父组件调用
+// Expose methods for parent component
 defineExpose({
   fetchCartItems,
   removeItem: handleRemoveItem
