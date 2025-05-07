@@ -19,10 +19,31 @@
             <i class="ri-shopping-bag-line"></i>
             Borrow
           </button>
-          <button class="clear-cart-btn" @click="handleClearCart" :disabled="isProcessing">Clear cart</button>
+          <button class="clear-cart-btn" @click="showClearCartConfirm = true" :disabled="isProcessing">Clear cart</button>
         </div>
       </template>
     </CartList>
+
+    <!-- Clear Cart Confirmation Modal -->
+    <div v-if="showClearCartConfirm" class="modal-overlay" @click.self="showClearCartConfirm = false">
+      <div class="modal-content">
+        <button class="close-btn" @click="showClearCartConfirm = false">&times;</button>
+        <h3>Confirm Cart Deletion</h3>
+        <p>Are you sure you want to clear all books from your cart? This action cannot be undone.</p>
+        <div class="modal-actions">
+          <button class="cancel-btn" @click="showClearCartConfirm = false">Cancel</button>
+          <button
+            class="confirm-btn"
+            :class="{ 'loading': isProcessing }"
+            :disabled="isProcessing"
+            @click="handleClearCart"
+          >
+            <i v-if="isProcessing" class="ri-loader-4-line loading-icon"></i>
+            {{ isProcessing ? 'Clearing...' : 'Confirm Delete' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -41,6 +62,7 @@ const cartItems = ref([]);
 const cartListRef = ref(null);
 const { showToast } = useToast();
 const isProcessing = ref(false);
+const showClearCartConfirm = ref(false);
 
 // 在组件挂载时加载购物车数据
 onMounted(() => {
@@ -229,6 +251,7 @@ const removeItemFromWishlist = async (bookId) => {
 const handleClearCart = async () => {
   if (cartItems.value.length === 0) {
     showToast('Cart is empty', 'info');
+    showClearCartConfirm.value = false;
     return;
   }
 
@@ -259,6 +282,7 @@ const handleClearCart = async () => {
     showToast('Failed to clear cart, please try again later', 'error');
   } finally {
     isProcessing.value = false;
+    showClearCartConfirm.value = false;
   }
 };
 </script>
@@ -389,5 +413,89 @@ const handleClearCart = async () => {
     justify-content: center;
     margin-right: 0;
   }
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 450px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  padding: 20px;
+  position: relative;
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 25px;
+  gap: 10px;
+}
+
+.cancel-btn {
+  padding: 8px 16px;
+  background-color: #f0f0f0;
+  color: #333;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.confirm-btn {
+  padding: 8px 16px;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.confirm-btn:hover {
+  background-color: #d32f2f;
+}
+
+.confirm-btn.loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.loading-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>

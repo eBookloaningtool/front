@@ -134,7 +134,7 @@ const submitComment = async () => {
     const result = await response.json()
     if (result.state === 'success') {
       showToast('success', 'success')
-      // 提交成功后重新加载评论
+      // Reload comments after successful submission
       await loadComments()
       commentText.value = ''
       currentRating.value = 0
@@ -185,7 +185,7 @@ const loadComments = async () => {
           bookId: commentData.bookId,
           createdAt: commentData.createDate
         }
-        console.log('处理后的评论对象:', comment)
+        console.log('Processed comment object:', comment)
         return comment
       } catch (err) {
         console.error(`Error processing comment ${commentId}:`, err)

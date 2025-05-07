@@ -76,7 +76,7 @@ const handleAddToCart = async (event) => {
 
       updateLocalCart(props.bookId);
 
-      // 触发自定义事件通知Header组件更新购物车图标
+      // Trigger custom event to notify Header component to update cart icon
       document.dispatchEvent(new CustomEvent('cart-updated'));
 
       setTimeout(() => {

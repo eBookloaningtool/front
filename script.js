@@ -1,7 +1,7 @@
-// API 配置
-const API_BASE_URL = ''; // TODO: 添加实际的 API 基础 URL
+// API Configuration
+const API_BASE_URL = ''; // TODO: Add actual API base URL
 
-// API 请求工具函数
+// API Request Utility Function
 async function apiRequest(endpoint, options = {}) {
     try {
         const token = localStorage.getItem('token');
@@ -26,7 +26,7 @@ async function apiRequest(endpoint, options = {}) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 返回按钮功能
+    // Back button functionality
     const backBtn = document.querySelector('.back-btn');
     if (backBtn) {
         backBtn.addEventListener('click', () => {
@@ -38,13 +38,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 撤销按钮功能
+    // Undo button functionality
     const undoBtn = document.querySelector('.undo-btn');
     undoBtn.addEventListener('click', () => {
         history.forward();
     });
 
-    // 搜索功能
+    // Search functionality
     const searchForm = document.querySelector('.search-bar');
     const searchInput = searchForm.querySelector('input');
     const searchBtn = searchForm.querySelector('button');
@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 登录功能
+    // Login functionality
     const loginForm = document.querySelector('.login-form');
     if (loginForm) {
         const loginInput = loginForm.querySelector('input');
@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 分类项点击事件
+    // Category item click event
     const categoryItems = document.querySelectorAll('.category-item');
     categoryItems.forEach(item => {
         item.addEventListener('click', () => {
@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 用户按钮点击事件
+    // User button click event
     const userBtn = document.querySelector('.user-btn');
     if (userBtn) {
         userBtn.addEventListener('click', () => {
@@ -90,24 +90,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 书籍卡片点击事件
+    // Book card click event
     const bookCards = document.querySelectorAll('.book-card');
     bookCards.forEach(card => {
         card.addEventListener('click', async () => {
             try {
                 const bookId = card.dataset.bookId;
                 if (!bookId) {
-                    throw new Error('无效的书籍ID');
+                    throw new Error('Invalid book ID');
                 }
 
-                // 从卡片中获取基本信息
+                // Get basic information from the card
                 const title = card.querySelector('h3').textContent;
                 const coverUrl = card.querySelector('img').src;
                 const rating = parseFloat(card.querySelector('.book-rating span').textContent);
                 const priceText = card.querySelector('.book-price').textContent;
                 const price = parseFloat(priceText.match(/£([\d.]+)/)[1]);
 
-                // 存储基本信息
+                // Store basic information
                 const basicBookInfo = {
                     bookId: bookId,
                     title: title,
@@ -119,42 +119,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 sessionStorage.setItem('selectedBook', JSON.stringify(basicBookInfo));
                 window.location.href = 'book-detail.html';
             } catch (error) {
-                console.error('处理书籍点击事件失败:', error);
-                alert('获取书籍信息失败，请重试');
+                console.error('Failed to process book click event:', error);
+                alert('Failed to get book information, please try again');
             }
         });
     });
 
-    // 书籍详情页面功能
+    // Book detail page functionality
     if (window.location.pathname.includes('book-detail.html')) {
         loadBookDetails();
         initializeTabs();
         initializeDetailPageActions();
     }
 
-    // 初始化登录和注册表单
+    // Initialize login and registration forms
     initializeLoginForm();
     initializeRegisterForm();
 });
 
-// 搜索功能实现
+// Search functionality implementation
 function performSearch(query) {
     if (!query.trim()) {
-        alert('请输入搜索内容');
+        alert('Please enter search content');
         return;
     }
-    console.log('搜索:', query);
-    // TODO: 实现实际的搜索功能
+    console.log('Search:', query);
+    // TODO: Implement actual search functionality
 }
 
-// 登录功能实现
+// Login functionality implementation
 async function handleLogin(email, password) {
     if (!email.trim() || !password.trim()) {
-        alert('请输入邮箱地址和密码');
+        alert('Please enter email address and password');
         return;
     }
     if (!isValidEmail(email)) {
-        alert('请输入有效的邮箱地址');
+        alert('Please enter a valid email address');
         return;
     }
 
@@ -169,14 +169,14 @@ async function handleLogin(email, password) {
 
         localStorage.setItem('token', response.token);
         localStorage.setItem('userId', response.userId);
-        alert('登录成功');
+        alert('Login successful');
         location.reload();
     } catch (error) {
-        alert('登录失败，请检查邮箱和密码是否正确');
+        alert('Login failed, please check your email and password');
     }
 }
 
-// 注册功能实现
+// Registration functionality implementation
 async function handleRegister(formData) {
     try {
         const response = await apiRequest('/api/auth/register', {
@@ -184,14 +184,14 @@ async function handleRegister(formData) {
             body: JSON.stringify(formData)
         });
 
-        alert('注册成功，请登录');
+        alert('Registration successful, please login');
         window.location.href = 'index.html';
     } catch (error) {
-        alert('注册失败，请重试');
+        alert('Registration failed, please try again');
     }
 }
 
-// 密码强度检查
+// Password strength check
 function checkPasswordStrength(password) {
     let strength = 0;
     if (password.length >= 8) strength++;
@@ -202,7 +202,7 @@ function checkPasswordStrength(password) {
     return strength;
 }
 
-// 更新密码强度指示器
+// Update password strength indicator
 function updatePasswordStrength(password) {
     const strength = checkPasswordStrength(password);
     const strengthBar = document.querySelector('.password-strength');
@@ -212,7 +212,7 @@ function updatePasswordStrength(password) {
     strengthBar.style.background = `linear-gradient(to right, ${colors[strength-1]} ${strength*20}%, #eee ${strength*20}%)`;
 }
 
-// 初始化注册表单
+// Initialize registration form
 function initializeRegisterForm() {
     const form = document.querySelector('.register-form');
     if (!form) return;
@@ -222,12 +222,12 @@ function initializeRegisterForm() {
     const agreeTerms = document.getElementById('agreeTerms');
     const submitButton = document.querySelector('.register-submit-btn');
 
-    // 监听密码输入
+    // Listen for password input
     passwordInput?.addEventListener('input', (e) => {
         updatePasswordStrength(e.target.value);
     });
 
-    // 验证表单
+    // Validate form
     function validateForm() {
         const password = passwordInput?.value;
         const confirmPassword = confirmPasswordInput?.value;
@@ -242,12 +242,12 @@ function initializeRegisterForm() {
         }
     }
 
-    // 添加表单验证监听器
+    // Add form validation listeners
     [passwordInput, confirmPasswordInput, agreeTerms].forEach(element => {
         element?.addEventListener('input', validateForm);
     });
 
-    // 处理表单提交
+    // Handle form submission
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -262,7 +262,7 @@ function initializeRegisterForm() {
     });
 }
 
-// 初始化登录表单
+// Initialize login form
 function initializeLoginForm() {
     const loginForm = document.querySelector('.login-form');
     if (!loginForm) return;
@@ -283,13 +283,13 @@ function initializeLoginForm() {
     });
 }
 
-// 分类导航功能
+// Category navigation functionality
 function navigateToCategory(category) {
-    console.log('导航到分类:', category);
-    // TODO: 实现实际的分类导航功能
+    console.log('Navigate to category:', category);
+    // TODO: Implement actual category navigation functionality
 }
 
-// 邮箱验证
+// Email validation
 function isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -314,7 +314,7 @@ async function loadBookDetails() {
         document.getElementById('bookTitle').textContent = fullBookInfo.title;
         document.getElementById('bookAuthor').textContent = fullBookInfo.author;
         document.getElementById('bookDescription').textContent = fullBookInfo.description;
-        document.getElementById('bookPrice').textContent = `£${fullBookInfo.price}/周`;
+        document.getElementById('bookPrice').textContent = `£${fullBookInfo.price}/Week`;
 
         // 加载评论
         await loadBookReviews(bookInfo.bookId);

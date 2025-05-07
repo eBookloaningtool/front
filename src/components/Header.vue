@@ -42,15 +42,15 @@
             <i :class="cartItemCount > 0 ? 'ri-shopping-cart-fill' : 'ri-shopping-cart-line'"></i>
             <span v-if="cartItemCount > 0" class="cart-counter">{{ cartItemCount }}</span>
           </router-link>
-          <div class="user-profile" @click="toggleUserMenu">
+          <div ref="userMenuRef" class="user-profile" @click.stop="toggleUserMenu">
             <i class="ri-user-line"></i>
             <div class="username">{{ username }}</div>
             <i class="ri-arrow-down-s-line"></i>
 
             <div class="user-menu" v-if="showUserMenu">
               <ul>
-                <li><router-link to="/user/profile" @click="closeUserMenu">Profile</router-link></li>
-                <li><router-link to="/user/books" @click="closeUserMenu">My Books</router-link></li>
+                <li><router-link to="/user/profile" @click.prevent="navigateTo('/user/profile')">Profile</router-link></li>
+                <li><router-link to="/user/books" @click.prevent="navigateTo('/user/books')">My Books</router-link></li>
                 <li><a href="#" @click.prevent="logout">Logout</a></li>
               </ul>
             </div>
@@ -68,7 +68,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/userStore'
 import { cartAPI } from '../services/api'
@@ -80,6 +80,7 @@ const showUserMenu = ref(false)
 const searchQuery = ref('')
 const cartItemCount = ref(0)
 const wishlistItemCount = ref(0)
+const userMenuRef = ref(null)
 
 // 使用computed计算属性获取登录状态
 const isLoggedIn = computed(() => userStore.isAuthenticated)
@@ -90,13 +91,31 @@ const closeUserMenu = () => {
   showUserMenu.value = false
 }
 
+// 处理菜单外部点击
+const handleOutsideClick = (event) => {
+  if (userMenuRef.value && !userMenuRef.value.contains(event.target) && showUserMenu.value) {
+    closeUserMenu()
+  }
+}
+
+// 路由导航方法
+const navigateTo = (path) => {
+  closeUserMenu()
+  // 即使是相同路径也强制刷新视图
+  if (router.currentRoute.value.path === path) {
+    router.replace({ path: path + '?t=' + Date.now() }).catch(() => {})
+  } else {
+    router.push(path)
+  }
+}
+
 // 监听路由变化，关闭用户菜单
-watch(() => router.currentRoute.value.path, () => {
+watch(() => router.currentRoute.value, () => {
   closeUserMenu()
   // 在路由变化时重新获取购物车和心愿单数量
   fetchCartItemCount()
   fetchWishlistItemCount()
-})
+}, { deep: true })
 
 // 获取购物车商品数量
 const fetchCartItemCount = async () => {
@@ -174,6 +193,14 @@ onMounted(() => {
   document.addEventListener('wishlist-updated', () => {
     fetchWishlistItemCount()
   })
+
+  // 添加全局点击事件监听器
+  document.addEventListener('click', handleOutsideClick)
+})
+
+onUnmounted(() => {
+  // 移除全局点击事件监听器
+  document.removeEventListener('click', handleOutsideClick)
 })
 
 const toggleUserMenu = () => {
