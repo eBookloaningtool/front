@@ -129,7 +129,7 @@ const handleForgetPassword = async () => {
 
     if (response.data.state === 'success') {
       forgetPasswordMessage.value = {
-        text: '重置密码链接已发送到您的邮箱',
+        text: 'The password reset link has been sent to your email',
         type: 'success'
       };
       // 关闭模态框
@@ -138,14 +138,14 @@ const handleForgetPassword = async () => {
       }, 2000);
     } else {
       forgetPasswordMessage.value = {
-        text: response.data.message || '发送重置密码链接失败',
+        text: response.data.message || 'Failed to send the password reset link',
         type: 'error'
       };
     }
   } catch (error) {
     console.error('Forget password error:', error);
     forgetPasswordMessage.value = {
-      text: '发送重置密码链接时发生错误',
+      text: 'An error occurred while sending the password reset link',
       type: 'error'
     };
   } finally {

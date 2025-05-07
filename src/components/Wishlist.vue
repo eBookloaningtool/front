@@ -1,11 +1,11 @@
 <template>
   <div class="wishlist-container">
-    <h2 class="text-2xl font-bold text-gray-800 mb-4">我的愿望清单</h2>
+    <h2 class="text-2xl font-bold text-gray-800 mb-4">My Wishlist</h2>
 
     <!-- 加载状态 -->
     <div v-if="loading" class="flex flex-col items-center justify-center py-10">
       <div class="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-      <p class="mt-4 text-gray-600">正在加载愿望清单...</p>
+      <p class="mt-4 text-gray-600">Loading wishlist...</p>
     </div>
 
     <!-- 错误状态 -->
@@ -15,7 +15,7 @@
         @click="fetchWishlist"
         class="mt-3 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-md transition duration-200"
       >
-        重新加载
+        Reload
       </button>
     </div>
 
@@ -24,8 +24,8 @@
       <svg class="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
       </svg>
-      <p class="mt-4 text-lg text-gray-600">您的愿望清单是空的</p>
-      <p class="mt-2 text-gray-500">浏览书籍并将您喜欢的添加到愿望清单中</p>
+      <p class="mt-4 text-lg text-gray-600">Your wishlist is empty</p>
+      <p class="mt-2 text-gray-500">Browse books and add your favorites to your wishlist</p>
     </div>
 
     <!-- 书籍列表 -->
@@ -56,7 +56,7 @@
                 book.isAvailable ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
               ]"
             >
-              {{ book.isAvailable ? '可借阅' : '暂无库存' }}
+              {{ book.isAvailable ? 'Borrowable' : 'No stock' }}
             </span>
           </div>
         </div>
@@ -159,10 +159,10 @@ const removeFromWishlist = async (bookId) => {
     books.value = books.value.filter(book => book.id !== bookId);
 
     // 显示成功提示
-    showNotification('从愿望清单移除成功', 'success');
+    showNotification('Successfully removed from wishlist', 'success');
   } catch (err) {
-    console.error('从愿望清单移除失败:', err);
-    showNotification('从愿望清单移除失败，请重试', 'error');
+    console.error('Failed to remove from wishlist:', err);
+    showNotification('Failed to remove from wishlist, please try again', 'error');
   } finally {
     // 清除加载状态
     const newRemoveLoading = { ...removeLoading.value };

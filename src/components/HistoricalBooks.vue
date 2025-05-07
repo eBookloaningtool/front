@@ -3,12 +3,12 @@
   <div class="historical-books">
     <div v-if="loading" class="loading-state">
       <div class="loading-spinner"></div>
-      <p>加载中...</p>
+      <p>Loading...</p>
     </div>
 
     <div v-else-if="error" class="error-state">
       <p>{{ error }}</p>
-      <button @click="fetchBooks" class="btn-retry">重试</button>
+      <button @click="fetchBooks" class="btn-retry">Retry</button>
     </div>
 
     <div v-else>
@@ -32,7 +32,7 @@
                     <p class="book-publisher">{{ book.publisher }}</p>
 
                     <div class="book-actions">
-                      <router-link :to="'/book/' + book.bookId" class="btn-view">查看详情</router-link>
+                      <router-link :to="'/book/' + book.bookId" class="btn-view">View details</router-link>
                       <button @click="addToWishlist(book.bookId)" class="btn-wishlist">
                         <span class="wishlist-icon">♡</span>
                       </button>
@@ -136,7 +136,7 @@ const addToWishlist = async (bookId) => {
     const token = localStorage.getItem('token');
     if (!token) {
       // 未登录情况下处理
-      alert('请先登录');
+      alert('Please log in first');
       return;
     }
 
