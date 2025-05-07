@@ -150,6 +150,7 @@ import CommentSection from '../components/CommentSection.vue';
 import { borrowBook, getBorrowList } from '@/api/borrowApi';
 import { formatPrice } from '@/utils/format';
 import { useUserStore } from '@/stores/userStore';
+import { removeFromWishlist } from '@/api/booksApi';
 
 const route = useRoute();
 const router = useRouter();
@@ -329,6 +330,17 @@ const handleBorrow = async () => {
         borrowDate: new Date().toISOString().split('T')[0] // 当前日期
       });
       localStorage.setItem('borrowedBooks', JSON.stringify(borrowedBooks));
+
+      // 从心愿单中移除当前书籍
+      try {
+        await removeFromWishlist(bookId.value);
+        console.log('已从心愿单中移除:', bookId.value);
+      } catch (wishlistError) {
+        console.error('从心愿单移除失败:', wishlistError);
+      } finally {
+        // 无论移除是否成功，都触发wishlist-updated事件更新心愿单数量
+        document.dispatchEvent(new CustomEvent('wishlist-updated'));
+      }
 
       // 显示成功提示
       showBorrowSuccess.value = true;

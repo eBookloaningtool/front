@@ -266,12 +266,13 @@ const handleClearCart = async () => {
 <style scoped>
 .shopping-cart-container {
   max-width: 1200px;
-  margin: 20px 40px;
+  margin: 20px auto;
   padding: 30px;
   padding-top: 100px;
   background: #ffffff;
   border-radius: 20px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  width: calc(100% - 80px);
 }
 
 .cart-title {
@@ -365,9 +366,10 @@ const handleClearCart = async () => {
 
 @media (max-width: 768px) {
   .shopping-cart-container {
-    margin: 10px 20px;
+    margin: 10px auto;
     padding: 20px;
     padding-top: 80px;
+    width: calc(100% - 40px);
   }
 
   .cart-title {
