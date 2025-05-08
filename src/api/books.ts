@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios';
 
 // Suppose there is a function to get an authentication token
-// You need to implement or import it according to your project实际情况
+// You need to implement or import it according to your project reality
 // For example: import { getAuthToken } from '@/utils/auth';
 const getAuthToken = (): string | null => {
   // Example implementation, please replace with your actual logic
@@ -61,7 +61,7 @@ export const getPopularBooks = async (): Promise<PopularBooksResponse> => {
     return response.data;
   } catch (error) {
     console.error('Get popular books failed:', error instanceof AxiosError ? error.message : error);
-    // Return default value符合接口
+    // Return default value interface
     return { bookId: [] };
   }
 };
