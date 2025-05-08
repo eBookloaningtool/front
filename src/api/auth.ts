@@ -1,17 +1,17 @@
 /**
- * 认证相关接口
+ * Authentication related interfaces
  */
 
-// 引入请求方法
+// Import request method
 import { post } from '../utils/request.ts';
-import { 
+import {
   LoginParams,
   LoginResponse,
   ForgetPasswordParams,
   SuccessResponse
 } from '../types/user.ts';
 
-// 接口地址枚举
+// Interface address enumeration
 enum URL {
   LOGIN = '/api/auth/login',
   LOGOUT = '/api/auth/logout',
@@ -19,9 +19,9 @@ enum URL {
 }
 
 /**
- * 用户登录
- * @param data 登录信息 {email, password}
- * @returns Promise 返回登录结果 {state, token, expiresIn, UUID}
+ * User login
+ * @param data Login information {email, password}
+ * @returns Promise Return login result {state, token, expiresIn, UUID}
  */
 export async function loginUser(data: LoginParams): Promise<LoginResponse> {
   return post({
@@ -31,9 +31,9 @@ export async function loginUser(data: LoginParams): Promise<LoginResponse> {
 }
 
 /**
- * 用户注销
- * 需要 Authorization 头
- * @returns Promise 返回注销结果 {state}
+ * User logout
+ * Requires Authorization header
+ * @returns Promise Return logout result {state}
  */
 export async function logout(): Promise<SuccessResponse> {
   return post({
@@ -42,9 +42,9 @@ export async function logout(): Promise<SuccessResponse> {
 }
 
 /**
- * 忘记密码
- * @param data 用户邮箱 {email}
- * @returns Promise 返回操作结果 {state}
+ * Forget password
+ * @param data User email {email}
+ * @returns Promise Return operation result {state}
  */
 export async function forgetPassword(data: ForgetPasswordParams): Promise<SuccessResponse> {
   return post({

@@ -1,15 +1,15 @@
 /**
- * 用户相关类型定义
+ * User related type definitions
  */
 
-// 注册请求参数
+// Register request parameters
 export interface RegisterParams {
   email: string;
   password: string;
   name: string;
 }
 
-// 注册响应
+// Register response
 export interface RegisterResponse {
   state: string;
   UUID: string;
@@ -18,13 +18,13 @@ export interface RegisterResponse {
   createdat: string;
 }
 
-// 登录请求参数
+// Login request parameters
 export interface LoginParams {
   email: string;
   password: string;
 }
 
-// 登录响应
+// Login response
 export interface LoginResponse {
   state: string;
   token: string;
@@ -32,7 +32,7 @@ export interface LoginResponse {
   UUID: string;
 }
 
-// 用户信息响应
+// User information response
 export interface UserInfoResponse {
   UUID: string;
   name: string;
@@ -41,14 +41,14 @@ export interface UserInfoResponse {
   createdat: string;
 }
 
-// 更新用户请求参数
+// Update user request parameters
 export interface UpdateUserParams {
   email?: string;
   password?: string;
   name?: string;
 }
 
-// 更新用户响应
+// Update user response
 export interface UpdateUserResponse {
   state: string;
   UUID: string;
@@ -56,12 +56,12 @@ export interface UpdateUserResponse {
   name: string;
 }
 
-// 忘记密码请求参数
+// Forget password request parameters
 export interface ForgetPasswordParams {
   email: string;
 }
 
-// 通用成功响应
+// Common success response
 export interface SuccessResponse {
   state: string;
-} 
+}

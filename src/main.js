@@ -6,24 +6,24 @@ import axios from 'axios'
 import 'remixicon/fonts/remixicon.css'
 import { createPinia } from 'pinia'
 
-// 创建Pinia实例
+// Creating a Pinia Instance
 const pinia = createPinia()
 
-// 配置axios默认值
+// Configure axios defaults
 axios.defaults.baseURL = 'https://api.borrowbee.wcy.one:61700/';
 axios.defaults.headers.common['Content-Type'] = 'application/json';
 
-// 添加请求拦截器处理认证
+// Add request interceptor to handle authentication
 axios.interceptors.request.use(
   config => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('[Axios] 已添加认证token到请求头');
+      console.log('[Axios] Token added to request headers');
     } else {
-      console.warn('[Axios] 未找到认证token');
+      console.warn('[Axios] No token found');
     }
-    console.log('[Axios] 发送请求:', {
+    console.log('[Axios] Sending request:', {
       url: config.url,
       method: config.method,
       headers: {
@@ -34,15 +34,15 @@ axios.interceptors.request.use(
     return config;
   },
   error => {
-    console.error('[Axios] 请求拦截器错误:', error);
+    console.error('[Axios] Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
 
-// 添加响应拦截器处理错误
+// Add response interceptor to handle errors
 axios.interceptors.response.use(
   response => {
-    console.log('[Axios] 收到响应:', {
+    console.log('[Axios] Received response:', {
       url: response.config.url,
       status: response.status,
       statusText: response.statusText,
@@ -52,7 +52,7 @@ axios.interceptors.response.use(
   },
   error => {
     if (error.response) {
-      console.error('[Axios] 响应错误:', {
+      console.error('[Axios] Response error:', {
         url: error.config?.url,
         status: error.response.status,
         statusText: error.response.statusText,
@@ -61,29 +61,29 @@ axios.interceptors.response.use(
       });
       switch (error.response.status) {
         case 401:
-          // 未认证，清除token并跳转到登录页
+          // Unauthorized, clear token and redirect to login page
           localStorage.removeItem('token');
           window.location.href = '/login';
           break;
         case 403:
-          // 权限不足
-          console.error('[Axios] 权限不足');
+          // Insufficient permissions
+          console.error('[Axios] Insufficient permissions');
           break;
         case 404:
-          // 资源不存在
-          console.error('[Axios] 请求的资源不存在');
+          // Resource not found
+          console.error('[Axios] Resource not found');
           break;
         case 500:
-          // 服务器错误
-          console.error('[Axios] 服务器错误');
+          // Server error
+          console.error('[Axios] Server error');
           break;
         default:
-          console.error('[Axios] 请求失败:', error.response.data);
+          console.error('[Axios] Request failed:', error.response.data);
       }
     } else if (error.request) {
-      console.error('[Axios] 请求未收到响应:', error.request);
+      console.error('[Axios] Request not received:', error.request);
     } else {
-      console.error('[Axios] 请求配置错误:', error.message);
+      console.error('[Axios] Request configuration error:', error.message);
     }
     return Promise.reject(error);
   }
@@ -91,9 +91,9 @@ axios.interceptors.response.use(
 
 const app = createApp(App)
 
-// 挂载axios到全局属性
+// Mount axios to global properties
 app.config.globalProperties.$axios = axios
 
-app.use(pinia)    // 添加Pinia
+app.use(pinia)    // Add Pinia
 app.use(router)   // Install router functionality
 app.mount('#app') // Mount App.vue to <div id="app"> in HTML

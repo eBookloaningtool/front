@@ -22,7 +22,7 @@
 <script setup>
 import { useToast } from '../composables/useToast';
 
-// 获取toasts列表
+// Get Toasts list
 const { toasts } = useToast();
 const closeToast = (id) => {
   const index = toasts.value.findIndex(toast => toast.id === id);
@@ -94,7 +94,7 @@ const closeToast = (id) => {
   background-color: #2196F3;
 }
 
-/* 动画效果 */
+/* Animation effect */
 .toast-enter-active,
 .toast-leave-active {
   transition: all 0.3s ease;

@@ -1,9 +1,9 @@
 import axios, { AxiosError } from 'axios';
 
-// --- TypeScript Interfaces ---
+// --- TypeScript interfaces ---
 
 /**
- * 分类信息接口
+ * Category information interface
  */
 interface Category {
   name: string;
@@ -11,7 +11,7 @@ interface Category {
 }
 
 /**
- * 获取所有分类的响应接口
+ * Get all categories response interface
  */
 interface GetAllCategoriesResponse {
   state: 'Success' | 'Error';
@@ -21,16 +21,16 @@ interface GetAllCategoriesResponse {
 // --- API Functions ---
 
 /**
- * 获取所有分类
- * @returns {Promise<GetAllCategoriesResponse>} - 所有分类信息
+ * Get all categories
+ * @returns {Promise<GetAllCategoriesResponse>} - All category information
  */
 export const getAllCategories = async (): Promise<GetAllCategoriesResponse> => {
   try {
     const response = await axios.get<GetAllCategoriesResponse>('/api/categories/getAll');
     return response.data;
   } catch (error) {
-    console.error('获取所有分类失败:', error instanceof AxiosError ? error.message : error);
-    // 返回符合接口的默认值
+    console.error('Failed to get all categories:', error instanceof AxiosError ? error.message : error);
+    // Return default values that match the interface
     return {
       state: 'Error',
       categoriesList: []

@@ -1,10 +1,10 @@
 /**
- * 购物车相关接口
+ * Shopping cart related interfaces
  */
 import { post } from '../utils/request';
 import axios from 'axios';
 
-// 接口类型定义
+// Interface type definition
 interface CartSuccessResponse {
   state: string;
   message?: string;
@@ -14,7 +14,7 @@ interface CartItemsResponse {
   bookId: string[];
 }
 
-// 接口地址枚举
+// Interface address enumeration
 const URL = {
   ADD: '/api/cart/add',
   GET: '/api/cart/get',
@@ -23,34 +23,34 @@ const URL = {
 };
 
 /**
- * 添加书籍到购物车
- * @param {string} bookId 书籍ID
- * @returns {Promise<CartSuccessResponse>} 响应结果
+ * Add book to cart
+ * @param {string} bookId Book ID
+ * @returns {Promise<CartSuccessResponse>} Response result
  */
 export async function addToCart(bookId: string): Promise<CartSuccessResponse> {
-  // 验证bookId有效性
+  // Validate bookId validity
   if (!bookId) {
-    console.error('addToCart: 提供的bookId无效', bookId);
-    return { state: 'error', message: '无效的书籍ID' };
+    console.error('addToCart: Invalid bookId provided', bookId);
+    return { state: 'error', message: 'Invalid book ID' };
   }
 
   try {
-    console.log(`正在将书籍(${bookId})添加到购物车...`);
+    console.log(`Adding book (${bookId}) to cart...`);
 
-    // 严格按照API文档发送请求
+    // Send request strictly according to API documentation
     const response = await post({
       url: URL.ADD,
       data: { bookId }
     });
 
-    console.log('服务器响应:', response);
+    console.log('Server response:', response);
 
-    // 确保响应是有效的
+    // Ensure the response is valid
     if (!response) {
-      return { state: 'error', message: '服务器未返回响应' };
+      return { state: 'error', message: 'Server did not return a response' };
     }
 
-    // 如果添加成功，同时更新本地缓存
+    // If the addition is successful, update the local cache at the same time
     if (response.state === 'success') {
       try {
         const localCart = JSON.parse(localStorage.getItem('cartItems') || '[]');
@@ -60,25 +60,25 @@ export async function addToCart(bookId: string): Promise<CartSuccessResponse> {
           localStorage.setItem('cartItems', JSON.stringify(localCart));
         }
       } catch (error) {
-        console.error('更新本地购物车缓存失败:', error);
+        console.error('Failed to update local cart cache:', error);
       }
     }
 
     return response;
   } catch (error) {
-    console.error('添加到购物车请求失败:', error);
+    console.error('Failed to add to cart:', error);
 
-    // 返回友好的错误响应而不是抛出异常
+    // Return a friendly error response instead of throwing an exception
     return {
       state: 'error',
-      message: error instanceof Error ? error.message : '添加到购物车失败'
+      message: error instanceof Error ? error.message : 'Failed to add to cart'
     };
   }
 }
 
 /**
- * 获取购物车内容
- * @returns {Promise<CartItemsResponse>} 包含书籍ID列表的响应
+ * Get cart content
+ * @returns {Promise<CartItemsResponse>} Response containing book ID list
  */
 export async function getCartItems(): Promise<CartItemsResponse> {
   try {
@@ -86,45 +86,45 @@ export async function getCartItems(): Promise<CartItemsResponse> {
       url: URL.GET
     });
 
-    // 日志记录响应
-    console.log('获取购物车响应:', response);
+    // Log response
+    console.log('Get cart response:', response);
 
-    // 确保返回的bookId是数组
+    // Ensure the returned bookId is an array
     if (!response) {
-      console.warn('获取购物车: 服务器返回空响应');
+      console.warn('Get cart: Server returned empty response');
       return { bookId: [] };
     }
 
     if (!response.bookId) {
-      console.warn('API返回的购物车数据缺少bookId字段', response);
+      console.warn('API returned cart data missing bookId field', response);
       return { bookId: [] };
     }
 
     if (!Array.isArray(response.bookId)) {
-      console.warn('API返回的bookId不是数组格式，进行转换', response.bookId);
+      console.warn('API returned bookId is not an array format, converting', response.bookId);
       return { bookId: [response.bookId].filter(Boolean) };
     }
 
     return response;
   } catch (error) {
-    console.error('获取购物车内容失败:', error);
+    console.error('Failed to get cart content:', error);
     return { bookId: [] };
   }
 }
 
 /**
- * 从购物车中移除书籍
- * @param {string|string[]} bookId 书籍ID或ID数组
- * @returns {Promise<CartSuccessResponse>} 响应结果
+ * Remove book from cart
+ * @param {string|string[]} bookId Book ID or ID array
+ * @returns {Promise<CartSuccessResponse>} Response result
  */
 export async function removeFromCart(bookId: string | string[]): Promise<CartSuccessResponse> {
-  // 验证参数
+  // Validate parameters
   if (!bookId || (Array.isArray(bookId) && bookId.length === 0)) {
-    console.error('removeFromCart: 提供的bookId无效', bookId);
-    return { state: 'error', message: '无效的书籍ID' };
+    console.error('removeFromCart: Invalid bookId provided', bookId);
+    return { state: 'error', message: 'Invalid book ID' };
   }
 
-  // 确保bookId是数组
+  // Ensure bookId is an array
   const bookIds = Array.isArray(bookId) ? bookId : [bookId];
 
   try {
@@ -133,19 +133,19 @@ export async function removeFromCart(bookId: string | string[]): Promise<CartSuc
       data: { bookId: bookIds }
     });
 
-    return response || { state: 'error', message: '服务器未返回响应' };
+    return response || { state: 'error', message: 'Server did not return a response' };
   } catch (error) {
-    console.error('从购物车移除失败:', error);
+    console.error('Failed to remove from cart:', error);
     return {
       state: 'error',
-      message: error instanceof Error ? error.message : '从购物车移除失败'
+      message: error instanceof Error ? error.message : 'Failed to remove from cart'
     };
   }
 }
 
 /**
- * 清空购物车
- * @returns {Promise<CartSuccessResponse>} 响应结果
+ * Clear cart
+ * @returns {Promise<CartSuccessResponse>} Response result
  */
 export const clearCart = async (): Promise<CartSuccessResponse> => {
   try {
@@ -153,12 +153,12 @@ export const clearCart = async (): Promise<CartSuccessResponse> => {
       url: URL.CLEAR
     });
 
-    return response || { state: 'error', message: '服务器未返回响应' };
+    return response || { state: 'error', message: 'Server did not return a response' };
   } catch (error) {
-    console.error('清空购物车失败:', error);
+    console.error('Failed to clear cart:', error);
     return {
       state: 'error',
-      message: error instanceof Error ? error.message : '清空购物车失败'
+      message: error instanceof Error ? error.message : 'Failed to clear cart'
     };
   }
 };

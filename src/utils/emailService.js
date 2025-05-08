@@ -1,18 +1,18 @@
 /**
- * 电子书借阅系统邮件通知服务
+ * E-book borrowing system email notification service
  */
 
 import axios from 'axios';
 
 /**
- * 发送邮件通知
- * @param {string} type - 邮件类型
- * @param {Object} data - 邮件数据
+ * Send email notification
+ * @param {string} type - Email type
+ * @param {Object} data - Email data
  */
 export const sendEmailNotification = async (type, data) => {
   try {
     const emailData = prepareEmailData(type, data);
-    // 实际项目中，这里会调用后端API发送邮件
+    // In actual projects, this will call the backend API to send emails
     const response = await axios.post('/api/notifications/email', emailData, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -26,17 +26,17 @@ export const sendEmailNotification = async (type, data) => {
 };
 
 /**
- * 准备邮件数据
- * @param {string} type - 邮件类型
- * @param {Object} data - 邮件数据
- * @returns {Object} - 格式化的邮件数据
+ * Prepare email data
+ * @param {string} type - Email type
+ * @param {Object} data - Email data
+ * @returns {Object} - Formatted email data
  */
 const prepareEmailData = (type, data) => {
   const user = data.user || {};
   const book = data.book || {};
 
   const templates = {
-    // 用户注册成功邮件
+    // User registration success email
     'register': {
       subject: 'Welcome to the e-book borrowing system',
       content: `
@@ -47,7 +47,7 @@ const prepareEmailData = (type, data) => {
       `
     },
 
-    // 借阅成功邮件
+    // Borrowing success email
     'borrow': {
       subject: 'Borrow confirmation - e-book borrowing system',
       content: `
@@ -64,7 +64,7 @@ const prepareEmailData = (type, data) => {
       `
     },
 
-    // 借阅即将到期邮件
+    // Borrowing due soon reminder email
     'due_soon': {
       subject: 'Borrowing due soon reminder - e-book borrowing system',
       content: `
@@ -81,7 +81,7 @@ const prepareEmailData = (type, data) => {
       `
     },
 
-    // 借阅到期邮件
+    // Borrowing expired email
     'expired': {
       subject: 'Borrowing expired - e-book borrowing system',
       content: `
@@ -98,7 +98,7 @@ const prepareEmailData = (type, data) => {
       `
     },
 
-    // 归还确认邮件
+    // Return confirmation email
     'return': {
       subject: 'Return confirmation - e-book borrowing system',
       content: `
@@ -115,7 +115,7 @@ const prepareEmailData = (type, data) => {
       `
     },
 
-    // 密码重置邮件
+    // Password reset email
     'password_reset': {
       subject: 'Password reset - e-book borrowing system',
       content: `
@@ -127,7 +127,7 @@ const prepareEmailData = (type, data) => {
     },
   };
 
-  // 获取对应类型的模板
+  // Get the corresponding type template
   const template = templates[type] || {
     subject: 'e-book borrowing system notification',
     content: '<p>System notification</p>'
@@ -143,13 +143,13 @@ const prepareEmailData = (type, data) => {
 };
 
 /**
- * 检查是否有即将到期的书籍并发送提醒
- * 此函数应该由定时任务调用，例如每天凌晨
+ * Check if there are books that are due soon and send reminders
+ * This function should be called by a scheduled task, such as daily at midnight
  */
 export const checkAndSendDueSoonNotifications = async () => {
   try {
-    // 获取所有用户的借阅信息
-    // 实际项目中，这里应该由后端服务完成
+    // Get all users' borrowing information
+    // In actual projects, this should be completed by the backend service
     const borrowedBooks = JSON.parse(localStorage.getItem('borrowedBooks') || '[]');
     const now = new Date();
 
@@ -157,12 +157,12 @@ export const checkAndSendDueSoonNotifications = async () => {
       const dueDate = new Date(book.dueDate);
       const diffDays = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
 
-      // 如果还有3天到期，发送提醒
+      // If there are 3 days left, send a reminder
       if (diffDays === 3) {
-        // 获取用户信息
+        // Get user information
         const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-        // 发送提醒邮件
+        // Send reminder email
         await sendEmailNotification('due_soon', {
           user: user,
           book: book,

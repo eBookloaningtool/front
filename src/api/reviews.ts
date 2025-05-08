@@ -1,11 +1,11 @@
 /**
- * 评论模块相关接口
+ * Review module related interfaces
  */
 
-// 引入请求方法
+// Import request method
 import { post, get } from '../utils/request.ts';
 
-// 接口类型定义
+// Interface type definition
 interface ReviewAddResponse {
   state: string;
   commentID: string;
@@ -29,7 +29,7 @@ interface DeleteReviewResponse {
   state: string;
 }
 
-// 接口地址枚举
+// Interface address enumeration
 const URL = {
   ADD_REVIEW: '/api/books/addreviews',
   DELETE_REVIEW: '/api/reviews/delete',
@@ -39,9 +39,9 @@ const URL = {
 };
 
 /**
- * 添加评论
- * @param {Object} data 评论信息 { bookId, rating, comment }
- * @returns {Promise<ReviewAddResponse>} 返回评论ID
+ * Add comment
+ * @param {Object} data Comment information { bookId, rating, comment }
+ * @returns {Promise<ReviewAddResponse>} Return comment ID
  */
 export async function addReview(data: { bookId: string; rating: number; comment: string }): Promise<ReviewAddResponse> {
   return post({
@@ -51,9 +51,9 @@ export async function addReview(data: { bookId: string; rating: number; comment:
 }
 
 /**
- * 删除评论
- * @param {String} commentID 评论ID
- * @returns {Promise<DeleteReviewResponse>} 操作结果
+ * Delete comment
+ * @param {String} commentID Comment ID
+ * @returns {Promise<DeleteReviewResponse>} Operation result
  */
 export async function deleteReview(commentID: string): Promise<DeleteReviewResponse> {
   return post({
@@ -63,8 +63,8 @@ export async function deleteReview(commentID: string): Promise<DeleteReviewRespo
 }
 
 /**
- * 获取用户的所有评论
- * @returns {Promise<UserReviewsResponse>} 用户评论列表
+ * Get all comments of a user
+ * @returns {Promise<UserReviewsResponse>} User comment list
  */
 export async function getUserReviews(): Promise<UserReviewsResponse> {
   return post({
@@ -73,9 +73,9 @@ export async function getUserReviews(): Promise<UserReviewsResponse> {
 }
 
 /**
- * 获取指定书籍的所有评论
- * @param {String} bookId 书籍ID
- * @returns {Promise<BookReviewsResponse>} 书籍评论列表
+ * Get all comments of a book
+ * @param {String} bookId Book ID
+ * @returns {Promise<BookReviewsResponse>} Book comment list
  */
 export async function getBookReviews(bookId: string): Promise<BookReviewsResponse> {
   return get({
@@ -84,12 +84,12 @@ export async function getBookReviews(bookId: string): Promise<BookReviewsRespons
 }
 
 /**
- * 获取评论内容
- * @param {String} commentID 评论ID
- * @returns {Promise<ReviewContentResponse>} 评论内容
+ * Get comment content
+ * @param {String} commentID Comment ID
+ * @returns {Promise<ReviewContentResponse>} Comment content
  */
 export async function getReviewContent(commentID: string): Promise<ReviewContentResponse> {
   return get({
     url: `${URL.REVIEW_CONTENT}?commentID=${commentID}`
   });
-} 
+}

@@ -1,16 +1,16 @@
 /**
- * 图片工具函数
+ * Image utility functions
  */
 
-// 获取图书封面URL
+// Get book cover URL
 export const getBookCoverUrl = (bookId) => {
   return `/images/book-covers/book${bookId}.jpg`;
 };
 
-// 图片加载错误处理
+// Image loading error handling
 export const handleImageError = (event) => {
   event.target.src = '/images/default-book-cover.html';
-  // 添加默认样式，让占位符更好看
+  // Add default styles to make the placeholder look better
   event.target.style.backgroundColor = '#e0e0e0';
   event.target.style.display = 'flex';
   event.target.style.justifyContent = 'center';
@@ -19,7 +19,7 @@ export const handleImageError = (event) => {
   event.target.style.fontSize = '12px';
 };
 
-// 批量预加载图片
+// Batch preload images
 export const preloadImages = (imageUrls) => {
   return Promise.all(
     imageUrls.map(url => {
@@ -27,8 +27,8 @@ export const preloadImages = (imageUrls) => {
         const img = new Image();
         img.src = url;
         img.onload = resolve;
-        img.onerror = resolve; // 即使加载失败也继续
+        img.onerror = resolve; // Even if loading fails, continue
       });
     })
   );
-}; 
+};

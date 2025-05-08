@@ -13,11 +13,11 @@ export const useUserStore = defineStore('user', {
   }),
 
   getters: {
-    // 获取用户认证状态
+    // Get user authentication status
     getIsAuthenticated(state) {
       return state.isAuthenticated
     },
-    // 获取用户信息
+    // Get user information
     getUserInfo(state) {
       return {
         uuid: state.uuid,
@@ -30,12 +30,12 @@ export const useUserStore = defineStore('user', {
   },
 
   actions: {
-    // 初始化用户状态（从localStorage恢复）
+    // Initialize user state (restore from localStorage)
     async initUserState() {
       const token = localStorage.getItem('token')
       if (token) {
         try {
-          // 验证token并获取用户信息
+          // Verify token and get user information
           const response = await userAPI.getUserInfo()
           if (response.data) {
             this.isAuthenticated = true
@@ -46,15 +46,15 @@ export const useUserStore = defineStore('user', {
             this.balance = response.data.balance
             this.createdAt = response.data.createdat
           } else {
-            // token无效，清除本地存储
+            // Invalid token, clear localStorage
             this.logout()
           }
         } catch (error) {
-          console.error('获取用户信息失败:', error)
+          console.error('Failed to get user information:', error)
           this.logout()
         }
       } else {
-        // 如果没有token，确保状态被清除
+        // If there is no token, ensure the state is cleared
         this.isAuthenticated = false
         this.token = null
         this.uuid = null
@@ -65,7 +65,7 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    // 设置用户登录状态
+    // Set user login status
     async login(userData) {
       try {
         const response = await userAPI.login(userData)
@@ -74,11 +74,11 @@ export const useUserStore = defineStore('user', {
           this.token = response.data.token
           this.uuid = response.data.UUID
 
-          // 保存到 localStorage
+          // Save to localStorage
           localStorage.setItem('token', response.data.token)
           localStorage.setItem('uuid', response.data.UUID)
 
-          // 获取并保存用户详细信息
+          // Get and save user detailed information
           const userInfo = await userAPI.getUserInfo()
           if (userInfo.data) {
             this.userName = userInfo.data.name
@@ -96,7 +96,7 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    // 用户登出
+    // User logout
     async logout() {
       try {
         await userAPI.logout()
@@ -111,7 +111,7 @@ export const useUserStore = defineStore('user', {
         this.balance = 0
         this.createdAt = null
 
-        // 清除 localStorage 中的登录信息
+        // Clear login information in localStorage
         localStorage.removeItem('token')
         localStorage.removeItem('uuid')
         localStorage.removeItem('userName')
@@ -119,7 +119,7 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    // 更新用户信息
+    // Update user information
     async updateUserInfo(userData) {
       try {
         const response = await userAPI.updateUserInfo(userData)
@@ -136,7 +136,7 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    // 删除账号
+    // Delete account
     async deleteAccount() {
       try {
         const response = await userAPI.deleteAccount()
@@ -145,7 +145,7 @@ export const useUserStore = defineStore('user', {
         }
         return response.data
       } catch (error) {
-        console.error('删除账号失败:', error)
+        console.error('Failed to delete account:', error)
         throw error
       }
     }

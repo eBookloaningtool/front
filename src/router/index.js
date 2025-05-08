@@ -78,7 +78,7 @@ const routes = [
     component: MyBooksPage,
     meta: { requiresAuth: true }
   },
-  // 用户资料页新增路由
+  // User profile page new routes
   {
     path: '/user/recent-borrows',
     name: 'RecentBorrows',
@@ -133,25 +133,25 @@ const router = createRouter({
   routes
 })
 
-// 全局前置守卫
+// Global before guard
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
 
-  // 初始化用户状态，从localStorage恢复登录状态
+  // Initialize user state, restore login status from localStorage
   userStore.initUserState()
 
-  // 检查页面是否需要认证
+  // Check if page requires authentication
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
 
-  // 如果页面需要认证，但用户未登录，则重定向到首页
+  // If page requires authentication, but user is not logged in, redirect to home page
   if (requiresAuth && !userStore.isAuthenticated) {
     next({ path: '/' })
   } else {
-    // 如果用户已登录且尝试访问登录或注册页面，重定向到主页
+    // If user is logged in and tries to access login or register page, redirect to home page
     if (userStore.isAuthenticated && (to.path === '/login' || to.path === '/register')) {
       next({ path: '/' })
     } else {
-      next() // 继续导航
+      next() // Continue navigation
     }
   }
 })

@@ -1,10 +1,10 @@
 /**
- * 用户管理相关接口
+ * User management related interfaces
  */
 
-// 引入请求方法
+// Import request method
 import { post } from '../utils/request.ts';
-import { 
+import {
   RegisterParams,
   RegisterResponse,
   UpdateUserParams,
@@ -13,7 +13,7 @@ import {
   SuccessResponse
 } from '../types/user.ts';
 
-// 接口地址枚举
+// Interface address enumeration
 enum URL {
   REGISTER = '/api/users/register',
   UPDATE = '/api/users/update',
@@ -22,9 +22,9 @@ enum URL {
 }
 
 /**
- * 用户注册
- * @param data 注册信息 {email, password, name}
- * @returns Promise 返回注册结果
+ * Register
+ * @param data Register information {email, password, name}
+ * @returns Promise Return registration result
  */
 export async function registerUser(data: RegisterParams): Promise<RegisterResponse> {
   return post({
@@ -34,10 +34,10 @@ export async function registerUser(data: RegisterParams): Promise<RegisterRespon
 }
 
 /**
- * 更新用户信息
- * 需要 Authorization 头
- * @param data 更新的用户信息 {email?, password?, name?}
- * @returns Promise 返回更新结果
+ * Update user information
+ * Requires Authorization header
+ * @param data Updated user information {email?, password?, name?}
+ * @returns Promise Return update result
  */
 export async function updateUser(data: UpdateUserParams): Promise<UpdateUserResponse> {
   return post({
@@ -47,9 +47,9 @@ export async function updateUser(data: UpdateUserParams): Promise<UpdateUserResp
 }
 
 /**
- * 获取用户信息
- * 需要 Authorization 头
- * @returns Promise 返回用户信息
+ * Get user information
+ * Requires Authorization header
+ * @returns Promise Return user information
  */
 export async function getUserInfo(): Promise<UserInfoResponse> {
   return post({
@@ -58,9 +58,9 @@ export async function getUserInfo(): Promise<UserInfoResponse> {
 }
 
 /**
- * 删除账号
- * 需要 Authorization 头
- * @returns Promise 返回删除结果
+ * Delete account
+ * Requires Authorization header
+ * @returns Promise Return delete result
  */
 export async function deleteUser(): Promise<SuccessResponse> {
   return post({

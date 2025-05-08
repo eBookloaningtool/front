@@ -1,4 +1,4 @@
-// 格式化价格为英镑格式
+// Format price to GBP format
 export const formatPrice = (price) => {
     return `£${parseFloat(price).toFixed(2)}`;
   };
