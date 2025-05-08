@@ -11,6 +11,15 @@ export const post = async ({ url, data = {}, headers = {} }: {
   headers?: Record<string, string>;
 }): Promise<any> => {
   try {
+    // 获取token并添加到headers
+    const token = localStorage.getItem('token');
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+      console.log('[API] 已添加认证token到请求头');
+    } else {
+      console.warn('[API] 未找到认证token');
+    }
+
     console.log(`[API] 发送POST请求: ${url}`, { data, headers: { ...headers, Authorization: headers.Authorization ? 'Bearer ***' : undefined } });
 
     // 发送请求
