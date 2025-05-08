@@ -54,8 +54,6 @@
 import { ref, onMounted } from 'vue';
 // Import API interfaces
 import { getWishlist, addToWishlist, removeFromWishlist } from '../api/wishlist';
-// Import development mock
-import { mockWishlistAPI } from '../mock-api.js';
 
 // Receive props from parent component
 const props = defineProps({
@@ -81,9 +79,6 @@ const notification = ref({
   type: 'success'
 });
 
-// Determine if in mock development environment
-const isMockMode = () => import.meta.env.MODE === 'development' && window.mockMode;
-
 // Initialize on component mount
 onMounted(() => {
   checkWishlistStatus();
@@ -104,9 +99,10 @@ const checkWishlistStatus = async () => {
 
   loading.value = true;
   try {
-    const response = isMockMode() ? mockWishlistAPI.getWishlist() : await getWishlist();
+    const response = await getWishlist();
     const bookIds = response?.bookId?.map(id => String(id)) || [];
-    isInWishlist.value = bookIds.includes(String(props.bookId));
+    const bookIdStr = String(props.bookId);
+    isInWishlist.value = bookIds.includes(bookIdStr);
   } catch (error) {
     console.error('Failed to check wishlist status:', error);
     showNotification('Failed to load wishlist', 'error');
@@ -129,17 +125,11 @@ const toggleWishlist = async () => {
 
   loading.value = true;
   try {
-    if (isMockMode()) {
-      // Mock mode
-      isInWishlist.value
-        ? mockWishlistAPI.removeFromWishlist([props.bookId])
-        : mockWishlistAPI.addToWishlist(props.bookId);
-    } else {
-      // Official API
-      isInWishlist.value
-        ? await removeFromWishlist(props.bookId)
-        : await addToWishlist(props.bookId);
-    }
+    // 使用实际API，确保bookId是字符串类型
+    const bookIdStr = String(props.bookId);
+    isInWishlist.value
+      ? await removeFromWishlist(bookIdStr)
+      : await addToWishlist(bookIdStr);
 
     // Update state
     isInWishlist.value = !isInWishlist.value;
