@@ -595,6 +595,14 @@ import { getWishlist, getBookDetail, removeFromWishlist } from '../api/booksApi'
 import { getBorrowHistory, getBorrowList } from '../api/borrowApi';
 import { get, post } from '../utils/request';
 
+// Define props for the component
+const props = defineProps({
+  query: {
+    type: Object,
+    default: () => ({})
+  }
+});
+
 // Default cover image
 const defaultCover = '/images/books/default-cover.jpg';
 
@@ -1078,6 +1086,12 @@ const confirmPayment = () => {
 onMounted(() => {
   // Get user information
   fetchUserInfo();
+
+  // Check if there's a view parameter in route props
+  if (props.query && props.query.view) {
+    switchView(props.query.view);
+    return;
+  }
 
   // Check if there's a view parameter in URL query parameters
   const viewParam = route.query.view;

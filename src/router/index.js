@@ -84,37 +84,43 @@ const routes = [
   {
     path: '/user/recent-borrows',
     name: 'RecentBorrows',
-    component: () => import('../views/user/RecentBorrowsPage.vue'),
+    component: ProfilePage,
+    props: { query: { view: 'RecentBorrows' }},
     meta: { requiresAuth: true }
   },
   {
     path: '/user/loan-history',
     name: 'LoanHistory',
-    component: () => import('../views/user/LoanHistoryPage.vue'),
+    component: ProfilePage,
+    props: { query: { view: 'LoanHistory' }},
     meta: { requiresAuth: true }
   },
   {
     path: '/user/wishlist',
     name: 'Wishlist',
-    component: () => import('../views/user/WishlistPage.vue'),
+    component: ProfilePage,
+    props: { query: { view: 'Wishlist' }},
     meta: { requiresAuth: true }
   },
   {
     path: '/user/reviews',
     name: 'MyReviews',
-    component: () => import('../views/user/ReviewsPage.vue'),
+    component: ProfilePage,
+    props: { query: { view: 'MyReviews' }},
     meta: { requiresAuth: true }
   },
   {
     path: '/user/payment-orders',
     name: 'PaymentOrders',
-    component: () => import('../views/user/PaymentOrdersPage.vue'),
+    component: ProfilePage,
+    props: { query: { view: 'PaymentOrders' }},
     meta: { requiresAuth: true }
   },
   {
     path: '/user/settings',
     name: 'Settings',
-    component: () => import('../views/user/SettingsPage.vue'),
+    component: ProfilePage,
+    props: { query: { view: 'Settings' }},
     meta: { requiresAuth: true }
   },
   {
