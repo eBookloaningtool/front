@@ -3,7 +3,6 @@ import RegisterPage from '../views/RegisterPage.vue'
 import Home from '../views/Home.vue'
 import BookDetail from '../views/BookDetail.vue'
 import ShoppingCart from '../views/ShoppingCart.vue'
-import UserDashboard from '../views/UserDashboard.vue'
 import ProfilePage from '../views/ProfilePage.vue'
 import MyBooksPage from '../views/MyBooksPage.vue'
 import FavoritesPage from '../views/FavoritesPage.vue'
@@ -64,8 +63,7 @@ const routes = [
   },
   {
     path: '/user/dashboard',
-    name: 'UserDashboard',
-    component: UserDashboard,
+    redirect: '/user/profile',
     meta: { requiresAuth: true }
   },
   {
