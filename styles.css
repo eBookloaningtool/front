@@ -278,7 +278,7 @@ main {
     }
 }
 
-/* 用户个人信息页面样式 */
+/* User personal information page style */
 .profile-section {
     padding: 20px;
     max-width: 800px;
@@ -371,7 +371,7 @@ main {
     }
 }
 
-/* 排行榜样式 */
+/* Ranking style */
 .rankings-section {
     margin-top: 40px;
 }
@@ -481,7 +481,7 @@ main {
     }
 }
 
-/* 书籍详情页面样式 */
+/* Book detail page style */
 .book-detail {
     max-width: 800px;
     margin: 0 auto;
@@ -671,7 +671,7 @@ main {
     }
 }
 
-/* 评论区样式 */
+/* Comment section style */
 .review-item {
     background-color: var(--secondary-color);
     border-radius: var(--border-radius);
@@ -702,7 +702,7 @@ main {
     font-size: 14px;
 }
 
-/* 目录样式 */
+/* Table of contents style */
 .book-contents ol {
     list-style-position: inside;
     padding-left: 0;
@@ -719,7 +719,7 @@ main {
     border-bottom: none;
 }
 
-/* 分享菜单样式 */
+/* Share menu style */
 .share-menu {
     position: fixed;
     top: 0;
@@ -767,7 +767,7 @@ main {
     color: var(--text-color);
 }
 
-/* 评论表单样式 */
+/* Comment form style */
 .comment-form {
     background-color: white;
     border-radius: var(--border-radius);
@@ -834,7 +834,7 @@ main {
     }
 }
 
-/* 注册表单样式 */
+/* Register form style */
 .register-section {
     max-width: 500px;
     margin: 20px auto;
@@ -926,7 +926,7 @@ main {
     text-decoration: none;
 }
 
-/* 响应式调整 */
+/* Responsive adjustment */
 @media (max-width: 768px) {
     .login-form,
     .register-section {
@@ -939,7 +939,7 @@ main {
     }
 }
 
-/* 页脚样式 */
+/* Footer style */
 footer {
     background-color: #f8f9fa;
     padding: 40px 0;
@@ -1001,7 +1001,7 @@ footer {
     color: #007bff;
 }
 
-/* 响应式设计 */
+/* Responsive design */
 @media (max-width: 768px) {
     .footer-content {
         flex-direction: column;

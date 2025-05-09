@@ -1,11 +1,11 @@
 /**
- * 支付相关接口
+ * Payment related interfaces
  */
 
-// 引入请求方法
+// Import request method
 import { post } from '../utils/request.ts';
 
-// 接口定义
+// Interface definition
 interface TopUpSuccessResponse {
   state: string;
   paymentId: string;
@@ -23,16 +23,16 @@ interface PaymentHistoryResponse {
   data: PaymentHistoryItem[];
 }
 
-// 接口地址枚举
+// Interface address enumeration
 const URL = {
   TOPUP: '/api/payments/topup',
   PAYMENT_HISTORY: '/api/payments/history'
 };
 
 /**
- * 充值余额
- * @param {number} amount - 充值金额
- * @returns {Promise<TopUpSuccessResponse>} - 响应结果，包含状态和余额信息
+ * Top up balance
+ * @param {number} amount - Top up amount
+ * @returns {Promise<TopUpSuccessResponse>} - Response result, including status and balance information
  */
 export async function topUp(amount: number): Promise<TopUpSuccessResponse> {
   return post({
@@ -42,12 +42,12 @@ export async function topUp(amount: number): Promise<TopUpSuccessResponse> {
 }
 
 /**
- * 获取充值历史记录
- * @returns {Promise<PaymentHistoryResponse>} - 充值历史记录列表
+ * Get top up history
+ * @returns {Promise<PaymentHistoryResponse>} - Top up history list
  */
 export async function getPaymentHistory(): Promise<PaymentHistoryResponse> {
   return post({
     url: URL.PAYMENT_HISTORY,
     data: {}
   });
-} 
+}

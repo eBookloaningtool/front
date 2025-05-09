@@ -1,10 +1,10 @@
 import axios, { AxiosError } from 'axios';
 
-// 假设存在一个获取认证 Token 的函数
-// 你需要根据你的项目实际情况来实现或导入它
-// 例如: import { getAuthToken } from '@/utils/auth';
+// Suppose there is a function to get an authentication token
+// You need to implement or import it according to your project reality
+// For example: import { getAuthToken } from '@/utils/auth';
 const getAuthToken = (): string | null => {
-  // 示例实现，请替换为你的实际逻辑
+  // Example implementation, please replace with your actual logic
   return localStorage.getItem('authToken');
 };
 
@@ -44,84 +44,84 @@ interface SearchBooksParams {
 }
 
 interface SearchBooksResponse {
-  state: 'success' | 'error'; // 根据文档响应添加状态
+  state: 'success' | 'error'; // Add status based on document response
   bookId: string[];
-  message?: string; // 可选的错误消息
+  message?: string; // Optional error message
 }
 
 // --- API Functions ---
 
 /**
- * 获取热门书籍列表
- * @returns {Promise<PopularBooksResponse>} - 热门书籍ID列表
+ * Get popular books list
+ * @returns {Promise<PopularBooksResponse>} - Popular books ID list
  */
 export const getPopularBooks = async (): Promise<PopularBooksResponse> => {
   try {
     const response = await axios.get<PopularBooksResponse>('/api/books/popular');
     return response.data;
   } catch (error) {
-    console.error('获取热门书籍失败:', error instanceof AxiosError ? error.message : error);
-    // 返回符合接口的默认值
+    console.error('Get popular books failed:', error instanceof AxiosError ? error.message : error);
+    // Return default value interface
     return { bookId: [] };
   }
 };
 
 /**
- * 获取书籍详情
- * @param {string} bookId - 书籍ID
- * @returns {Promise<BookDetail | null>} - 书籍详细信息或 null
+ * Get book details
+ * @param {string} bookId - Book ID
+ * @returns {Promise<BookDetail | null>} - Book details or null
  */
 export const getBookDetail = async (bookId: string): Promise<BookDetail | null> => {
   if (!bookId) {
-    console.error('获取书籍详情失败: bookId 不能为空');
+    console.error('Get book details failed: bookId cannot be empty');
     return null;
   }
   try {
     const response = await axios.get<BookDetail>(`/api/books/get?bookId=${bookId}`);
     return response.data;
   } catch (error) {
-    console.error(`获取书籍详情失败 (ID: ${bookId}):`, error instanceof AxiosError ? error.message : error);
+    console.error(`Get book details failed (ID: ${bookId}):`, error instanceof AxiosError ? error.message : error);
     return null;
   }
 };
 
 /**
- * 获取电子书内容
- * @param bookId 电子书ID
- * @returns 电子书内容
+ * Get electronic book content
+ * @param bookId Electronic book ID
+ * @returns Electronic book content
  */
 export async function getBookContent(bookId: string) {
   try {
     const response = await axios.post('/api/books/content', { bookId });
     return response.data;
   } catch (error) {
-    console.error('获取电子书内容失败:', error);
+    console.error('Get electronic book content failed:', error);
     throw error;
   }
 }
 
 /**
- * 搜索书籍
- * @param {SearchBooksParams} params - 搜索参数 (title, author, category)
- * @returns {Promise<SearchBooksResponse>} - 搜索结果
+ * Search books
+ * @param {SearchBooksParams} params - Search parameters (title, author, category)
+ * @returns {Promise<SearchBooksResponse>} - Search results
  */
 export const searchBooks = async (params: SearchBooksParams): Promise<SearchBooksResponse> => {
   try {
-    // 构建查询参数
+    // Build query parameters
     const queryParams = new URLSearchParams();
     if (params.title) queryParams.append('title', params.title);
     if (params.author) queryParams.append('author', params.author);
     if (params.category) queryParams.append('category', params.category);
 
-    // 确保至少有一个搜索参数
+    // Ensure at least one search parameter
     if (queryParams.toString() === '') {
-      return { state: 'error', bookId: [], message: '至少需要一个搜索参数' };
+      return { state: 'error', bookId: [], message: 'At least one search parameter is required' };
     }
 
     const response = await axios.get<SearchBooksResponse>(`/api/books/search?${queryParams.toString()}`);
     return response.data;
   } catch (error) {
-    console.error('搜索书籍失败:', error);
+    console.error('Search books failed:', error);
     return { state: 'error', bookId: [], message: 'Search failed, please try again later' };
   }
 };

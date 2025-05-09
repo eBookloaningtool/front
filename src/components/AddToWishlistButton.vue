@@ -125,7 +125,7 @@ const toggleWishlist = async () => {
 
   loading.value = true;
   try {
-    // 使用实际API，确保bookId是字符串类型
+    // Use actual API, ensure bookId is a string type
     const bookIdStr = String(props.bookId);
     isInWishlist.value
       ? await removeFromWishlist(bookIdStr)

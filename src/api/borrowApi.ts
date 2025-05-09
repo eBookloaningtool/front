@@ -1,33 +1,33 @@
 import axios, { AxiosRequestConfig, AxiosError } from 'axios';
 import { post, get } from '../utils/request';
 
-// --- 接口定义 ---
+// --- Interface definition ---
 
-/** 借阅成功响应 */
+/** Borrow success response */
 interface BorrowSuccessResponse {
   state: 'success';
   dueDate: string; // YYYY-MM-DD
   balance: number;
 }
 
-/** 续借成功响应 */
+/** Renew success response */
 interface RenewSuccessResponse {
   state: 'success';
   newDueDate: string; // YYYY-MM-DD
 }
 
-/** 余额不足响应 */
+/** Insufficient balance response */
 interface InsufficientBalanceResponse {
   state: 'insufficient balance';
   newPayment: number;
 }
 
-/** 达到借阅上限响应 */
+/** Reach borrow limit response */
 interface ReachBorrowLimitResponse {
   state: 'Reach borrow limit';
 }
 
-/** 借阅失败响应(包含无效书籍、库存不足、已借阅等问题) */
+/** Borrow failed response (includes invalid books, insufficient stock, already borrowed, etc.) */
 interface BorrowFailedResponse {
   state: 'Borrow failed.';
   InvalidBookIds?: string[];
@@ -35,32 +35,32 @@ interface BorrowFailedResponse {
   BorrowedBookIds?: string[];
 }
 
-/** 没有可用副本响应 */
+/** No available copies response */
 interface NoAvailableCopiesResponse {
   state: 'no_available_copies';
   error: string;
 }
 
-/** 超出借阅限制响应 */
+/** Exceed borrow limit response */
 interface ExceedLimitResponse {
   state: 'exceed_limit';
   error: string;
 }
 
-/** 归还成功响应 */
+/** Return success response */
 interface ReturnSuccessResponse {
   state: 'success';
 }
 
-/** 通用错误响应 */
+/** General error response */
 interface ErrorResponse {
   state: 'error';
   message: string;
-  // 可以根据后端实际返回添加更多错误信息字段
+  // Add more error information fields based on actual backend returns
   // e.g., errorCode?: number;
 }
 
-/** 借阅记录项 */
+/** Borrow record item */
 interface BorrowRecord {
   borrowId: string;
   bookId: string;
@@ -68,70 +68,70 @@ interface BorrowRecord {
   dueDate: string;
 }
 
-/** 历史借阅记录项 */
+/** Borrow history record item */
 interface BorrowHistoryRecord extends BorrowRecord {
   returnDate: string;
-  status: string; // 例如 "returned"
+  status: string; // For example, "returned"
   bookTitle: string;
   bookAuthor: string;
   bookCover?: string;
 }
 
-/** 借阅列表响应 */
+/** Borrow list response */
 interface BorrowListResponse {
   state: string;
   data: BorrowRecord[];
 }
 
-/** 借阅历史响应 */
+/** Borrow history response */
 interface BorrowHistoryResponse {
   state: string;
   data: BorrowHistoryRecord[];
 }
 
-/** borrowBook 可能的响应类型 */
+/** borrowBook possible response types */
 type BorrowApiResponse = BorrowSuccessResponse | InsufficientBalanceResponse | ReachBorrowLimitResponse | BorrowFailedResponse | NoAvailableCopiesResponse | ExceedLimitResponse | ErrorResponse;
-/** returnBook 可能的响应类型 */
+/** returnBook possible response types */
 type ReturnApiResponse = ReturnSuccessResponse | ErrorResponse;
-/** renewBook 可能的响应类型 */
+/** renewBook possible response types */
 type RenewApiResponse = RenewSuccessResponse | InsufficientBalanceResponse | ErrorResponse;
 
-// --- 辅助函数 ---
+// --- Helper functions ---
 
 /**
- * 获取包含 JWT Token 的 Axios 请求配置
- * @returns {AxiosRequestConfig} Axios 请求配置对象
+ * Get Axios request configuration with JWT Token
+ * @returns {AxiosRequestConfig} Axios request configuration object
  */
 const getAuthConfig = (): AxiosRequestConfig => {
   const token = localStorage.getItem('token');
   if (!token) {
     console.warn('JWT token not found in localStorage. Application logic should handle redirection or errors.');
-    // 返回空的 headers 或根据应用逻辑抛出错误
+    // Return empty headers or throw an error based on application logic
     // return { headers: {} };
-    // 或者可以考虑在这里抛出错误，让调用方处理
+    // Alternatively, you can throw an error here to let the caller handle it
     // throw new Error('Authentication token not found.');
   }
   return {
     headers: {
-      // 仅在 token 存在时添加 Authorization 头
+      // Add Authorization header only when token exists
       ...(token && { Authorization: `Bearer ${token}` }),
     },
   };
 };
 
-// --- API 调用函数 ---
+// --- API call functions ---
 
 /**
- * 借阅电子书 - 支持批量借阅
- * @param {string|string[]} bookId - 单个书籍ID或书籍ID数组
- * @returns {Promise<BorrowApiResponse>} - 借阅结果
+ * Borrow electronic book - supports batch borrowing
+ * @param {string|string[]} bookId - Single book ID or book ID array
+ * @returns {Promise<BorrowApiResponse>} - Borrow result
  */
 export const borrowBook = async (bookId: string | string[]): Promise<BorrowApiResponse> => {
   try {
-    // 确保 bookId 始终作为数组传递
+    // Ensure bookId is always passed as an array
     const bookIdParam = Array.isArray(bookId) ? bookId : [bookId];
 
-    // 获取认证token
+    // Get authentication token
     const token = localStorage.getItem('token');
     const headers: Record<string, string> = {};
 
@@ -154,9 +154,9 @@ export const borrowBook = async (bookId: string | string[]): Promise<BorrowApiRe
 };
 
 /**
- * 归还电子书 (取消借阅)
- * @param {string} bookId - 书籍ID
- * @returns {Promise<ReturnApiResponse>} - 归还结果
+ * Return electronic book (cancel borrowing)
+ * @param {string} bookId - Book ID
+ * @returns {Promise<ReturnApiResponse>} - Return result
  */
 export const returnBook = async (bookId: string): Promise<ReturnApiResponse> => {
   try {
@@ -182,9 +182,9 @@ export const returnBook = async (bookId: string): Promise<ReturnApiResponse> => 
 };
 
 /**
- * 续借电子书
- * @param {string} bookId - 书籍ID
- * @returns {Promise<RenewApiResponse>} - 续借结果
+ * Renew electronic book
+ * @param {string} bookId - Book ID
+ * @returns {Promise<RenewApiResponse>} - Renew result
  */
 export const renewBook = async (bookId: string): Promise<RenewApiResponse> => {
   try {
@@ -210,27 +210,27 @@ export const renewBook = async (bookId: string): Promise<RenewApiResponse> => {
 };
 
 /**
- * 获取用户当前借阅列表
- * @returns {Promise<BorrowListResponse>} - 借阅记录列表
+ * Get user current borrow list
+ * @returns {Promise<BorrowListResponse>} - Borrow record list
  */
 export const getBorrowList = async (): Promise<BorrowListResponse> => {
   try {
     const response = await axios.post<BorrowListResponse>(
       '/api/borrow/borrowlist',
-      {},  // 无需请求体参数
+      {},  // No request body parameters
       getAuthConfig()
     );
     return response.data;
   } catch (error) {
     console.error('Failed to get borrow list:', (error as AxiosError)?.response?.data || (error as Error).message);
-    // 出错时返回空数据
+    // Return empty data when an error occurs
     return { state: 'error', data: [] };
   }
 };
 
 /**
- * 获取用户借阅历史记录
- * @returns {Promise<BorrowHistoryResponse>} - 借阅历史记录
+ * Get user borrow history
+ * @returns {Promise<BorrowHistoryResponse>} - Borrow history
  */
 export const getBorrowHistory = async (): Promise<BorrowHistoryResponse> => {
   try {
@@ -239,11 +239,11 @@ export const getBorrowHistory = async (): Promise<BorrowHistoryResponse> => {
       data: {}
     });
 
-    // 确保每个借阅记录都有正确的封面 URL 和书名
+    // Ensure each borrow record has the correct cover URL and book name
     const historyWithCovers = await Promise.all(
       response.data.map(async (loan) => {
         try {
-          // 获取书籍详情以获取封面 URL 和书名
+          // Get book details to get cover URL and book name
           const bookDetail = await get({
             url: `/api/books/get?bookId=${loan.bookId}`
           });

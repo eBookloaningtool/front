@@ -2,8 +2,8 @@
 import axios from 'axios';
 
 /**
- * 封装POST请求方法
- * @param options 请求选项
+ * Wrap POST request method
+ * @param options Request options
  */
 export const post = async ({ url, data = {}, headers = {} }: {
   url: string;
@@ -11,53 +11,53 @@ export const post = async ({ url, data = {}, headers = {} }: {
   headers?: Record<string, string>;
 }): Promise<any> => {
   try {
-    // 获取token并添加到headers
+    // Get token and add to headers
     const token = localStorage.getItem('token');
     if (token) {
       headers.Authorization = `Bearer ${token}`;
-      console.log('[API] 已添加认证token到请求头');
+      console.log('[API] Token added to request headers');
     } else {
-      console.warn('[API] 未找到认证token');
+      console.warn('[API] No token found');
     }
 
-    console.log(`[API] 发送POST请求: ${url}`, { data, headers: { ...headers, Authorization: headers.Authorization ? 'Bearer ***' : undefined } });
+    console.log(`[API] Sending POST request: ${url}`, { data, headers: { ...headers, Authorization: headers.Authorization ? 'Bearer ***' : undefined } });
 
-    // 发送请求
+    // Send request
     const response = await axios.post(url, data, { headers });
 
-    // 记录响应（不含敏感数据）
-    console.log(`[API] 收到响应: ${url}`, {
+    // Record response (without sensitive data)
+    console.log(`[API] Received response: ${url}`, {
       status: response.status,
       data: response.data
     });
 
     return response.data;
   } catch (error) {
-    // 详细错误日志
+    // Detailed error log
     if (axios.isAxiosError(error)) {
-      console.error(`[API] 请求错误: ${url}`, {
+      console.error(`[API] Request error: ${url}`, {
         status: error.response?.status,
         statusText: error.response?.statusText,
         data: error.response?.data,
         message: error.message
       });
 
-      // 如果服务器返回了错误响应，使用其数据
+      // If the server returns an error response, use its data
       if (error.response?.data) {
         return error.response.data;
       }
     } else {
-      console.error(`[API] 非Axios错误: ${url}`, error);
+      console.error(`[API] Non-Axios error: ${url}`, error);
     }
 
-    // 抛出错误
+    // Throw error
     throw error;
   }
 };
 
 /**
- * 封装GET请求方法
- * @param options 请求选项
+ * Wrap GET request method
+ * @param options Request options
  */
 export const get = async ({ url, params = {}, headers = {} }: {
   url: string;
@@ -65,7 +65,7 @@ export const get = async ({ url, params = {}, headers = {} }: {
   headers?: Record<string, string>;
 }): Promise<any> => {
   try {
-    console.log(`[API] 发送GET请求: ${url}`, {
+    console.log(`[API] Sending GET request: ${url}`, {
       params,
       headers: {
         ...headers,
@@ -73,20 +73,20 @@ export const get = async ({ url, params = {}, headers = {} }: {
       }
     });
 
-    // 获取token并添加到headers
+    // Get token and add to headers
     const token = localStorage.getItem('token');
     if (token) {
       headers.Authorization = `Bearer ${token}`;
-      console.log('[API] 已添加认证token到请求头');
+      console.log('[API] Token added to request headers');
     } else {
-      console.warn('[API] 未找到认证token');
+      console.warn('[API] No token found');
     }
 
-    // 发送请求
+    // Send request
     const response = await axios.get(url, { params, headers });
 
-    // 记录响应（不含敏感数据）
-    console.log(`[API] 收到响应: ${url}`, {
+    // Record response (without sensitive data)
+    console.log(`[API] Received response: ${url}`, {
       status: response.status,
       statusText: response.statusText,
       data: response.data
@@ -94,9 +94,9 @@ export const get = async ({ url, params = {}, headers = {} }: {
 
     return response.data;
   } catch (error) {
-    // 详细错误日志
+    // Detailed error log
     if (axios.isAxiosError(error)) {
-      console.error(`[API] 请求错误: ${url}`, {
+      console.error(`[API] Request error: ${url}`, {
         status: error.response?.status,
         statusText: error.response?.statusText,
         data: error.response?.data,
@@ -104,15 +104,15 @@ export const get = async ({ url, params = {}, headers = {} }: {
         headers: error.response?.headers
       });
 
-      // 如果服务器返回了错误响应，使用其数据
+      // If the server returns an error response, use its data
       if (error.response?.data) {
         return error.response.data;
       }
     } else {
-      console.error(`[API] 非Axios错误: ${url}`, error);
+      console.error(`[API] Non-Axios error: ${url}`, error);
     }
 
-    // 抛出错误
+    // Throw error
     throw error;
   }
 };
