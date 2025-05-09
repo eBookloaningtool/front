@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- 书本 -->
+  <path d="M40 35 L40 165 L160 165 L160 35 L40 35 Z" fill="#f5edd7" stroke="#e9a84c" stroke-width="4"/>
+  
+  <!-- 书脊 -->
+  <path d="M40 35 L40 165 L55 165 L55 35 L40 35 Z" fill="#e9a84c"/>
+  
+  <!-- 书页 -->
+  <path d="M55 40 L155 40 L155 160 L55 160 Z" fill="#ffffff" stroke="#ddd" stroke-width="2"/>
+  <path d="M65 60 L145 60" stroke="#ddd" stroke-width="2"/>
+  <path d="M65 80 L145 80" stroke="#ddd" stroke-width="2"/>
+  <path d="M65 100 L145 100" stroke="#ddd" stroke-width="2"/>
+  <path d="M65 120 L145 120" stroke="#ddd" stroke-width="2"/>
+  <path d="M65 140 L120 140" stroke="#ddd" stroke-width="2"/>
+  
+  <!-- 蜜蜂身体 -->
+  <ellipse cx="130" cy="95" rx="20" ry="15" fill="#e9a84c"/>
+  <ellipse cx="130" cy="95" rx="15" ry="12" fill="#e9a84c"/>
+  
+  <!-- 蜜蜂条纹 -->
+  <path d="M126 88 L134 88" stroke="#333" stroke-width="2"/>
+  <path d="M123 95 L137 95" stroke="#333" stroke-width="2"/>
+  <path d="M126 102 L134 102" stroke="#333" stroke-width="2"/>
+  
+  <!-- 蜜蜂翅膀 -->
+  <ellipse cx="122" cy="85" rx="10" ry="6" transform="rotate(-30 122 85)" fill="#f0f0f0" stroke="#ddd"/>
+  <ellipse cx="138" cy="85" rx="10" ry="6" transform="rotate(30 138 85)" fill="#f0f0f0" stroke="#ddd"/>
+  
+  <!-- 蜜蜂头和眼睛 -->
+  <circle cx="145" cy="95" r="7" fill="#333"/>
+  <circle cx="147" cy="93" r="2" fill="#fff"/>
+  
+  <!-- 蜜蜂触角 -->
+  <path d="M145 90 Q150 82 155 85" fill="none" stroke="#333" stroke-width="1.5"/>
+  <path d="M148 90 Q155 86 158 90" fill="none" stroke="#333" stroke-width="1.5"/>
+</svg>
